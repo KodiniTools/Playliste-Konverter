@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.yaml
+pnpm-lock.yaml
+
+# Build Output
+dist/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/temp/*
+!backend/temp/.gitkeep
+
+# Environment
+.env
+.env.local

@@ -1,0 +1,7 @@
+RewriteEngine On
+RewriteBase /playlistkonverter/api/
+
+RewriteRule ^upload$ upload.php [L]
+RewriteRule ^convert$ convert.php [L]
+RewriteRule ^status/([a-f0-9]{32})$ status.php?id=$1 [L]
+RewriteRule ^download/([a-f0-9]{32})$ download.php?id=$1 [L]
