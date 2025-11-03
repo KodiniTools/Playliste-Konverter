@@ -6,6 +6,9 @@ import { API_BASE_URL } from '../config'
 // Timeout für große Uploads (10 Minuten)
 const UPLOAD_TIMEOUT = 10 * 60 * 1000
 
+// Maximale Größe für Konvertierung (500 MB)
+const MAX_PLAYLIST_SIZE = 500 * 1024 * 1024 // 500 MB in Bytes
+
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
   const uploadProgress = ref(0)
@@ -14,6 +17,7 @@ export const useConverterStore = defineStore('converter', () => {
   const sessionId = ref(null)
   const downloadUrl = ref(null)
   const errorMessage = ref(null)
+  const outputFileSize = ref(null) // Größe der konvertierten WebM-Datei
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
@@ -21,6 +25,16 @@ export const useConverterStore = defineStore('converter', () => {
     if (status.value === 'done') return 100
     return 0
   })
+
+  const totalSize = computed(() => {
+    return files.value.reduce((sum, f) => sum + f.size, 0)
+  })
+
+  const isOverSizeLimit = computed(() => {
+    return totalSize.value > MAX_PLAYLIST_SIZE
+  })
+
+  const maxPlaylistSize = MAX_PLAYLIST_SIZE
 
   function addFiles(newFiles) {
     const validFiles = Array.from(newFiles).filter(f => 
@@ -109,7 +123,7 @@ export const useConverterStore = defineStore('converter', () => {
       try {
         const url = `${API_BASE_URL}/status/${sessionId.value}`
         const res = await axios.get(url, { timeout: 10000 })
-        
+
         conversionProgress.value = res.data.progress
         console.log(`Conversion: ${res.data.status} - ${res.data.progress}%`)
 
@@ -117,6 +131,7 @@ export const useConverterStore = defineStore('converter', () => {
           clearInterval(interval)
           status.value = 'done'
           downloadUrl.value = `${API_BASE_URL}/download/${sessionId.value}`
+          outputFileSize.value = res.data.file_size || null
           console.log('Conversion done! Download:', downloadUrl.value)
         } else if (res.data.status === 'error') {
           clearInterval(interval)
@@ -141,6 +156,7 @@ export const useConverterStore = defineStore('converter', () => {
     sessionId.value = null
     downloadUrl.value = null
     errorMessage.value = null
+    outputFileSize.value = null
   }
 
   return {
@@ -149,8 +165,12 @@ export const useConverterStore = defineStore('converter', () => {
     conversionProgress,
     status,
     totalProgress,
+    totalSize,
+    isOverSizeLimit,
+    maxPlaylistSize,
     downloadUrl,
     errorMessage,
+    outputFileSize,
     addFiles,
     removeFile,
     moveFile,
