@@ -24,12 +24,23 @@ function onDragEnd() {
 function formatSize(bytes) {
   return (bytes / 1024 / 1024).toFixed(2) + ' MB'
 }
+
+function formatTotalSize(bytes) {
+  const mb = bytes / 1024 / 1024
+  if (mb >= 1024) {
+    return (mb / 1024).toFixed(2) + ' GB'
+  }
+  return mb.toFixed(2) + ' MB'
+}
 </script>
 
 <template>
   <div class="bg-white rounded-lg border border-gray-200 p-4">
     <div class="flex justify-between items-center mb-3">
-      <h3 class="font-semibold text-gray-900">Playlist ({{ store.files.length }} Tracks)</h3>
+      <div>
+        <h3 class="font-semibold text-gray-900">Playlist ({{ store.files.length }} Tracks)</h3>
+        <p class="text-sm text-gray-600 mt-1">Gesamtgröße: {{ formatTotalSize(store.totalSize) }}</p>
+      </div>
       <button @click="store.reset" class="text-sm text-red-600 hover:underline">Alle entfernen</button>
     </div>
     

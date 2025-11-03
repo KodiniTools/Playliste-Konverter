@@ -14,12 +14,17 @@ export const useConverterStore = defineStore('converter', () => {
   const sessionId = ref(null)
   const downloadUrl = ref(null)
   const errorMessage = ref(null)
+  const outputFileSize = ref(null) // Größe der konvertierten WebM-Datei
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
     if (status.value === 'converting') return 30 + (conversionProgress.value * 0.7)
     if (status.value === 'done') return 100
     return 0
+  })
+
+  const totalSize = computed(() => {
+    return files.value.reduce((sum, f) => sum + f.size, 0)
   })
 
   function addFiles(newFiles) {
@@ -109,7 +114,7 @@ export const useConverterStore = defineStore('converter', () => {
       try {
         const url = `${API_BASE_URL}/status/${sessionId.value}`
         const res = await axios.get(url, { timeout: 10000 })
-        
+
         conversionProgress.value = res.data.progress
         console.log(`Conversion: ${res.data.status} - ${res.data.progress}%`)
 
@@ -117,7 +122,11 @@ export const useConverterStore = defineStore('converter', () => {
           clearInterval(interval)
           status.value = 'done'
           downloadUrl.value = `${API_BASE_URL}/download/${sessionId.value}`
+          outputFileSize.value = res.data.file_size || null
           console.log('Conversion done! Download:', downloadUrl.value)
+          if (outputFileSize.value) {
+            console.log('Output file size:', outputFileSize.value, 'bytes')
+          }
         } else if (res.data.status === 'error') {
           clearInterval(interval)
           status.value = 'error'
@@ -141,6 +150,7 @@ export const useConverterStore = defineStore('converter', () => {
     sessionId.value = null
     downloadUrl.value = null
     errorMessage.value = null
+    outputFileSize.value = null
   }
 
   return {
@@ -149,8 +159,10 @@ export const useConverterStore = defineStore('converter', () => {
     conversionProgress,
     status,
     totalProgress,
+    totalSize,
     downloadUrl,
     errorMessage,
+    outputFileSize,
     addFiles,
     removeFile,
     moveFile,
