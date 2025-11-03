@@ -33,7 +33,7 @@ function formatSize(bytes) {
       <button @click="store.reset" class="text-sm text-red-600 hover:underline">Alle entfernen</button>
     </div>
     
-    <div class="space-y-2">
+    <div class="space-y-2 max-h-[420px] overflow-y-auto">
       <div
         v-for="(item, index) in store.files"
         :key="item.id"
