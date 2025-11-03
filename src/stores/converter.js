@@ -131,19 +131,8 @@ export const useConverterStore = defineStore('converter', () => {
           clearInterval(interval)
           status.value = 'done'
           downloadUrl.value = `${API_BASE_URL}/download/${sessionId.value}`
-
-          // Dateigröße vom Server abrufen
-          try {
-            const sizeRes = await axios.head(downloadUrl.value, { timeout: 5000 })
-            outputFileSize.value = parseInt(sizeRes.headers['content-length']) || null
-            console.log('Conversion done! Download:', downloadUrl.value)
-            if (outputFileSize.value) {
-              console.log('Output file size:', outputFileSize.value, 'bytes')
-            }
-          } catch (sizeErr) {
-            console.warn('Could not fetch file size:', sizeErr)
-            outputFileSize.value = null
-          }
+          outputFileSize.value = res.data.file_size || null
+          console.log('Conversion done! Download:', downloadUrl.value)
         } else if (res.data.status === 'error') {
           clearInterval(interval)
           status.value = 'error'
