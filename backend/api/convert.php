@@ -40,7 +40,7 @@ $outputFile = $sessionDir . 'playlist.webm';
 $logFile = $sessionDir . 'ffmpeg.log';
 
 $cmd = sprintf(
-    'ffmpeg -f concat -safe 0 -i %s -c:a libopus -b:a 128k -y %s > %s 2>&1 & echo $!',
+    'ffmpeg -f concat -safe 0 -i %s -c:a libopus -b:a 128k -threads 4 -y %s > %s 2>&1 & echo $!',
     escapeshellarg($concatFile),
     escapeshellarg($outputFile),
     escapeshellarg($logFile)

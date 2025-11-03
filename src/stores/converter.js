@@ -6,8 +6,8 @@ import { API_BASE_URL } from '../config'
 // Timeout für große Uploads (10 Minuten)
 const UPLOAD_TIMEOUT = 10 * 60 * 1000
 
-// Maximale Größe für Konvertierung (500 MB)
-const MAX_PLAYLIST_SIZE = 500 * 1024 * 1024 // 500 MB in Bytes
+// Maximale Größe für Konvertierung (1 GB)
+const MAX_PLAYLIST_SIZE = 1024 * 1024 * 1024 // 1 GB in Bytes
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
