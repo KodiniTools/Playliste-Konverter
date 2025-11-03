@@ -8,6 +8,7 @@ import FileList from './components/FileList.vue'
 import ConversionProgress from './components/ConversionProgress.vue'
 import DownloadButton from './components/DownloadButton.vue'
 import SettingsSwitcher from './components/SettingsSwitcher.vue'
+import FAQ from './components/FAQ.vue'
 
 const store = useConverterStore()
 const uiStore = useUIStore()
@@ -52,6 +53,11 @@ onMounted(() => {
       <div v-if="store.errorMessage" class="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
         <p class="text-red-800 dark:text-red-300">{{ store.errorMessage }}</p>
         <button @click="store.reset" class="mt-2 text-red-600 dark:text-red-400 underline">{{ t('error.reset') }}</button>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="mt-12">
+        <FAQ />
       </div>
     </div>
   </div>
