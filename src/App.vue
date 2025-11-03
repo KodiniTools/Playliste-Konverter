@@ -9,6 +9,7 @@ import ConversionProgress from './components/ConversionProgress.vue'
 import DownloadButton from './components/DownloadButton.vue'
 import SettingsSwitcher from './components/SettingsSwitcher.vue'
 import FAQ from './components/FAQ.vue'
+import SizeWarning from './components/SizeWarning.vue'
 
 const store = useConverterStore()
 const uiStore = useUIStore()
@@ -37,10 +38,20 @@ onMounted(() => {
       <div v-if="store.status === 'idle'" class="space-y-6">
         <FileUploader />
         <FileList v-if="store.files.length > 0" />
+
+        <!-- Size Warning / All Clear -->
+        <SizeWarning />
+
         <button
           v-if="store.files.length > 0"
           @click="store.convert"
-          class="w-full bg-blue-600 dark:bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-semibold transition-colors"
+          :disabled="store.isOverSizeLimit"
+          :class="[
+            'w-full py-3 rounded-lg font-semibold transition-colors',
+            store.isOverSizeLimit
+              ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+          ]"
         >
           {{ store.files.length }} {{ t('button.convert') }}
         </button>

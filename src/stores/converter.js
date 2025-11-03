@@ -6,6 +6,9 @@ import { API_BASE_URL } from '../config'
 // Timeout für große Uploads (10 Minuten)
 const UPLOAD_TIMEOUT = 10 * 60 * 1000
 
+// Maximale Größe für Konvertierung (500 MB)
+const MAX_PLAYLIST_SIZE = 500 * 1024 * 1024 // 500 MB in Bytes
+
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
   const uploadProgress = ref(0)
@@ -26,6 +29,12 @@ export const useConverterStore = defineStore('converter', () => {
   const totalSize = computed(() => {
     return files.value.reduce((sum, f) => sum + f.size, 0)
   })
+
+  const isOverSizeLimit = computed(() => {
+    return totalSize.value > MAX_PLAYLIST_SIZE
+  })
+
+  const maxPlaylistSize = MAX_PLAYLIST_SIZE
 
   function addFiles(newFiles) {
     const validFiles = Array.from(newFiles).filter(f => 
@@ -168,6 +177,8 @@ export const useConverterStore = defineStore('converter', () => {
     status,
     totalProgress,
     totalSize,
+    isOverSizeLimit,
+    maxPlaylistSize,
     downloadUrl,
     errorMessage,
     outputFileSize,

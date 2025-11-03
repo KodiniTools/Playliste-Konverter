@@ -38,6 +38,17 @@ const messages = {
     error: {
       reset: 'Zurücksetzen'
     },
+    sizeWarning: {
+      title: 'Playlist zu groß!',
+      message: 'Die Gesamtgröße Ihrer Playlist überschreitet das Maximum von {maxSize}. Bitte entfernen Sie einige Dateien, um fortzufahren.',
+      currentSize: 'Aktuelle Größe',
+      maxSize: 'Maximale Größe',
+      overBy: 'Überschreitung um'
+    },
+    sizeOk: {
+      title: 'Playlist bereit!',
+      message: 'Die Größe Ihrer Playlist liegt innerhalb des zulässigen Limits. Sie können mit der Konvertierung fortfahren.'
+    },
     faq: {
       title: 'Häufig gestellte Fragen (FAQ)',
       questions: [
@@ -112,6 +123,17 @@ const messages = {
     },
     error: {
       reset: 'Reset'
+    },
+    sizeWarning: {
+      title: 'Playlist too large!',
+      message: 'The total size of your playlist exceeds the maximum of {maxSize}. Please remove some files to continue.',
+      currentSize: 'Current size',
+      maxSize: 'Maximum size',
+      overBy: 'Exceeding by'
+    },
+    sizeOk: {
+      title: 'Playlist ready!',
+      message: 'Your playlist size is within the allowed limit. You can proceed with the conversion.'
     },
     faq: {
       title: 'Frequently Asked Questions (FAQ)',
