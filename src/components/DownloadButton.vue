@@ -2,6 +2,43 @@
 import { useConverterStore } from '../stores/converter'
 
 const store = useConverterStore()
+
+async function handleDownload() {
+  try {
+    // Prüfe ob File System Access API verfügbar ist
+    if ('showSaveFilePicker' in window) {
+      // Moderne Browser: Zeige "Speichern unter"-Dialog
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: 'playlist.webm',
+        types: [{
+          description: 'WebM Audio',
+          accept: { 'audio/webm': ['.webm'] }
+        }]
+      })
+
+      // Lade die Datei vom Backend
+      const response = await fetch(store.downloadUrl)
+      const blob = await response.blob()
+
+      // Schreibe in die ausgewählte Datei
+      const writable = await fileHandle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+
+      console.log('Datei erfolgreich gespeichert!')
+    } else {
+      // Fallback für ältere Browser
+      window.location.href = store.downloadUrl
+    }
+  } catch (err) {
+    // Benutzer hat den Dialog abgebrochen oder Fehler aufgetreten
+    if (err.name !== 'AbortError') {
+      console.error('Download-Fehler:', err)
+      // Fallback bei Fehler
+      window.location.href = store.downloadUrl
+    }
+  }
+}
 </script>
 
 <template>
@@ -12,13 +49,12 @@ const store = useConverterStore()
     <h3 class="text-xl font-semibold text-gray-900 mb-2">Konvertierung abgeschlossen!</h3>
     <p class="text-gray-600 mb-6">Deine Playlist ist bereit zum Download</p>
     
-    <a
-      :href="store.downloadUrl"
-      download="playlist.webm"
-      class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold"
+    <button
+      @click="handleDownload"
+      class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold cursor-pointer"
     >
       playlist.webm herunterladen
-    </a>
+    </button>
 
     <button
       @click="store.reset"
