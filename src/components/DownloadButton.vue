@@ -13,6 +13,43 @@ function formatFileSize(bytes) {
   }
   return mb.toFixed(2) + ' MB'
 }
+
+async function handleDownload() {
+  try {
+    // Prüfe ob File System Access API verfügbar ist
+    if ('showSaveFilePicker' in window) {
+      // Moderne Browser: Zeige "Speichern unter"-Dialog
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: 'playlist.webm',
+        types: [{
+          description: 'WebM Audio',
+          accept: { 'audio/webm': ['.webm'] }
+        }]
+      })
+
+      // Lade die Datei vom Backend
+      const response = await fetch(store.downloadUrl)
+      const blob = await response.blob()
+
+      // Schreibe in die ausgewählte Datei
+      const writable = await fileHandle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+
+      console.log('Datei erfolgreich gespeichert!')
+    } else {
+      // Fallback für ältere Browser
+      window.location.href = store.downloadUrl
+    }
+  } catch (err) {
+    // Benutzer hat den Dialog abgebrochen oder Fehler aufgetreten
+    if (err.name !== 'AbortError') {
+      console.error('Download-Fehler:', err)
+      // Fallback bei Fehler
+      window.location.href = store.downloadUrl
+    }
+  }
+}
 </script>
 
 <template>
@@ -27,12 +64,12 @@ function formatFileSize(bytes) {
     </p>
     <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-6">&nbsp;</p>
 
-    <a
-      :href="store.downloadUrl"
-      class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors"
+    <button
+      @click="handleDownload"
+      class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors cursor-pointer"
     >
       {{ t('download.button') }}
-    </a>
+    </button>
 
     <button
       @click="store.reset"
