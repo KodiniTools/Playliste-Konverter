@@ -1,9 +1,14 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t, locale, tm } = useI18n()
 const openIndex = ref(null)
+
+// FAQ-Fragen als computed property, um reaktiv auf Sprachänderungen zu reagieren
+const faqQuestions = computed(() => {
+  return tm('faq.questions')
+})
 
 function toggleQuestion(index) {
   openIndex.value = openIndex.value === index ? null : index
@@ -18,7 +23,7 @@ function toggleQuestion(index) {
 
     <div class="space-y-3">
       <div
-        v-for="(item, index) in t('faq.questions')"
+        v-for="(item, index) in faqQuestions"
         :key="index"
         class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden transition-all"
       >
