@@ -1,10 +1,11 @@
 <script setup>
+import { ref } from 'vue'
 import { useConverterStore } from '../stores/converter'
 import { useI18n } from 'vue-i18n'
-import axios from 'axios'
 
 const store = useConverterStore()
 const { t } = useI18n()
+const customFilename = ref('playlist')
 
 function formatFileSize(bytes) {
   if (!bytes) return null
@@ -15,36 +16,10 @@ function formatFileSize(bytes) {
   return mb.toFixed(2) + ' MB'
 }
 
-async function handleDownload(e) {
-  e.preventDefault()
-
-  // Dialog öffnen für Dateinamen
-  const defaultName = 'playlist.webm'
-  const filename = prompt(t('download.promptText'), defaultName)
-
-  if (!filename) {
-    return // Benutzer hat abgebrochen
-  }
-
-  // Datei herunterladen
-  try {
-    const response = await axios.get(store.downloadUrl, {
-      responseType: 'blob'
-    })
-
-    // Blob erstellen und Download starten
-    const blob = new Blob([response.data], { type: 'video/webm' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename.endsWith('.webm') ? filename : filename + '.webm'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Download error:', error)
-    alert(t('download.error'))
+function promptForFilename() {
+  const filename = prompt(t('download.promptText'), customFilename.value)
+  if (filename) {
+    customFilename.value = filename.replace(/\.webm$/, '') // Remove .webm if user added it
   }
 }
 </script>
@@ -61,12 +36,27 @@ async function handleDownload(e) {
     </p>
     <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-6">&nbsp;</p>
 
-    <button
-      @click="handleDownload"
-      class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors"
-    >
-      {{ t('download.button') }}
-    </button>
+    <div class="flex flex-col gap-3 items-center">
+      <!-- Filename input -->
+      <div class="flex items-center gap-2 w-full max-w-md">
+        <input
+          v-model="customFilename"
+          type="text"
+          class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          :placeholder="t('download.promptText')"
+        />
+        <span class="text-gray-600 dark:text-gray-400">.webm</span>
+      </div>
+
+      <!-- Download button -->
+      <a
+        :href="store.downloadUrl"
+        :download="customFilename + '.webm'"
+        class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors"
+      >
+        {{ t('download.button') }}
+      </a>
+    </div>
 
     <button
       @click="store.reset"
