@@ -29,7 +29,6 @@ function formatFileSize(bytes) {
 
     <a
       :href="store.downloadUrl"
-      download="playlist.webm"
       class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors"
     >
       {{ t('download.button') }}
