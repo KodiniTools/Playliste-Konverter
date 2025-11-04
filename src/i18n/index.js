@@ -49,6 +49,16 @@ const messages = {
       title: 'Playlist bereit!',
       message: 'Die Größe Ihrer Playlist liegt innerhalb des zulässigen Limits. Sie können mit der Konvertierung fortfahren.'
     },
+    sizeYellowWarning: {
+      title: 'Größere Playlist',
+      message: 'Ihre Playlist ist relativ groß. Die Konvertierung kann 3-5 Minuten dauern.',
+      estimatedTime: 'Geschätzte Zeit: 3-5 Minuten'
+    },
+    sizeOrangeWarning: {
+      title: 'Sehr große Playlist',
+      message: 'Ihre Playlist ist sehr groß. Die Konvertierung kann 5-7 Minuten dauern. Bitte haben Sie Geduld.',
+      estimatedTime: 'Geschätzte Zeit: 5-7 Minuten'
+    },
     faq: {
       title: 'Häufig gestellte Fragen (FAQ)',
       questions: [
@@ -134,6 +144,16 @@ const messages = {
     sizeOk: {
       title: 'Playlist ready!',
       message: 'Your playlist size is within the allowed limit. You can proceed with the conversion.'
+    },
+    sizeYellowWarning: {
+      title: 'Larger Playlist',
+      message: 'Your playlist is relatively large. Conversion may take 3-5 minutes.',
+      estimatedTime: 'Estimated time: 3-5 minutes'
+    },
+    sizeOrangeWarning: {
+      title: 'Very Large Playlist',
+      message: 'Your playlist is very large. Conversion may take 5-7 minutes. Please be patient.',
+      estimatedTime: 'Estimated time: 5-7 minutes'
     },
     faq: {
       title: 'Frequently Asked Questions (FAQ)',
