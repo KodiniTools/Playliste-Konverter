@@ -170,8 +170,8 @@ Lädt fertige WebM-Datei herunter.
 
 ## Limitierungen
 
-- Max Upload-Größe: 500MB (PHP-konfigurierbar)
-- Max Tracks: 50 (empfohlen)
+- Max Upload-Größe: 1GB (PHP-konfigurierbar)
+- Max Tracks: 100 (empfohlen)
 - RAM: ~200MB + Dateigröße für FFmpeg
 - Timeout: 5 Min (PHP-konfigurierbar)
 
