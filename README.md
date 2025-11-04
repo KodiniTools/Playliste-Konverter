@@ -191,7 +191,7 @@ Lädt fertige WebM-Datei herunter.
 
 ## License
 
-Proprietär - kodinitools.com
+MIT License
 
 ## Autor
 Dinko Ramić, Kodini Tools, kodinitools.com
