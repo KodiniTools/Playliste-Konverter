@@ -20,15 +20,15 @@ define('MAX_RUNTIME', 300);        // 5 Minuten max. Laufzeit
 $queue = new ConversionQueue();
 $startTime = time();
 
-echo "=== Queue Worker gestartet ===\n";
-echo "Max gleichzeitige Jobs: " . MAX_CONCURRENT_JOBS . "\n";
-echo "Worker Sleep: " . WORKER_SLEEP . " Sekunden\n\n";
+fwrite(STDOUT, "=== Queue Worker gestartet ===\n");
+fwrite(STDOUT, "Max gleichzeitige Jobs: " . MAX_CONCURRENT_JOBS . "\n");
+fwrite(STDOUT, "Worker Sleep: " . WORKER_SLEEP . " Sekunden\n\n");
 
 // Hauptschleife
 while (true) {
     // Prüfe ob Worker zu lange läuft (für Cronjob-Modus)
     if (time() - $startTime > MAX_RUNTIME) {
-        echo "Max. Laufzeit erreicht. Worker beendet.\n";
+        fwrite(STDOUT, "Max. Laufzeit erreicht. Worker beendet.\n");
         break;
     }
 
@@ -36,31 +36,31 @@ while (true) {
     $stats = $queue->getStats();
     $activeJobs = $stats['pending'] + $stats['processing'];
 
-    echo "[" . date('H:i:s') . "] Stats: {$stats['pending']} pending, {$stats['processing']} processing, {$stats['completed']} completed, {$stats['failed']} failed\n";
+    fwrite(STDOUT, "[" . date('H:i:s') . "] Stats: " . $stats['pending'] . " pending, " . $stats['processing'] . " processing, " . $stats['completed'] . " completed, " . $stats['failed'] . " failed\n");
 
     // Wenn zu viele Jobs laufen, warte
     if ($stats['processing'] >= MAX_CONCURRENT_JOBS) {
-        echo "→ Max. Jobs erreicht. Warte...\n";
+        fwrite(STDOUT, "→ Max. Jobs erreicht. Warte...\n");
         sleep(WORKER_SLEEP);
         continue;
     }
 
     // Keine Jobs mehr? Beende Worker (für Cronjob-Modus)
-    if ($activeJobs == 0) {
-        echo "→ Keine Jobs in Queue. Worker beendet.\n";
+    if ($activeJobs === 0) {
+        fwrite(STDOUT, "→ Keine Jobs in Queue. Worker beendet.\n");
         break;
     }
 
     // Hole nächsten Job
     $sessionId = $queue->getNextJob();
 
-    if (!$sessionId) {
-        echo "→ Kein Job verfügbar. Warte...\n";
+    if ($sessionId === false || $sessionId === null) {
+        fwrite(STDOUT, "→ Kein Job verfügbar. Warte...\n");
         sleep(WORKER_SLEEP);
         continue;
     }
 
-    echo "→ Starte Job: $sessionId\n";
+    fwrite(STDOUT, "→ Starte Job: " . $sessionId . "\n");
 
     // Markiere als "in Bearbeitung"
     $queue->markAsProcessing($sessionId);
@@ -68,11 +68,11 @@ while (true) {
     // Starte Konvertierung
     $success = startConversion($sessionId);
 
-    if ($success) {
-        echo "✓ Job erfolgreich: $sessionId\n";
+    if ($success === true) {
+        fwrite(STDOUT, "✓ Job erfolgreich: " . $sessionId . "\n");
         $queue->markAsCompleted($sessionId);
     } else {
-        echo "✗ Job fehlgeschlagen: $sessionId\n";
+        fwrite(STDERR, "✗ Job fehlgeschlagen: " . $sessionId . "\n");
         $queue->markAsFailed($sessionId, 'Konvertierung fehlgeschlagen');
     }
 
@@ -83,10 +83,10 @@ while (true) {
 // Cleanup alte Jobs
 $deleted = $queue->cleanupOldJobs(3600); // Jobs älter als 1 Stunde
 if ($deleted > 0) {
-    echo "\nCleanup: $deleted alte Jobs gelöscht\n";
+    fwrite(STDOUT, "\nCleanup: " . $deleted . " alte Jobs gelöscht\n");
 }
 
-echo "\n=== Queue Worker beendet ===\n";
+fwrite(STDOUT, "\n=== Queue Worker beendet ===\n");
 
 /**
  * Startet die Konvertierung für eine Session
@@ -95,8 +95,8 @@ function startConversion($sessionId) {
     $sessionDir = __DIR__ . '/temp/' . $sessionId . '/';
     $metaFile = $sessionDir . 'meta.json';
 
-    if (!file_exists($metaFile)) {
-        echo "  ✗ Meta-Datei nicht gefunden\n";
+    if (file_exists($metaFile) === false) {
+        fwrite(STDERR, "  ✗ Meta-Datei nicht gefunden\n");
         return false;
     }
 
@@ -119,7 +119,7 @@ function startConversion($sessionId) {
         escapeshellarg($logFile)
     );
 
-    echo "  → FFmpeg läuft...\n";
+    fwrite(STDOUT, "  → FFmpeg läuft...\n");
 
     // Führe FFmpeg aus und warte auf Abschluss
     exec($cmd, $output, $returnCode);
@@ -132,7 +132,7 @@ function startConversion($sessionId) {
         file_put_contents($metaFile, json_encode($meta));
 
         $sizeMB = round($meta['file_size'] / 1024 / 1024, 2);
-        echo "  ✓ Konvertierung abgeschlossen ({$sizeMB} MB)\n";
+        fwrite(STDOUT, "  ✓ Konvertierung abgeschlossen (" . $sizeMB . " MB)\n");
 
         return true;
     } else {
@@ -141,7 +141,7 @@ function startConversion($sessionId) {
         $meta['error'] = 'FFmpeg Fehler - Return Code: ' . $returnCode;
         file_put_contents($metaFile, json_encode($meta));
 
-        echo "  ✗ FFmpeg Fehler (Return Code: $returnCode)\n";
+        fwrite(STDERR, "  ✗ FFmpeg Fehler (Return Code: " . $returnCode . ")\n");
 
         return false;
     }

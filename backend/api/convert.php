@@ -33,7 +33,7 @@ if (!is_dir($sessionDir) || !file_exists($metaFile)) {
 $meta = json_decode(file_get_contents($metaFile), true);
 
 // Prüfe ob Queue-System aktiv ist
-if ($config['use_queue']) {
+if (isset($config['use_queue']) && $config['use_queue'] === true) {
     // Queue-Modus: Füge Job zur Queue hinzu
     require_once __DIR__ . '/../queue.php';
 

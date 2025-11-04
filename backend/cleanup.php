@@ -16,8 +16,8 @@ $now = time();
 $deletedCount = 0;
 $errorCount = 0;
 
-if (!is_dir($tempDir)) {
-    echo "Temp-Verzeichnis existiert nicht: $tempDir\n";
+if (is_dir($tempDir) === false) {
+    fwrite(STDERR, "Temp-Verzeichnis existiert nicht: " . $tempDir . "\n");
     exit(1);
 }
 
@@ -25,7 +25,8 @@ if (!is_dir($tempDir)) {
 $dirs = glob($tempDir . '*', GLOB_ONLYDIR);
 
 foreach ($dirs as $dir) {
-    $dirName = basename($dir);
+    $parts = explode('/', $dir);
+    $dirName = end($parts);
 
     // Überspringe spezielle Verzeichnisse
     if ($dirName === '.' || $dirName === '..') {
@@ -52,19 +53,19 @@ foreach ($dirs as $dir) {
             rmdir($dir);
 
             $ageMinutes = round($age / 60);
-            echo "✓ Gelöscht: $dirName (Alter: $ageMinutes Minuten)\n";
+            fwrite(STDOUT, "✓ Gelöscht: " . $dirName . " (Alter: " . $ageMinutes . " Minuten)\n");
             $deletedCount++;
 
         } catch (Exception $e) {
-            echo "✗ Fehler beim Löschen von $dirName: " . $e->getMessage() . "\n";
+            fwrite(STDERR, "✗ Fehler beim Löschen von " . $dirName . ": " . $e->getMessage() . "\n");
             $errorCount++;
         }
     }
 }
 
-echo "\n=== Cleanup abgeschlossen ===\n";
-echo "Sessions gelöscht: $deletedCount\n";
-echo "Fehler: $errorCount\n";
-echo "Verbleibende Sessions: " . (count($dirs) - $deletedCount) . "\n";
+fwrite(STDOUT, "\n=== Cleanup abgeschlossen ===\n");
+fwrite(STDOUT, "Sessions gelöscht: " . $deletedCount . "\n");
+fwrite(STDOUT, "Fehler: " . $errorCount . "\n");
+fwrite(STDOUT, "Verbleibende Sessions: " . (count($dirs) - $deletedCount) . "\n");
 
 exit($errorCount > 0 ? 1 : 0);

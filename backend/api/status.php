@@ -27,7 +27,7 @@ $outputFile = $sessionDir . 'playlist.webm';
 $logFile = $sessionDir . 'ffmpeg.log';
 
 // Prüfe Queue-Status wenn Queue aktiviert ist
-if ($config['use_queue'] && $meta['status'] === 'queued') {
+if (isset($config['use_queue']) && $config['use_queue'] === true && $meta['status'] === 'queued') {
     require_once __DIR__ . '/../queue.php';
 
     $queue = new ConversionQueue();
