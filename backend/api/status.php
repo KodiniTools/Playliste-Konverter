@@ -2,6 +2,9 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
+// Lade Konfiguration
+$config = require __DIR__ . '/../config.php';
+
 $sessionId = basename($_GET['id'] ?? '');
 
 if (empty($sessionId) || !preg_match('/^[a-f0-9]{32}$/', $sessionId)) {
@@ -23,16 +26,40 @@ $meta = json_decode(file_get_contents($metaFile), true);
 $outputFile = $sessionDir . 'playlist.webm';
 $logFile = $sessionDir . 'ffmpeg.log';
 
-// Check if FFmpeg process is still running
+// Prüfe Queue-Status wenn Queue aktiviert ist
+if (isset($config['use_queue']) && $config['use_queue'] === true && $meta['status'] === 'queued') {
+    require_once __DIR__ . '/../queue.php';
+
+    $queue = new ConversionQueue();
+    $queueStatus = $queue->getStatus($sessionId);
+
+    if ($queueStatus) {
+        $meta['queue_position'] = $queue->getQueuePosition($sessionId);
+
+        // Wenn Queue-Status "processing" ist, prüfe ob auch wirklich konvertiert wird
+        if ($queueStatus['status'] === 'processing') {
+            $meta['status'] = 'converting';
+        } elseif ($queueStatus['status'] === 'completed') {
+            $meta['status'] = 'done';
+            $meta['progress'] = 100;
+        } elseif ($queueStatus['status'] === 'failed') {
+            $meta['status'] = 'error';
+            $meta['error'] = $queueStatus['error'] ?? 'Queue-Fehler';
+        }
+    }
+}
+
+// Check if FFmpeg process is still running (nur im direkten Modus oder wenn aus Queue gestartet)
 if (isset($meta['pid'])) {
     $pidCheck = shell_exec("ps -p {$meta['pid']} -o pid=");
     $isRunning = !empty(trim($pidCheck));
-    
-    if (!$isRunning && file_exists($outputFile)) {
+
+    if ($isRunning === false && file_exists($outputFile)) {
         $meta['status'] = 'done';
         $meta['progress'] = 100;
+        $meta['file_size'] = filesize($outputFile);
         file_put_contents($metaFile, json_encode($meta));
-    } elseif (!$isRunning) {
+    } elseif ($isRunning === false && $meta['status'] === 'converting') {
         // Process ended but no output file - error
         $meta['status'] = 'error';
         $meta['error'] = 'FFmpeg Fehler - siehe Log';
@@ -52,8 +79,20 @@ if (isset($meta['pid'])) {
     }
 }
 
-echo json_encode([
+$response = [
     'status' => $meta['status'],
     'progress' => $meta['progress'] ?? 0,
     'error' => $meta['error'] ?? null
-]);
+];
+
+// Füge Queue-Position hinzu wenn vorhanden
+if (isset($meta['queue_position'])) {
+    $response['queue_position'] = $meta['queue_position'];
+}
+
+// Füge Dateigröße hinzu wenn vorhanden
+if (isset($meta['file_size'])) {
+    $response['file_size'] = $meta['file_size'];
+}
+
+echo json_encode($response);
