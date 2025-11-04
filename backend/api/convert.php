@@ -9,6 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Lade Konfiguration
+$config = require __DIR__ . '/../config.php';
+
 $input = json_decode(file_get_contents('php://input'), true);
 $sessionId = $input['session_id'] ?? '';
 
@@ -29,25 +32,47 @@ if (!is_dir($sessionDir) || !file_exists($metaFile)) {
 
 $meta = json_decode(file_get_contents($metaFile), true);
 
-// Update status
-$meta['status'] = 'converting';
-$meta['progress'] = 0;
-file_put_contents($metaFile, json_encode($meta));
+// Prüfe ob Queue-System aktiv ist
+if ($config['use_queue']) {
+    // Queue-Modus: Füge Job zur Queue hinzu
+    require_once __DIR__ . '/../queue.php';
 
-// Start FFmpeg in background
-$concatFile = $sessionDir . 'concat.txt';
-$outputFile = $sessionDir . 'playlist.webm';
-$logFile = $sessionDir . 'ffmpeg.log';
+    $queue = new ConversionQueue();
+    $queue->addToQueue($sessionId);
 
-$cmd = sprintf(
-    'ffmpeg -f concat -safe 0 -i %s -c:a libopus -b:a 128k -threads 4 -y %s > %s 2>&1 & echo $!',
-    escapeshellarg($concatFile),
-    escapeshellarg($outputFile),
-    escapeshellarg($logFile)
-);
+    $meta['status'] = 'queued';
+    $meta['progress'] = 0;
+    $meta['queue_position'] = $queue->getQueuePosition($sessionId);
+    file_put_contents($metaFile, json_encode($meta));
 
-$pid = shell_exec($cmd);
-$meta['pid'] = trim($pid);
-file_put_contents($metaFile, json_encode($meta));
+    echo json_encode([
+        'success' => true,
+        'message' => 'In Warteschlange eingereiht',
+        'queue_position' => $meta['queue_position']
+    ]);
 
-echo json_encode(['success' => true, 'message' => 'Konvertierung gestartet']);
+} else {
+    // Direkter Modus: Starte FFmpeg sofort (wie vorher)
+    $meta['status'] = 'converting';
+    $meta['progress'] = 0;
+    file_put_contents($metaFile, json_encode($meta));
+
+    // Start FFmpeg in background
+    $concatFile = $sessionDir . 'concat.txt';
+    $outputFile = $sessionDir . 'playlist.webm';
+    $logFile = $sessionDir . 'ffmpeg.log';
+
+    $cmd = sprintf(
+        'ffmpeg -f concat -safe 0 -i %s -c:a libopus -b:a 128k -threads 4 -y %s > %s 2>&1 & echo $!',
+        escapeshellarg($concatFile),
+        escapeshellarg($outputFile),
+        escapeshellarg($logFile)
+    );
+
+    $pid = shell_exec($cmd);
+    $meta['pid'] = trim($pid);
+    file_put_contents($metaFile, json_encode($meta));
+
+    echo json_encode(['success' => true, 'message' => 'Konvertierung gestartet']);
+}
+
