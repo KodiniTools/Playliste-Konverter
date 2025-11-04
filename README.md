@@ -84,8 +84,8 @@ apt install ffmpeg
 **PHP-Konfiguration anpassen** (`/etc/php/8.3/fpm/php.ini`):
 
 ```ini
-upload_max_filesize = 500M
-post_max_size = 500M
+upload_max_filesize = 1GB
+post_max_size = 1GB
 max_execution_time = 300
 memory_limit = 512M
 ```
@@ -192,3 +192,7 @@ Lädt fertige WebM-Datei herunter.
 ## License
 
 Proprietär - kodinitools.com
+
+## Autor
+Dinko Ramić, Kodini Tools, kodinitools.com
+
