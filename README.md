@@ -1,6 +1,6 @@
 # Playlist zu WebM Konverter
 
-Server-basiertes Tool zum Konvertieren von bis zu 50 MP3/WAV Tracks in eine WebM-Datei.
+Server-basiertes Tool zum Konvertieren von bis zu 100 MP3/WAV Tracks in eine WebM-Datei.
 
 ## Features
 
