@@ -54,12 +54,12 @@ if (isset($meta['pid'])) {
     $pidCheck = shell_exec("ps -p {$meta['pid']} -o pid=");
     $isRunning = !empty(trim($pidCheck));
 
-    if (!$isRunning && file_exists($outputFile)) {
+    if ($isRunning === false && file_exists($outputFile)) {
         $meta['status'] = 'done';
         $meta['progress'] = 100;
         $meta['file_size'] = filesize($outputFile);
         file_put_contents($metaFile, json_encode($meta));
-    } elseif (!$isRunning && $meta['status'] === 'converting') {
+    } elseif ($isRunning === false && $meta['status'] === 'converting') {
         // Process ended but no output file - error
         $meta['status'] = 'error';
         $meta['error'] = 'FFmpeg Fehler - siehe Log';
