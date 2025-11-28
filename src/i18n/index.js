@@ -38,6 +38,10 @@ const messages = {
     error: {
       reset: 'Zurücksetzen'
     },
+    donate: {
+      title: 'Unterstütze dieses Projekt',
+      button: 'spenden'
+    },
     sizeWarning: {
       title: 'Playlist zu groß!',
       message: 'Die Gesamtgröße Ihrer Playlist überschreitet das Maximum von {maxSize}. Bitte entfernen Sie einige Dateien, um fortzufahren.',
@@ -133,6 +137,10 @@ const messages = {
     },
     error: {
       reset: 'Reset'
+    },
+    donate: {
+      title: 'Support this project',
+      button: 'donate'
     },
     sizeWarning: {
       title: 'Playlist too large!',

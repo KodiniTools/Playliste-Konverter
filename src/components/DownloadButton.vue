@@ -53,27 +53,27 @@ async function handleDownload() {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
-    <svg class="mx-auto h-16 w-16 text-green-500 dark:text-green-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-6 text-center">
+    <svg class="mx-auto h-16 w-16 text-accent dark:text-accent-light mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-    <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ t('download.title') }}</h3>
-    <p class="text-gray-600 dark:text-gray-400 mb-2">{{ t('download.subtitle') }}</p>
-    <p v-if="store.outputFileSize" class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+    <h3 class="text-xl font-semibold text-dark dark:text-neutral-light mb-2">{{ t('download.title') }}</h3>
+    <p class="text-muted dark:text-neutral mb-2">{{ t('download.subtitle') }}</p>
+    <p v-if="store.outputFileSize" class="text-sm text-muted-light dark:text-neutral mb-6">
       {{ t('download.fileSize') }}: {{ formatFileSize(store.outputFileSize) }}
     </p>
-    <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-6">&nbsp;</p>
+    <p v-else class="text-sm text-muted-light dark:text-neutral mb-6">&nbsp;</p>
 
     <button
       @click="handleDownload"
-      class="inline-block bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold transition-colors cursor-pointer"
+      class="inline-block bg-accent dark:bg-accent text-dark px-6 py-3 rounded-lg hover:bg-accent-dark dark:hover:bg-accent-dark font-semibold transition-colors cursor-pointer shadow-sm hover:shadow-md"
     >
       {{ t('download.button') }}
     </button>
 
     <button
       @click="store.reset"
-      class="block mx-auto mt-4 text-sm text-gray-600 dark:text-gray-400 hover:underline"
+      class="block mx-auto mt-4 text-sm text-muted dark:text-neutral hover:underline"
     >
       {{ t('download.newConversion') }}
     </button>

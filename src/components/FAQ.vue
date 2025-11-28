@@ -16,8 +16,8 @@ function toggleQuestion(index) {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-6">
+    <h2 class="text-2xl font-bold text-dark dark:text-neutral-light mb-6">
       {{ t('faq.title') }}
     </h2>
 
@@ -25,19 +25,19 @@ function toggleQuestion(index) {
       <div
         v-for="(item, index) in faqQuestions"
         :key="index"
-        class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden transition-all"
+        class="border border-neutral dark:border-muted rounded-lg overflow-hidden transition-all"
       >
         <!-- Question -->
         <button
           @click="toggleQuestion(index)"
-          class="w-full flex items-center justify-between p-4 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+          class="w-full flex items-center justify-between p-4 text-left bg-neutral-light dark:bg-dark-lighter hover:bg-neutral/30 dark:hover:bg-muted/30 transition-colors"
         >
-          <span class="font-semibold text-gray-900 dark:text-gray-100 pr-4">
+          <span class="font-semibold text-dark dark:text-neutral-light pr-4">
             {{ item.q }}
           </span>
           <svg
             :class="[
-              'w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform flex-shrink-0',
+              'w-5 h-5 text-muted dark:text-neutral transition-transform flex-shrink-0',
               openIndex === index ? 'transform rotate-180' : ''
             ]"
             fill="none"
@@ -51,9 +51,9 @@ function toggleQuestion(index) {
         <!-- Answer -->
         <div
           v-show="openIndex === index"
-          class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600"
+          class="p-4 bg-white dark:bg-dark-card border-t border-neutral dark:border-muted"
         >
-          <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+          <p class="text-muted dark:text-neutral leading-relaxed">
             {{ item.a }}
           </p>
         </div>
