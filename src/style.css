@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  /* Lowercase styling for headings and buttons */
+  h1, h2, h3, h4, h5, h6,
+  button,
+  .lowercase-style {
+    text-transform: lowercase;
+  }
+
+  /* First letter uppercase for better readability */
+  h1::first-letter,
+  h2::first-letter,
+  h3::first-letter {
+    text-transform: uppercase;
+  }
+}
+
+/* PayPal donation button styles */
+@layer components {
+  .donate-btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply bg-accent text-dark hover:bg-accent-dark;
+    @apply dark:bg-accent dark:text-dark dark:hover:bg-accent-dark;
+    @apply border border-transparent hover:border-accent-dark;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .donate-btn:focus {
+    @apply outline-none ring-2 ring-accent ring-offset-2;
+    @apply dark:ring-offset-dark;
+  }
+
+  .donate-btn-icon {
+    @apply w-5 h-5;
+  }
+}
