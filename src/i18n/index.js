@@ -21,7 +21,10 @@ const messages = {
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
       converting: 'Konvertierung läuft...',
-      progress: 'Fortschritt'
+      progress: 'Fortschritt',
+      remaining: 'Verbleibend',
+      cancel: 'Abbrechen',
+      cancelling: 'Wird abgebrochen...'
     },
     download: {
       title: 'Konvertierung abgeschlossen!',
@@ -121,7 +124,10 @@ const messages = {
     conversion: {
       uploading: 'Uploading files...',
       converting: 'Converting...',
-      progress: 'Progress'
+      progress: 'Progress',
+      remaining: 'Remaining',
+      cancel: 'Cancel',
+      cancelling: 'Cancelling...'
     },
     download: {
       title: 'Conversion completed!',

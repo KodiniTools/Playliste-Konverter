@@ -43,7 +43,7 @@ function formatTotalSize(bytes) {
         <h3 class="font-semibold text-dark dark:text-neutral-light">{{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})</h3>
         <p class="text-sm text-muted dark:text-neutral mt-1">{{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}</p>
       </div>
-      <button @click="store.reset" class="text-sm text-secondary dark:text-secondary-light hover:underline">{{ t('fileList.removeAll') }}</button>
+      <button @click="store.removeAllFiles" class="text-sm text-secondary dark:text-secondary-light hover:underline">{{ t('fileList.removeAll') }}</button>
     </div>
 
     <div class="space-y-2 max-h-[420px] overflow-y-auto">
