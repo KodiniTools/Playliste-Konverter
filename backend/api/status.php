@@ -49,6 +49,34 @@ if (isset($config['use_queue']) && $config['use_queue'] === true && $meta['statu
     }
 }
 
+// Funktion um Gesamtdauer aus concat.txt zu berechnen
+function getTotalDuration($sessionDir) {
+    $concatFile = $sessionDir . 'concat.txt';
+    if (!file_exists($concatFile)) {
+        return null;
+    }
+
+    $totalDuration = 0;
+    $lines = file($concatFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    foreach ($lines as $line) {
+        if (preg_match("/^file '(.+)'$/", $line, $matches)) {
+            $filePath = $matches[1];
+            // Nutze ffprobe um Dauer zu ermitteln
+            $cmd = sprintf(
+                'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
+                escapeshellarg($filePath)
+            );
+            $duration = trim(shell_exec($cmd));
+            if (is_numeric($duration)) {
+                $totalDuration += floatval($duration);
+            }
+        }
+    }
+
+    return $totalDuration > 0 ? $totalDuration : null;
+}
+
 // Check if FFmpeg process is still running (nur im direkten Modus oder wenn aus Queue gestartet)
 if (isset($meta['pid'])) {
     $pidCheck = shell_exec("ps -p {$meta['pid']} -o pid=");
@@ -65,15 +93,40 @@ if (isset($meta['pid'])) {
         $meta['error'] = 'FFmpeg Fehler - siehe Log';
         file_put_contents($metaFile, json_encode($meta));
     } else {
-        // Estimate progress from log (very rough)
+        // Berechne Fortschritt aus FFmpeg-Log
         if (file_exists($logFile)) {
             $log = file_get_contents($logFile);
-            if (preg_match('/time=(\d+):(\d+):(\d+)/', $log, $matches)) {
-                $seconds = $matches[1] * 3600 + $matches[2] * 60 + $matches[3];
-                // Assume max 1 hour total for 50 tracks
-                $meta['progress'] = min(99, ($seconds / 3600) * 100);
+
+            // Extrahiere aktuelle Zeit aus FFmpeg-Log
+            // FFmpeg gibt Zeit im Format "time=00:01:23.45" aus
+            if (preg_match_all('/time=(\d+):(\d+):(\d+\.?\d*)/', $log, $matches, PREG_SET_ORDER)) {
+                // Nimm den letzten Match (aktuellster Fortschritt)
+                $lastMatch = end($matches);
+                $currentSeconds = $lastMatch[1] * 3600 + $lastMatch[2] * 60 + floatval($lastMatch[3]);
+
+                // Hole Gesamtdauer (einmal berechnen und cachen)
+                if (!isset($meta['total_duration'])) {
+                    $meta['total_duration'] = getTotalDuration($sessionDir);
+                    file_put_contents($metaFile, json_encode($meta));
+                }
+
+                $totalDuration = $meta['total_duration'];
+
+                if ($totalDuration && $totalDuration > 0) {
+                    // Berechne echten Fortschritt
+                    $meta['progress'] = min(99, round(($currentSeconds / $totalDuration) * 100));
+                } else {
+                    // Fallback: Schätze basierend auf Dateigröße und Zeit
+                    // Wenn keine Dauer bekannt, nutze zeitbasierte Schätzung
+                    $startTime = $meta['start_time'] ?? time();
+                    $elapsed = time() - $startTime;
+                    // Schätze: kleine Dateien 30s, große 5min
+                    $estimatedTotal = max(30, min(300, $elapsed * 2));
+                    $meta['progress'] = min(95, round(($elapsed / $estimatedTotal) * 100));
+                }
             } else {
-                $meta['progress'] = 50; // Default mid-point
+                // Kein Zeitstempel im Log - FFmpeg startet gerade
+                $meta['progress'] = max($meta['progress'] ?? 0, 5);
             }
         }
     }

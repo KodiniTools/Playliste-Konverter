@@ -55,6 +55,7 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     // Direkter Modus: Starte FFmpeg sofort (wie vorher)
     $meta['status'] = 'converting';
     $meta['progress'] = 0;
+    $meta['start_time'] = time();
     file_put_contents($metaFile, json_encode($meta));
 
     // Start FFmpeg in background
