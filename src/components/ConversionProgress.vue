@@ -14,11 +14,25 @@ const { t } = useI18n()
 
     <div class="relative pt-1">
       <div class="flex mb-2 items-center justify-between">
-        <div>
+        <div class="flex items-center gap-3">
           <span class="text-xs font-semibold inline-block text-accent-dark dark:text-accent">
             {{ Math.round(store.totalProgress) }}%
           </span>
+          <!-- Geschwindigkeit während Upload -->
+          <span
+            v-if="store.status === 'uploading' && store.formattedUploadSpeed"
+            class="text-xs text-muted dark:text-neutral"
+          >
+            {{ store.formattedUploadSpeed }}
+          </span>
         </div>
+        <!-- Geschätzte Restzeit -->
+        <span
+          v-if="store.status === 'uploading' && store.formattedTimeRemaining"
+          class="text-xs text-muted dark:text-neutral"
+        >
+          {{ t('conversion.remaining') }}: {{ store.formattedTimeRemaining }}
+        </span>
       </div>
       <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-light dark:bg-muted">
         <div
@@ -28,8 +42,23 @@ const { t } = useI18n()
       </div>
     </div>
 
-    <p class="text-sm text-muted dark:text-neutral">
-      {{ t('conversion.progress') }}
-    </p>
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-muted dark:text-neutral">
+        {{ t('conversion.progress') }}
+      </p>
+
+      <!-- Abbrechen Button -->
+      <button
+        @click="store.cancel"
+        :disabled="store.isCancelling"
+        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors
+               bg-secondary/10 hover:bg-secondary/20 text-secondary dark:text-secondary-light
+               border border-secondary/30 hover:border-secondary/50
+               disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span v-if="store.isCancelling">{{ t('conversion.cancelling') }}</span>
+        <span v-else>{{ t('conversion.cancel') }}</span>
+      </button>
+    </div>
   </div>
 </template>

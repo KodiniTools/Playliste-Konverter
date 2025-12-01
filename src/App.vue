@@ -10,6 +10,7 @@ import DownloadButton from './components/DownloadButton.vue'
 import SettingsSwitcher from './components/SettingsSwitcher.vue'
 import FAQ from './components/FAQ.vue'
 import SizeWarning from './components/SizeWarning.vue'
+import ToastContainer from './components/ToastContainer.vue'
 
 const store = useConverterStore()
 const uiStore = useUIStore()
@@ -22,6 +23,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <ToastContainer />
   <div class="min-h-screen bg-neutral-light dark:bg-dark py-8 transition-colors">
     <div class="max-w-4xl mx-auto px-4">
       <header class="mb-8">
