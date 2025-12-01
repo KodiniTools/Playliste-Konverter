@@ -219,17 +219,27 @@ export const useConverterStore = defineStore('converter', () => {
     // Starte simulierten flüssigen Fortschritt
     displayProgress.value = 0
     lastBackendProgress.value = 0
+    const conversionStartTime = Date.now()
 
     smoothProgressInterval = setInterval(() => {
-      // Simuliere flüssigen Fortschritt zwischen Backend-Updates
-      // Erhöhe langsam bis maximal 95%, außer Backend gibt höheren Wert
-      if (displayProgress.value < Math.max(lastBackendProgress.value, 95)) {
-        const increment = lastBackendProgress.value > displayProgress.value
-          ? (lastBackendProgress.value - displayProgress.value) * 0.3  // Schnell aufholen
-          : 0.5  // Langsam weiterlaufen
-        displayProgress.value = Math.min(95, displayProgress.value + increment)
+      // Simuliere flüssigen Fortschritt
+      // Ziel: Von 0 auf 95% in ca. 60 Sekunden (wenn Backend keine Updates gibt)
+      const elapsedSeconds = (Date.now() - conversionStartTime) / 1000
+
+      // Berechne Zielfortschritt basierend auf Zeit (langsamer werdend)
+      // Formel: 95 * (1 - e^(-elapsed/30)) - nähert sich asymptotisch 95%
+      const timeBasedProgress = 95 * (1 - Math.exp(-elapsedSeconds / 30))
+
+      // Nimm das Maximum aus Backend-Fortschritt und zeitbasiertem Fortschritt
+      const targetProgress = Math.max(lastBackendProgress.value, timeBasedProgress)
+
+      // Bewege displayProgress sanft zum Ziel
+      if (displayProgress.value < targetProgress) {
+        const diff = targetProgress - displayProgress.value
+        displayProgress.value += Math.max(0.5, diff * 0.15)
+        displayProgress.value = Math.min(95, displayProgress.value)
       }
-    }, 200)
+    }, 100)
 
     pollingInterval = setInterval(async () => {
       if (isCancelling.value) {
