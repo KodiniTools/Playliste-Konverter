@@ -23,7 +23,12 @@ export const useConverterStore = defineStore('converter', () => {
   // Für Abbrechen-Funktion
   let abortController = null
   let pollingInterval = null
+  let smoothProgressInterval = null
   const isCancelling = ref(false)
+
+  // Für simulierten flüssigen Fortschritt
+  const displayProgress = ref(0)
+  const lastBackendProgress = ref(0)
 
   // Für Zeitberechnung
   const uploadStartTime = ref(null)
@@ -34,7 +39,7 @@ export const useConverterStore = defineStore('converter', () => {
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
-    if (status.value === 'converting') return 30 + (conversionProgress.value * 0.7)
+    if (status.value === 'converting') return 30 + (displayProgress.value * 0.7)
     if (status.value === 'done') return 100
     return 0
   })
@@ -211,10 +216,27 @@ export const useConverterStore = defineStore('converter', () => {
   async function pollStatus() {
     const toastStore = useToastStore()
 
+    // Starte simulierten flüssigen Fortschritt
+    displayProgress.value = 0
+    lastBackendProgress.value = 0
+
+    smoothProgressInterval = setInterval(() => {
+      // Simuliere flüssigen Fortschritt zwischen Backend-Updates
+      // Erhöhe langsam bis maximal 95%, außer Backend gibt höheren Wert
+      if (displayProgress.value < Math.max(lastBackendProgress.value, 95)) {
+        const increment = lastBackendProgress.value > displayProgress.value
+          ? (lastBackendProgress.value - displayProgress.value) * 0.3  // Schnell aufholen
+          : 0.5  // Langsam weiterlaufen
+        displayProgress.value = Math.min(95, displayProgress.value + increment)
+      }
+    }, 200)
+
     pollingInterval = setInterval(async () => {
       if (isCancelling.value) {
         clearInterval(pollingInterval)
+        clearInterval(smoothProgressInterval)
         pollingInterval = null
+        smoothProgressInterval = null
         return
       }
 
@@ -225,12 +247,17 @@ export const useConverterStore = defineStore('converter', () => {
           signal: abortController?.signal
         })
 
+        // Aktualisiere Backend-Fortschritt
         conversionProgress.value = res.data.progress
+        lastBackendProgress.value = res.data.progress
         console.log(`Conversion: ${res.data.status} - ${res.data.progress}%`)
 
         if (res.data.status === 'done') {
           clearInterval(pollingInterval)
+          clearInterval(smoothProgressInterval)
           pollingInterval = null
+          smoothProgressInterval = null
+          displayProgress.value = 100
           status.value = 'done'
           downloadUrl.value = `${API_BASE_URL}/download/${sessionId.value}`
           outputFileSize.value = res.data.file_size || null
@@ -238,7 +265,9 @@ export const useConverterStore = defineStore('converter', () => {
           toastStore.success('Konvertierung abgeschlossen!')
         } else if (res.data.status === 'error') {
           clearInterval(pollingInterval)
+          clearInterval(smoothProgressInterval)
           pollingInterval = null
+          smoothProgressInterval = null
           status.value = 'error'
           errorMessage.value = res.data.error
           console.error('Conversion error:', res.data.error)
@@ -247,13 +276,17 @@ export const useConverterStore = defineStore('converter', () => {
       } catch (err) {
         if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
           clearInterval(pollingInterval)
+          clearInterval(smoothProgressInterval)
           pollingInterval = null
+          smoothProgressInterval = null
           return
         }
 
         console.error('Polling error:', err)
         clearInterval(pollingInterval)
+        clearInterval(smoothProgressInterval)
         pollingInterval = null
+        smoothProgressInterval = null
         status.value = 'error'
         errorMessage.value = 'Statusabfrage fehlgeschlagen'
         toastStore.error('Verbindung zum Server verloren')
@@ -271,10 +304,14 @@ export const useConverterStore = defineStore('converter', () => {
       abortController = null
     }
 
-    // Polling stoppen
+    // Polling und Fortschritts-Simulation stoppen
     if (pollingInterval) {
       clearInterval(pollingInterval)
       pollingInterval = null
+    }
+    if (smoothProgressInterval) {
+      clearInterval(smoothProgressInterval)
+      smoothProgressInterval = null
     }
 
     toastStore.info('Vorgang wird abgebrochen...')
@@ -285,6 +322,8 @@ export const useConverterStore = defineStore('converter', () => {
     files.value = []
     uploadProgress.value = 0
     conversionProgress.value = 0
+    displayProgress.value = 0
+    lastBackendProgress.value = 0
     status.value = 'idle'
     sessionId.value = null
     downloadUrl.value = null
@@ -305,6 +344,10 @@ export const useConverterStore = defineStore('converter', () => {
     if (pollingInterval) {
       clearInterval(pollingInterval)
       pollingInterval = null
+    }
+    if (smoothProgressInterval) {
+      clearInterval(smoothProgressInterval)
+      smoothProgressInterval = null
     }
   }
 
