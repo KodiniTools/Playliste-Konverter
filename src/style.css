@@ -2,22 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
-@layer base {
-  /* Lowercase styling for headings and buttons */
-  h1, h2, h3, h4, h5, h6,
-  button,
-  .lowercase-style {
-    text-transform: lowercase;
-  }
-
-  /* First letter uppercase for better readability */
-  h1::first-letter,
-  h2::first-letter,
-  h3::first-letter {
-    text-transform: uppercase;
-  }
-}
 
 /* PayPal donation button styles */
 @layer components {
