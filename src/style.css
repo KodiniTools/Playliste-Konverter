@@ -56,6 +56,43 @@ html.dark body > div:not(#app) a:hover {
   color: #D4C46E !important; /* accent-dark */
 }
 
+/* Navigation dropdown z-index - must be above app header */
+body > *:not(#app):not(script),
+body > nav,
+body > header,
+body > div:not(#app) {
+  position: relative;
+  z-index: 100 !important;
+}
+
+/* Dropdown menus need even higher z-index */
+body > *:not(#app):not(script) ul,
+body > *:not(#app):not(script) [class*="dropdown"],
+body > *:not(#app):not(script) [class*="menu"],
+body > *:not(#app):not(script) [class*="submenu"],
+body > nav ul,
+body > nav [class*="dropdown"],
+body > nav [class*="menu"],
+body > header ul,
+body > header [class*="dropdown"],
+body > header [class*="menu"] {
+  z-index: 1000 !important;
+}
+
+/* Dropdown background for dark mode - needs solid background to be readable */
+html.dark body > *:not(#app):not(script) ul,
+html.dark body > *:not(#app):not(script) [class*="dropdown"],
+html.dark body > *:not(#app):not(script) [class*="menu"],
+html.dark body > nav ul,
+html.dark body > nav [class*="dropdown"],
+html.dark body > nav [class*="menu"],
+html.dark body > header ul,
+html.dark body > header [class*="dropdown"],
+html.dark body > header [class*="menu"] {
+  background-color: #1E1E26 !important; /* dark-card */
+  border-color: #5E5F69 !important; /* muted */
+}
+
 /* PayPal donation button styles */
 @layer components {
   .donate-btn {
