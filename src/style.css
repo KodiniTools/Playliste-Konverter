@@ -3,48 +3,52 @@
 @tailwind utilities;
 
 /* Navigation and Footer styles for SSI includes */
-@layer base {
-  /* Make navigation and footer transparent */
-  body > nav,
-  body > header,
-  body > footer,
-  [class*="nav"],
-  [class*="footer"],
-  [class*="header"]:not(#app header) {
-    background: transparent !important;
-    background-color: transparent !important;
-  }
+/* Make navigation and footer transparent in both light and dark mode */
+body > nav,
+body > nav *,
+body > header:first-of-type,
+body > header:first-of-type *,
+body > footer,
+body > footer *,
+nav,
+nav *,
+footer,
+footer * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
-  /* Dark theme text colors for navigation and footer */
-  .dark body > nav,
-  .dark body > header,
-  .dark body > footer,
-  .dark body > nav *,
-  .dark body > header *,
-  .dark body > footer *,
-  .dark [class*="nav"],
-  .dark [class*="nav"] *,
-  .dark [class*="footer"],
-  .dark [class*="footer"] * {
-    color: #C4C5CB !important; /* neutral-light */
-  }
+/* Dark theme text colors for navigation and footer */
+html.dark body > nav,
+html.dark body > nav *,
+html.dark body > header:first-of-type,
+html.dark body > header:first-of-type *,
+html.dark body > footer,
+html.dark body > footer *,
+html.dark nav,
+html.dark nav *,
+html.dark footer,
+html.dark footer * {
+  color: #C4C5CB !important; /* neutral-light */
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
-  /* Links in navigation and footer for dark theme */
-  .dark body > nav a,
-  .dark body > header a,
-  .dark body > footer a,
-  .dark [class*="nav"] a,
-  .dark [class*="footer"] a {
-    color: #F2E28E !important; /* accent */
-  }
+/* Links in navigation and footer for dark theme */
+html.dark body > nav a,
+html.dark body > header:first-of-type a,
+html.dark body > footer a,
+html.dark nav a,
+html.dark footer a {
+  color: #F2E28E !important; /* accent */
+}
 
-  .dark body > nav a:hover,
-  .dark body > header a:hover,
-  .dark body > footer a:hover,
-  .dark [class*="nav"] a:hover,
-  .dark [class*="footer"] a:hover {
-    color: #D4C46E !important; /* accent-dark */
-  }
+html.dark body > nav a:hover,
+html.dark body > header:first-of-type a:hover,
+html.dark body > footer a:hover,
+html.dark nav a:hover,
+html.dark footer a:hover {
+  color: #D4C46E !important; /* accent-dark */
 }
 
 /* PayPal donation button styles */
