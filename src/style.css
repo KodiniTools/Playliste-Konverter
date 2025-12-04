@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Navigation and Footer styles for SSI includes */
+@layer base {
+  /* Make navigation and footer transparent */
+  body > nav,
+  body > header,
+  body > footer,
+  [class*="nav"],
+  [class*="footer"],
+  [class*="header"]:not(#app header) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* Dark theme text colors for navigation and footer */
+  .dark body > nav,
+  .dark body > header,
+  .dark body > footer,
+  .dark body > nav *,
+  .dark body > header *,
+  .dark body > footer *,
+  .dark [class*="nav"],
+  .dark [class*="nav"] *,
+  .dark [class*="footer"],
+  .dark [class*="footer"] * {
+    color: #C4C5CB !important; /* neutral-light */
+  }
+
+  /* Links in navigation and footer for dark theme */
+  .dark body > nav a,
+  .dark body > header a,
+  .dark body > footer a,
+  .dark [class*="nav"] a,
+  .dark [class*="footer"] a {
+    color: #F2E28E !important; /* accent */
+  }
+
+  .dark body > nav a:hover,
+  .dark body > header a:hover,
+  .dark body > footer a:hover,
+  .dark [class*="nav"] a:hover,
+  .dark [class*="footer"] a:hover {
+    color: #D4C46E !important; /* accent-dark */
+  }
+}
 
 /* PayPal donation button styles */
 @layer components {
