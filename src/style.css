@@ -2,52 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Body background for dark mode */
+html.dark body {
+  background-color: #0C0C10 !important; /* dark */
+}
+
 /* Navigation and Footer styles for SSI includes */
-/* Make navigation and footer transparent in both light and dark mode */
+/* Target all direct children of body except #app and script */
+body > *:not(#app):not(script),
+body > *:not(#app):not(script) *,
 body > nav,
 body > nav *,
-body > header:first-of-type,
-body > header:first-of-type *,
+body > header,
+body > header *,
 body > footer,
 body > footer *,
-nav,
-nav *,
-footer,
-footer * {
+body > div:not(#app),
+body > div:not(#app) * {
   background: transparent !important;
   background-color: transparent !important;
 }
 
-/* Dark theme text colors for navigation and footer */
+/* Dark theme: transparent background and light text */
+html.dark body > *:not(#app):not(script),
+html.dark body > *:not(#app):not(script) *,
 html.dark body > nav,
 html.dark body > nav *,
-html.dark body > header:first-of-type,
-html.dark body > header:first-of-type *,
+html.dark body > header,
+html.dark body > header *,
 html.dark body > footer,
 html.dark body > footer *,
-html.dark nav,
-html.dark nav *,
-html.dark footer,
-html.dark footer * {
+html.dark body > div:not(#app),
+html.dark body > div:not(#app) * {
   color: #C4C5CB !important; /* neutral-light */
   background: transparent !important;
   background-color: transparent !important;
 }
 
 /* Links in navigation and footer for dark theme */
+html.dark body > *:not(#app):not(script) a,
 html.dark body > nav a,
-html.dark body > header:first-of-type a,
+html.dark body > header a,
 html.dark body > footer a,
-html.dark nav a,
-html.dark footer a {
+html.dark body > div:not(#app) a {
   color: #F2E28E !important; /* accent */
 }
 
+html.dark body > *:not(#app):not(script) a:hover,
 html.dark body > nav a:hover,
-html.dark body > header:first-of-type a:hover,
+html.dark body > header a:hover,
 html.dark body > footer a:hover,
-html.dark nav a:hover,
-html.dark footer a:hover {
+html.dark body > div:not(#app) a:hover {
   color: #D4C46E !important; /* accent-dark */
 }
 
