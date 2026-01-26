@@ -23,7 +23,8 @@ if (!file_exists($metaFile)) {
 }
 
 $meta = json_decode(file_get_contents($metaFile), true);
-$outputFile = $sessionDir . 'playlist.webm';
+$extension = $meta['output_extension'] ?? 'webm';
+$outputFile = $sessionDir . 'playlist.' . $extension;
 $logFile = $sessionDir . 'ffmpeg.log';
 
 // Prüfe Queue-Status wenn Queue aktiviert ist

@@ -10,6 +10,13 @@ const UPLOAD_TIMEOUT = 10 * 60 * 1000
 // Maximale Größe für Konvertierung (1 GB)
 const MAX_PLAYLIST_SIZE = 1024 * 1024 * 1024 // 1 GB in Bytes
 
+// Verfügbare Ausgabeformate
+const OUTPUT_FORMATS = {
+  webm: { extension: 'webm', label: 'WebM (Opus)', description: 'Kompakt, modern' },
+  mp3: { extension: 'mp3', label: 'MP3', description: 'Universell kompatibel' },
+  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source' }
+}
+
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
   const uploadProgress = ref(0)
@@ -18,7 +25,8 @@ export const useConverterStore = defineStore('converter', () => {
   const sessionId = ref(null)
   const downloadUrl = ref(null)
   const errorMessage = ref(null)
-  const outputFileSize = ref(null) // Größe der konvertierten WebM-Datei
+  const outputFileSize = ref(null) // Größe der konvertierten Datei
+  const outputFormat = ref(localStorage.getItem('outputFormat') || 'mp3') // Standard: MP3
 
   // Für Abbrechen-Funktion
   let abortController = null
@@ -121,6 +129,24 @@ export const useConverterStore = defineStore('converter', () => {
     files.value.splice(toIndex, 0, item)
   }
 
+  function setOutputFormat(format) {
+    if (OUTPUT_FORMATS[format]) {
+      outputFormat.value = format
+      localStorage.setItem('outputFormat', format)
+    }
+  }
+
+  const currentFormatConfig = computed(() => {
+    return OUTPUT_FORMATS[outputFormat.value] || OUTPUT_FORMATS.mp3
+  })
+
+  const availableFormats = computed(() => {
+    return Object.entries(OUTPUT_FORMATS).map(([key, value]) => ({
+      id: key,
+      ...value
+    }))
+  })
+
   async function convert() {
     if (files.value.length === 0) {
       errorMessage.value = 'Keine Dateien ausgewählt'
@@ -186,9 +212,10 @@ export const useConverterStore = defineStore('converter', () => {
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
-      console.log('Starting conversion for session:', sessionId.value)
+      console.log('Starting conversion for session:', sessionId.value, 'format:', outputFormat.value)
       await axios.post(`${API_BASE_URL}/convert`, {
-        session_id: sessionId.value
+        session_id: sessionId.value,
+        format: outputFormat.value
       }, {
         timeout: 30000, // 30 Sekunden für Convert-Start
         signal: abortController.signal
@@ -373,6 +400,9 @@ export const useConverterStore = defineStore('converter', () => {
     downloadUrl,
     errorMessage,
     outputFileSize,
+    outputFormat,
+    currentFormatConfig,
+    availableFormats,
     isCancelling,
     formattedUploadSpeed,
     formattedTimeRemaining,
@@ -380,6 +410,7 @@ export const useConverterStore = defineStore('converter', () => {
     removeFile,
     removeAllFiles,
     moveFile,
+    setOutputFormat,
     convert,
     cancel,
     reset

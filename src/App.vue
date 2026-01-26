@@ -5,6 +5,7 @@ import { useUIStore } from './stores/ui'
 import { useI18n } from 'vue-i18n'
 import FileUploader from './components/FileUploader.vue'
 import FileList from './components/FileList.vue'
+import FormatSelector from './components/FormatSelector.vue'
 import ConversionProgress from './components/ConversionProgress.vue'
 import DownloadButton from './components/DownloadButton.vue'
 import SettingsSwitcher from './components/SettingsSwitcher.vue'
@@ -52,6 +53,9 @@ onMounted(() => {
       <div v-if="store.status === 'idle'" class="space-y-6">
         <FileUploader />
         <FileList v-if="store.files.length > 0" />
+
+        <!-- Format Selector -->
+        <FormatSelector v-if="store.files.length > 0" />
 
         <!-- Size Warning / All Clear -->
         <SizeWarning />

@@ -3,9 +3,21 @@ import { createI18n } from 'vue-i18n'
 const messages = {
   de: {
     app: {
-      title: 'Playlist zu WebM Konverter',
-      subtitle: 'Bis zu 50 Audio-Tracks in eine WebM-Datei konvertieren',
+      title: 'Playlist Konverter',
+      subtitle: 'Bis zu 50 Audio-Tracks in eine Datei konvertieren',
       warning: '⚠️ Verarbeitung erfolgt auf dem Server'
+    },
+    format: {
+      title: 'Ausgabeformat',
+      webm: {
+        description: 'Kompakt, modern'
+      },
+      mp3: {
+        description: 'Universell kompatibel'
+      },
+      ogg: {
+        description: 'Open Source'
+      }
     },
     uploader: {
       dropText: 'MP3 oder WAV Dateien hier ablegen',
@@ -30,7 +42,7 @@ const messages = {
       title: 'Konvertierung abgeschlossen!',
       subtitle: 'Deine Playlist ist bereit zum Download',
       fileSize: 'Dateigröße',
-      button: 'playlist.webm herunterladen',
+      button: 'playlist.{format} herunterladen',
       newConversion: 'Neue Konvertierung starten',
       promptText: 'Bitte geben Sie den Dateinamen ein:',
       error: 'Download fehlgeschlagen. Bitte versuchen Sie es erneut.'
@@ -106,9 +118,21 @@ const messages = {
   },
   en: {
     app: {
-      title: 'Playlist to WebM Converter',
-      subtitle: 'Convert up to 50 audio tracks into one WebM file',
+      title: 'Playlist Converter',
+      subtitle: 'Convert up to 50 audio tracks into one file',
       warning: '⚠️ Processing happens on the server'
+    },
+    format: {
+      title: 'Output Format',
+      webm: {
+        description: 'Compact, modern'
+      },
+      mp3: {
+        description: 'Universal compatibility'
+      },
+      ogg: {
+        description: 'Open source'
+      }
     },
     uploader: {
       dropText: 'Drop MP3 or WAV files here',
@@ -133,7 +157,7 @@ const messages = {
       title: 'Conversion completed!',
       subtitle: 'Your playlist is ready for download',
       fileSize: 'File size',
-      button: 'Download playlist.webm',
+      button: 'Download playlist.{format}',
       newConversion: 'Start new conversion',
       promptText: 'Please enter the filename:',
       error: 'Download failed. Please try again.'

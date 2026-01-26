@@ -1,4 +1,7 @@
 <?php
+// Lade Konfiguration
+$config = require __DIR__ . '/../config.php';
+
 $sessionId = basename($_GET['id'] ?? '');
 
 if (empty($sessionId) || !preg_match('/^[a-f0-9]{32}$/', $sessionId)) {
@@ -8,7 +11,16 @@ if (empty($sessionId) || !preg_match('/^[a-f0-9]{32}$/', $sessionId)) {
 }
 
 $sessionDir = __DIR__ . '/../temp/' . $sessionId . '/';
-$outputFile = $sessionDir . 'playlist.webm';
+$metaFile = $sessionDir . 'meta.json';
+
+// Lese Meta-Daten für Format-Information
+$meta = file_exists($metaFile) ? json_decode(file_get_contents($metaFile), true) : [];
+$extension = $meta['output_extension'] ?? 'webm';
+$format = $meta['output_format'] ?? 'webm';
+$formatConfig = $config['output_formats'][$format] ?? $config['output_formats']['webm'];
+$mimeType = $formatConfig['mime_type'] ?? 'audio/webm';
+
+$outputFile = $sessionDir . 'playlist.' . $extension;
 
 if (!file_exists($outputFile)) {
     http_response_code(404);
@@ -16,8 +28,8 @@ if (!file_exists($outputFile)) {
     exit;
 }
 
-header('Content-Type: audio/webm');
-header('Content-Disposition: attachment; filename="playlist.webm"');
+header('Content-Type: ' . $mimeType);
+header('Content-Disposition: attachment; filename="playlist.' . $extension . '"');
 header('Content-Length: ' . filesize($outputFile));
 readfile($outputFile);
 
