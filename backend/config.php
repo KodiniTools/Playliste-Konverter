@@ -32,7 +32,7 @@ return [
         'mp3' => [
             'extension' => 'mp3',
             'mime_type' => 'audio/mpeg',
-            'ffmpeg_codec' => '-c:a libmp3lame -q:a 2',
+            'ffmpeg_codec' => '-c:a libmp3lame',
             'bitrate_flag' => '-b:a',
             'label' => 'MP3',
             'max_bitrate' => 320
