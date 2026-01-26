@@ -29,10 +29,18 @@ onMounted(() => {
     <div class="max-w-4xl mx-auto px-4">
       <header class="mb-8">
         <div class="flex justify-between items-start mb-4">
-          <div>
-            <h1 class="text-3xl font-bold text-dark dark:text-neutral-light">{{ t('app.title') }}</h1>
-            <p class="text-muted dark:text-neutral mt-2">{{ t('app.subtitle') }}</p>
-            <p class="text-sm text-secondary dark:text-secondary-light mt-1">{{ t('app.warning') }}</p>
+          <div class="flex items-start gap-3">
+            <a href="./" class="home-link" title="Home">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </a>
+            <div>
+              <h1 class="text-3xl font-bold text-dark dark:text-neutral-light">{{ t('app.title') }}</h1>
+              <p class="text-muted dark:text-neutral mt-2">{{ t('app.subtitle') }}</p>
+              <p class="text-sm text-secondary dark:text-secondary-light mt-1">{{ t('app.warning') }}</p>
+            </div>
           </div>
           <div class="flex items-center gap-3">
             <SettingsSwitcher />
