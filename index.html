@@ -61,20 +61,25 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Navigation */
-    nav {
+    /* Hero Navigation - does not affect global SSI nav */
+    .hero-nav {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 100;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
+      z-index: 50;
+      background: transparent;
+      border-bottom: 1px solid transparent;
       backdrop-filter: blur(10px);
       transition: all 0.3s ease;
     }
 
-    html.dark nav {
+    .hero-nav.scrolled {
+      background: var(--bg-secondary);
+      border-bottom-color: var(--border-color);
+    }
+
+    html.dark .hero-nav.scrolled {
       background: rgba(24, 24, 31, 0.95);
     }
 
@@ -144,7 +149,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 6rem 1.5rem 4rem;
+      padding: 10rem 1.5rem 4rem;
       position: relative;
       overflow: hidden;
     }
@@ -526,7 +531,7 @@
 <body>
   <!--#include virtual="/partials/nav.html" -->
   <!-- Hero Navigation -->
-  <nav>
+  <nav class="hero-nav">
     <div class="nav-container">
       <a href="./app.html" class="logo">
         <div class="logo-icon">
@@ -926,6 +931,16 @@
     // Initialize
     initTheme();
     initLanguage();
+
+    // Hero navigation scroll effect
+    const heroNav = document.querySelector('.hero-nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        heroNav.classList.add('scrolled');
+      } else {
+        heroNav.classList.remove('scrolled');
+      }
+    });
 
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

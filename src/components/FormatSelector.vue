@@ -7,7 +7,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-light rounded-lg p-4 border border-neutral dark:border-muted space-y-4">
+  <div class="bg-white dark:bg-dark-card rounded-lg p-4 border border-neutral dark:border-muted space-y-4">
     <!-- Format-Auswahl -->
     <div>
       <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-3">
