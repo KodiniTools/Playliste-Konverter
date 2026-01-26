@@ -1,15 +1,976 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Playlist zu WebM Konverter</title>
-  <script src="https://kodinitools.com/analytics/tracker.js" data-api="https://kodinitools.com/analytics/api"></script>
+  <meta name="description" content="Konvertiere mehrere Audio-Dateien zu einer einzigen Playlist. Unterstützt MP3, WAV mit Ausgabe in WebM, MP3 oder OGG.">
+  <title>Playlist Konverter - Audio-Dateien zusammenfügen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Color Palette */
+      --accent: #F2E28E;
+      --accent-dark: #D4C46E;
+      --accent-light: #F7EDB5;
+      --secondary: #A28680;
+      --secondary-dark: #8A716B;
+      --secondary-light: #BFA29C;
+      --muted: #5E5F69;
+      --muted-dark: #4A4B54;
+      --muted-light: #75767F;
+      --neutral: #AEAFB7;
+      --neutral-dark: #9A9BA3;
+      --neutral-light: #C4C5CB;
+      --dark: #0C0C10;
+      --dark-lighter: #18181F;
+      --dark-card: #1E1E26;
+
+      /* Light mode defaults */
+      --bg-primary: var(--neutral-light);
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: var(--dark);
+      --text-secondary: var(--muted);
+      --text-muted: var(--neutral-dark);
+      --border-color: var(--neutral);
+    }
+
+    html.dark {
+      --bg-primary: var(--dark);
+      --bg-secondary: var(--dark-lighter);
+      --bg-card: var(--dark-card);
+      --text-primary: var(--neutral-light);
+      --text-secondary: var(--neutral);
+      --text-muted: var(--muted-light);
+      --border-color: var(--muted);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    html.dark nav {
+      background: rgba(24, 24, 31, 0.95);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .control-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:hover {
+      background: var(--accent);
+      color: var(--dark);
+      border-color: var(--accent);
+    }
+
+    .lang-btn {
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6rem 1.5rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, var(--accent) 0%, transparent 50%);
+      opacity: 0.1;
+      pointer-events: none;
+    }
+
+    html.dark .hero-bg {
+      opacity: 0.05;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 50px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-highlight {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-description {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--dark);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px rgba(242, 226, 142, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: var(--bg-secondary);
+    }
+
+    /* Features Section */
+    .features {
+      padding: 6rem 1.5rem;
+      background: var(--bg-secondary);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--dark);
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section-description {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.2);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-icon svg {
+      width: 24px;
+      height: 24px;
+      color: var(--dark);
+    }
+
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-description {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* How It Works Section */
+    .how-it-works {
+      padding: 6rem 1.5rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .step {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 64px;
+      height: 64px;
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0 auto 1.5rem;
+    }
+
+    .step-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .step-description {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Formats Section */
+    .formats {
+      padding: 6rem 1.5rem;
+      background: var(--bg-secondary);
+    }
+
+    .formats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .format-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .format-card:hover {
+      border-color: var(--accent);
+    }
+
+    .format-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+
+    .format-description {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 6rem 1.5rem;
+      text-align: center;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark) 100%);
+      border-radius: 24px;
+      padding: 4rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    html:not(.dark) .cta-box {
+      background: linear-gradient(135deg, var(--muted) 0%, var(--muted-dark) 100%);
+    }
+
+    .cta-glow {
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+      background: var(--accent);
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .cta-description {
+      color: var(--neutral);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Footer */
+    footer {
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .footer-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!--#include virtual="/partials/nav.html" -->
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
-  <!--#include virtual="/partials/footer.html" -->
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0C0C10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <span data-i18n="nav.logo">Playlist Konverter</span>
+      </a>
+      <div class="nav-controls">
+        <button class="control-btn lang-btn" id="langToggle" title="Switch language">
+          <span id="langText">EN</span>
+        </button>
+        <button class="control-btn" id="themeToggle" title="Toggle theme">
+          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-badge animate-fade-in">
+        <span class="hero-badge-dot"></span>
+        <span data-i18n="hero.badge">Kostenlos & Ohne Registrierung</span>
+      </div>
+      <h1 class="hero-title animate-fade-in delay-1">
+        <span data-i18n="hero.title1">Audio-Dateien</span><br>
+        <span class="hero-highlight" data-i18n="hero.title2">einfach zusammenfügen</span>
+      </h1>
+      <p class="hero-description animate-fade-in delay-2" data-i18n="hero.description">
+        Konvertiere bis zu 50 MP3- oder WAV-Dateien zu einer einzigen Playlist.
+        Wähle dein bevorzugtes Ausgabeformat und die Audioqualität.
+      </p>
+      <div class="hero-buttons animate-fade-in delay-3">
+        <a href="./app.html" class="btn btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span data-i18n="hero.cta">Jetzt starten</span>
+        </a>
+        <a href="#features" class="btn btn-secondary">
+          <span data-i18n="hero.learnMore">Mehr erfahren</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="features.tag">Funktionen</span>
+        <h2 class="section-title" data-i18n="features.title">Alles was du brauchst</h2>
+        <p class="section-description" data-i18n="features.description">
+          Leistungsstarke Funktionen für eine einfache Audio-Konvertierung
+        </p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.upload.title">Drag & Drop Upload</h3>
+          <p class="feature-description" data-i18n="features.upload.description">
+            Ziehe einfach deine Dateien in den Browser oder wähle sie aus dem Datei-Dialog.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.reorder.title">Reihenfolge ändern</h3>
+          <p class="feature-description" data-i18n="features.reorder.description">
+            Ordne die Tracks per Drag & Drop in der gewünschten Reihenfolge an.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.preview.title">Audio-Vorschau</h3>
+          <p class="feature-description" data-i18n="features.preview.description">
+            Höre dir jeden Track vor der Konvertierung an, um sicherzustellen, dass alles stimmt.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.privacy.title">Datenschutz</h3>
+          <p class="feature-description" data-i18n="features.privacy.description">
+            Alle Dateien werden nach der Konvertierung automatisch vom Server gelöscht.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.realtime.title">Echtzeit-Fortschritt</h3>
+          <p class="feature-description" data-i18n="features.realtime.description">
+            Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.formats.title">Mehrere Formate</h3>
+          <p class="feature-description" data-i18n="features.formats.description">
+            Wähle zwischen WebM, MP3 oder OGG als Ausgabeformat.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="howItWorks.tag">So funktioniert's</span>
+        <h2 class="section-title" data-i18n="howItWorks.title">In 3 einfachen Schritten</h2>
+        <p class="section-description" data-i18n="howItWorks.description">
+          Keine Registrierung, keine Installation - sofort loslegen
+        </p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3 class="step-title" data-i18n="howItWorks.step1.title">Dateien hochladen</h3>
+          <p class="step-description" data-i18n="howItWorks.step1.description">
+            Lade deine MP3- oder WAV-Dateien per Drag & Drop oder über den Datei-Dialog hoch.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3 class="step-title" data-i18n="howItWorks.step2.title">Format wählen</h3>
+          <p class="step-description" data-i18n="howItWorks.step2.description">
+            Wähle dein bevorzugtes Ausgabeformat und die gewünschte Audioqualität.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3 class="step-title" data-i18n="howItWorks.step3.title">Herunterladen</h3>
+          <p class="step-description" data-i18n="howItWorks.step3.description">
+            Klicke auf Konvertieren und lade deine fertige Playlist herunter.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formats Section -->
+  <section class="formats" id="formats">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="formats.tag">Ausgabeformate</span>
+        <h2 class="section-title" data-i18n="formats.title">Unterstützte Formate</h2>
+        <p class="section-description" data-i18n="formats.description">
+          Wähle das Format, das am besten zu deinen Bedürfnissen passt
+        </p>
+      </div>
+      <div class="formats-grid">
+        <div class="format-card">
+          <div class="format-name">WebM</div>
+          <p class="format-description" data-i18n="formats.webm">Kompakt & Modern - Opus Codec</p>
+        </div>
+        <div class="format-card">
+          <div class="format-name">MP3</div>
+          <p class="format-description" data-i18n="formats.mp3">Universell kompatibel</p>
+        </div>
+        <div class="format-card">
+          <div class="format-name">OGG</div>
+          <p class="format-description" data-i18n="formats.ogg">Open Source - Vorbis Codec</p>
+        </div>
+        <div class="format-card">
+          <div class="format-name">WAV</div>
+          <p class="format-description" data-i18n="formats.wav">Eingabeformat unterstützt</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div class="cta-glow"></div>
+        <div class="cta-content">
+          <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
+          <p class="cta-description" data-i18n="cta.description">
+            Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.
+          </p>
+          <a href="./app.html" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span data-i18n="cta.button">Zur Anwendung</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p class="footer-text">
+      <span data-i18n="footer.text">Erstellt mit</span>
+      <svg style="display: inline; width: 16px; height: 16px; vertical-align: middle; color: var(--accent);" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <span data-i18n="footer.by">von</span>
+      <a href="#" class="footer-link">KodiniTools</a>
+    </p>
+  </footer>
+
+  <script>
+    // Translations
+    const translations = {
+      de: {
+        'nav.logo': 'Playlist Konverter',
+        'hero.badge': 'Kostenlos & Ohne Registrierung',
+        'hero.title1': 'Audio-Dateien',
+        'hero.title2': 'einfach zusammenfügen',
+        'hero.description': 'Konvertiere bis zu 50 MP3- oder WAV-Dateien zu einer einzigen Playlist. Wähle dein bevorzugtes Ausgabeformat und die Audioqualität.',
+        'hero.cta': 'Jetzt starten',
+        'hero.learnMore': 'Mehr erfahren',
+        'features.tag': 'Funktionen',
+        'features.title': 'Alles was du brauchst',
+        'features.description': 'Leistungsstarke Funktionen für eine einfache Audio-Konvertierung',
+        'features.upload.title': 'Drag & Drop Upload',
+        'features.upload.description': 'Ziehe einfach deine Dateien in den Browser oder wähle sie aus dem Datei-Dialog.',
+        'features.reorder.title': 'Reihenfolge ändern',
+        'features.reorder.description': 'Ordne die Tracks per Drag & Drop in der gewünschten Reihenfolge an.',
+        'features.preview.title': 'Audio-Vorschau',
+        'features.preview.description': 'Höre dir jeden Track vor der Konvertierung an, um sicherzustellen, dass alles stimmt.',
+        'features.privacy.title': 'Datenschutz',
+        'features.privacy.description': 'Alle Dateien werden nach der Konvertierung automatisch vom Server gelöscht.',
+        'features.realtime.title': 'Echtzeit-Fortschritt',
+        'features.realtime.description': 'Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.',
+        'features.formats.title': 'Mehrere Formate',
+        'features.formats.description': 'Wähle zwischen WebM, MP3 oder OGG als Ausgabeformat.',
+        'howItWorks.tag': 'So funktioniert\'s',
+        'howItWorks.title': 'In 3 einfachen Schritten',
+        'howItWorks.description': 'Keine Registrierung, keine Installation - sofort loslegen',
+        'howItWorks.step1.title': 'Dateien hochladen',
+        'howItWorks.step1.description': 'Lade deine MP3- oder WAV-Dateien per Drag & Drop oder über den Datei-Dialog hoch.',
+        'howItWorks.step2.title': 'Format wählen',
+        'howItWorks.step2.description': 'Wähle dein bevorzugtes Ausgabeformat und die gewünschte Audioqualität.',
+        'howItWorks.step3.title': 'Herunterladen',
+        'howItWorks.step3.description': 'Klicke auf Konvertieren und lade deine fertige Playlist herunter.',
+        'formats.tag': 'Ausgabeformate',
+        'formats.title': 'Unterstützte Formate',
+        'formats.description': 'Wähle das Format, das am besten zu deinen Bedürfnissen passt',
+        'formats.webm': 'Kompakt & Modern - Opus Codec',
+        'formats.mp3': 'Universell kompatibel',
+        'formats.ogg': 'Open Source - Vorbis Codec',
+        'formats.wav': 'Eingabeformat unterstützt',
+        'cta.title': 'Bereit zum Starten?',
+        'cta.description': 'Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.',
+        'cta.button': 'Zur Anwendung',
+        'footer.text': 'Erstellt mit',
+        'footer.by': 'von'
+      },
+      en: {
+        'nav.logo': 'Playlist Converter',
+        'hero.badge': 'Free & No Registration',
+        'hero.title1': 'Merge Audio Files',
+        'hero.title2': 'with ease',
+        'hero.description': 'Convert up to 50 MP3 or WAV files into a single playlist. Choose your preferred output format and audio quality.',
+        'hero.cta': 'Get Started',
+        'hero.learnMore': 'Learn more',
+        'features.tag': 'Features',
+        'features.title': 'Everything you need',
+        'features.description': 'Powerful features for simple audio conversion',
+        'features.upload.title': 'Drag & Drop Upload',
+        'features.upload.description': 'Simply drag your files into the browser or select them from the file dialog.',
+        'features.reorder.title': 'Reorder Tracks',
+        'features.reorder.description': 'Arrange tracks in your desired order using drag & drop.',
+        'features.preview.title': 'Audio Preview',
+        'features.preview.description': 'Listen to each track before conversion to make sure everything is correct.',
+        'features.privacy.title': 'Privacy',
+        'features.privacy.description': 'All files are automatically deleted from the server after conversion.',
+        'features.realtime.title': 'Real-time Progress',
+        'features.realtime.description': 'Track upload and conversion progress in real-time.',
+        'features.formats.title': 'Multiple Formats',
+        'features.formats.description': 'Choose between WebM, MP3 or OGG as output format.',
+        'howItWorks.tag': 'How It Works',
+        'howItWorks.title': 'In 3 Simple Steps',
+        'howItWorks.description': 'No registration, no installation - start right away',
+        'howItWorks.step1.title': 'Upload Files',
+        'howItWorks.step1.description': 'Upload your MP3 or WAV files via drag & drop or file dialog.',
+        'howItWorks.step2.title': 'Choose Format',
+        'howItWorks.step2.description': 'Select your preferred output format and audio quality.',
+        'howItWorks.step3.title': 'Download',
+        'howItWorks.step3.description': 'Click convert and download your finished playlist.',
+        'formats.tag': 'Output Formats',
+        'formats.title': 'Supported Formats',
+        'formats.description': 'Choose the format that best suits your needs',
+        'formats.webm': 'Compact & Modern - Opus Codec',
+        'formats.mp3': 'Universal compatibility',
+        'formats.ogg': 'Open Source - Vorbis Codec',
+        'formats.wav': 'Input format supported',
+        'cta.title': 'Ready to Start?',
+        'cta.description': 'Convert your audio files now - free and without registration.',
+        'cta.button': 'Go to App',
+        'footer.text': 'Made with',
+        'footer.by': 'by'
+      }
+    };
+
+    // Current language
+    let currentLang = localStorage.getItem('landing-locale') || 'de';
+
+    // Theme Management
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcons(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcons(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcons(isDark);
+    }
+
+    function updateThemeIcons(isDark) {
+      document.getElementById('sunIcon').style.display = isDark ? 'none' : 'block';
+      document.getElementById('moonIcon').style.display = isDark ? 'block' : 'none';
+    }
+
+    // Language Management
+    function initLanguage() {
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'de' ? 'en' : 'de';
+      localStorage.setItem('landing-locale', currentLang);
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+      document.documentElement.lang = currentLang;
+    }
+
+    function updateLanguage(lang) {
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+    }
+
+    // Event Listeners
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+
+    // Initialize
+    initTheme();
+    initLanguage();
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
