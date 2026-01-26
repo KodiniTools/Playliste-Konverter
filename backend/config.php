@@ -15,25 +15,35 @@ return [
     // Maximales Alter für Session-Cleanup in Sekunden
     'cleanup_max_age' => 3600, // 1 Stunde
 
+    // Verfügbare Bitraten (in kbps)
+    'available_bitrates' => [64, 128, 192, 256, 320],
+    'default_bitrate' => 192,
+
     // Unterstützte Ausgabeformate
     'output_formats' => [
         'webm' => [
             'extension' => 'webm',
             'mime_type' => 'audio/webm',
-            'ffmpeg_codec' => '-c:a libopus -b:a 128k',
-            'label' => 'WebM (Opus)'
+            'ffmpeg_codec' => '-c:a libopus',
+            'bitrate_flag' => '-b:a',
+            'label' => 'WebM (Opus)',
+            'max_bitrate' => 256 // Opus unterstützt max 256k effektiv
         ],
         'mp3' => [
             'extension' => 'mp3',
             'mime_type' => 'audio/mpeg',
-            'ffmpeg_codec' => '-c:a libmp3lame -b:a 192k -q:a 2',
-            'label' => 'MP3'
+            'ffmpeg_codec' => '-c:a libmp3lame -q:a 2',
+            'bitrate_flag' => '-b:a',
+            'label' => 'MP3',
+            'max_bitrate' => 320
         ],
         'ogg' => [
             'extension' => 'ogg',
             'mime_type' => 'audio/ogg',
-            'ffmpeg_codec' => '-c:a libvorbis -b:a 192k',
-            'label' => 'OGG (Vorbis)'
+            'ffmpeg_codec' => '-c:a libvorbis',
+            'bitrate_flag' => '-b:a',
+            'label' => 'OGG (Vorbis)',
+            'max_bitrate' => 320
         ]
     ],
 

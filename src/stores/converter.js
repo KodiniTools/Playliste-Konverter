@@ -12,10 +12,19 @@ const MAX_PLAYLIST_SIZE = 1024 * 1024 * 1024 // 1 GB in Bytes
 
 // Verfügbare Ausgabeformate
 const OUTPUT_FORMATS = {
-  webm: { extension: 'webm', label: 'WebM (Opus)', description: 'Kompakt, modern' },
-  mp3: { extension: 'mp3', label: 'MP3', description: 'Universell kompatibel' },
-  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source' }
+  webm: { extension: 'webm', label: 'WebM (Opus)', description: 'Kompakt, modern', maxBitrate: 256 },
+  mp3: { extension: 'mp3', label: 'MP3', description: 'Universell kompatibel', maxBitrate: 320 },
+  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source', maxBitrate: 320 }
 }
+
+// Verfügbare Bitraten
+const AVAILABLE_BITRATES = [
+  { value: 64, label: '64 kbps', description: 'Niedrig' },
+  { value: 128, label: '128 kbps', description: 'Standard' },
+  { value: 192, label: '192 kbps', description: 'Hoch' },
+  { value: 256, label: '256 kbps', description: 'Sehr hoch' },
+  { value: 320, label: '320 kbps', description: 'Maximum' }
+]
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
@@ -27,6 +36,7 @@ export const useConverterStore = defineStore('converter', () => {
   const errorMessage = ref(null)
   const outputFileSize = ref(null) // Größe der konvertierten Datei
   const outputFormat = ref(localStorage.getItem('outputFormat') || 'mp3') // Standard: MP3
+  const bitrate = ref(parseInt(localStorage.getItem('bitrate')) || 192) // Standard: 192 kbps
 
   // Für Abbrechen-Funktion
   let abortController = null
@@ -133,6 +143,22 @@ export const useConverterStore = defineStore('converter', () => {
     if (OUTPUT_FORMATS[format]) {
       outputFormat.value = format
       localStorage.setItem('outputFormat', format)
+      // Bitrate anpassen falls über Maximum des neuen Formats
+      const maxBitrate = OUTPUT_FORMATS[format].maxBitrate || 320
+      if (bitrate.value > maxBitrate) {
+        setBitrate(maxBitrate)
+      }
+    }
+  }
+
+  function setBitrate(value) {
+    const validBitrate = AVAILABLE_BITRATES.find(b => b.value === value)
+    if (validBitrate) {
+      // Begrenze auf Format-Maximum
+      const maxBitrate = currentFormatConfig.value.maxBitrate || 320
+      const finalBitrate = Math.min(value, maxBitrate)
+      bitrate.value = finalBitrate
+      localStorage.setItem('bitrate', finalBitrate.toString())
     }
   }
 
@@ -145,6 +171,11 @@ export const useConverterStore = defineStore('converter', () => {
       id: key,
       ...value
     }))
+  })
+
+  const availableBitratesForFormat = computed(() => {
+    const maxBitrate = currentFormatConfig.value.maxBitrate || 320
+    return AVAILABLE_BITRATES.filter(b => b.value <= maxBitrate)
   })
 
   async function convert() {
@@ -212,10 +243,11 @@ export const useConverterStore = defineStore('converter', () => {
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
-      console.log('Starting conversion for session:', sessionId.value, 'format:', outputFormat.value)
+      console.log('Starting conversion for session:', sessionId.value, 'format:', outputFormat.value, 'bitrate:', bitrate.value)
       await axios.post(`${API_BASE_URL}/convert`, {
         session_id: sessionId.value,
-        format: outputFormat.value
+        format: outputFormat.value,
+        bitrate: bitrate.value
       }, {
         timeout: 30000, // 30 Sekunden für Convert-Start
         signal: abortController.signal
@@ -401,8 +433,10 @@ export const useConverterStore = defineStore('converter', () => {
     errorMessage,
     outputFileSize,
     outputFormat,
+    bitrate,
     currentFormatConfig,
     availableFormats,
+    availableBitratesForFormat,
     isCancelling,
     formattedUploadSpeed,
     formattedTimeRemaining,
@@ -411,6 +445,7 @@ export const useConverterStore = defineStore('converter', () => {
     removeAllFiles,
     moveFile,
     setOutputFormat,
+    setBitrate,
     convert,
     cancel,
     reset

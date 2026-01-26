@@ -19,6 +19,15 @@ const messages = {
         description: 'Open Source'
       }
     },
+    bitrate: {
+      title: 'Audioqualität',
+      hint: 'Höhere Bitrate = bessere Qualität, größere Datei',
+      64: 'Niedrig',
+      128: 'Standard',
+      192: 'Hoch',
+      256: 'Sehr hoch',
+      320: 'Maximum'
+    },
     uploader: {
       dropText: 'MP3 oder WAV Dateien hier ablegen',
       orText: 'oder',
@@ -133,6 +142,15 @@ const messages = {
       ogg: {
         description: 'Open source'
       }
+    },
+    bitrate: {
+      title: 'Audio Quality',
+      hint: 'Higher bitrate = better quality, larger file',
+      64: 'Low',
+      128: 'Standard',
+      192: 'High',
+      256: 'Very high',
+      320: 'Maximum'
     },
     uploader: {
       dropText: 'Drop MP3 or WAV files here',
