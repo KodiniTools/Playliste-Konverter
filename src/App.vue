@@ -39,7 +39,6 @@ onMounted(() => {
             <div>
               <h1 class="text-3xl font-bold text-dark dark:text-neutral-light">{{ t('app.title') }}</h1>
               <p class="text-muted dark:text-neutral mt-2">{{ t('app.subtitle') }}</p>
-              <p class="text-sm text-secondary dark:text-secondary-light mt-1">{{ t('app.warning') }}</p>
             </div>
           </div>
           <div class="flex items-center gap-3">

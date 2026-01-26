@@ -61,6 +61,51 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
+    /* Global SSI Navigation and Footer - transparent background */
+    body > *:not(.hero):not(.hero-nav):not(.features):not(.how-it-works):not(.formats):not(.cta):not(script),
+    body > nav:not(.hero-nav),
+    body > header,
+    body > footer,
+    body > div:not(.hero):not(.features) {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Dark mode: transparent background and light text for SSI includes */
+    html.dark body > *:not(.hero):not(.hero-nav):not(.features):not(.how-it-works):not(.formats):not(.cta):not(script),
+    html.dark body > nav:not(.hero-nav),
+    html.dark body > header,
+    html.dark body > footer,
+    html.dark body > div:not(.hero):not(.features) {
+      color: var(--neutral-light) !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Links in global nav/footer for dark mode */
+    html.dark body > nav:not(.hero-nav) a,
+    html.dark body > header a,
+    html.dark body > footer a {
+      color: var(--accent) !important;
+    }
+
+    html.dark body > nav:not(.hero-nav) a:hover,
+    html.dark body > header a:hover,
+    html.dark body > footer a:hover {
+      color: var(--accent-dark) !important;
+    }
+
+    /* Dropdown menus in dark mode need solid background */
+    html.dark body > nav:not(.hero-nav) ul,
+    html.dark body > nav:not(.hero-nav) [class*="dropdown"],
+    html.dark body > nav:not(.hero-nav) [class*="menu"],
+    html.dark body > header ul,
+    html.dark body > header [class*="dropdown"],
+    html.dark body > header [class*="menu"] {
+      background-color: var(--dark-card) !important;
+      border-color: var(--muted) !important;
+    }
+
     /* Hero Navigation - does not affect global SSI nav */
     .hero-nav {
       position: fixed;

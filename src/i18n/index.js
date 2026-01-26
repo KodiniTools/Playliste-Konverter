@@ -4,8 +4,7 @@ const messages = {
   de: {
     app: {
       title: 'Playlist Konverter',
-      subtitle: 'Bis zu 50 Audio-Tracks in eine Datei konvertieren',
-      warning: '⚠️ Verarbeitung erfolgt auf dem Server'
+      subtitle: 'Bis zu 50 Audio-Tracks in eine Datei konvertieren'
     },
     format: {
       title: 'Ausgabeformat',
@@ -132,8 +131,7 @@ const messages = {
   en: {
     app: {
       title: 'Playlist Converter',
-      subtitle: 'Convert up to 50 audio tracks into one file',
-      warning: '⚠️ Processing happens on the server'
+      subtitle: 'Convert up to 50 audio tracks into one file'
     },
     format: {
       title: 'Output Format',
