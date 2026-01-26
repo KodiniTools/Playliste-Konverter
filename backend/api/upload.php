@@ -1,19 +1,27 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+// Lade Sicherheitsfunktionen
+require_once __DIR__ . '/../security.php';
 
+// Setze sichere Header
+header('Content-Type: application/json');
+setSecurityHeaders();
+setCorsHeaders(['POST', 'OPTIONS']);
+
+// Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
+    sendJsonError(405, 'Method not allowed');
 }
+
+// Maximale Dateigröße pro Upload (100MB pro Datei)
+$maxFileSize = 100 * 1024 * 1024;
+
+// Maximale Anzahl Dateien
+$maxFiles = 50;
 
 $uploadDir = __DIR__ . '/../temp/';
 if (!is_dir($uploadDir)) {
@@ -28,43 +36,68 @@ $files = $_FILES['files'] ?? [];
 $order = $_POST['order'] ?? [];
 
 if (empty($files['name'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Keine Dateien hochgeladen']);
-    exit;
+    sendJsonError(400, 'Keine Dateien hochgeladen');
 }
 
 $uploadedFiles = [];
-$count = count($files['name']);
+$count = min(count($files['name']), $maxFiles); // Begrenze Anzahl
 
 for ($i = 0; $i < $count; $i++) {
     $tmpName = $files['tmp_name'][$i];
     $name = basename($files['name'][$i]);
-    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-    
-    if (!in_array($ext, ['mp3', 'wav'])) {
+    $size = $files['size'][$i];
+    $error = $files['error'][$i];
+
+    // Prüfe Upload-Fehler
+    if ($error !== UPLOAD_ERR_OK) {
         continue;
     }
-    
-    $orderIndex = isset($order[$i]) ? str_pad($order[$i], 4, '0', STR_PAD_LEFT) : str_pad($i, 4, '0', STR_PAD_LEFT);
-    $targetName = $orderIndex . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $name);
+
+    // Prüfe Dateigröße
+    if ($size > $maxFileSize) {
+        continue;
+    }
+
+    // Prüfe MIME-Type (zusätzlich zur Extension)
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $tmpName);
+    finfo_close($finfo);
+
+    $allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave'];
+    if (!in_array($mimeType, $allowedMimes)) {
+        continue;
+    }
+
+    // Prüfe Extension
+    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['mp3', 'wav'], true)) {
+        continue;
+    }
+
+    // Sanitiere Dateinamen
+    $orderIndex = isset($order[$i]) ? str_pad(intval($order[$i]), 4, '0', STR_PAD_LEFT) : str_pad($i, 4, '0', STR_PAD_LEFT);
+    $safeName = sanitizeFilename($name);
+    $targetName = $orderIndex . '_' . $safeName;
     $targetPath = $sessionDir . $targetName;
-    
+
     if (move_uploaded_file($tmpName, $targetPath)) {
         $uploadedFiles[] = $targetName;
     }
 }
 
 if (empty($uploadedFiles)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Keine gültigen Audio-Dateien']);
-    exit;
+    // Cleanup leeres Verzeichnis
+    rmdir($sessionDir);
+    sendJsonError(400, 'Keine gültigen Audio-Dateien');
 }
 
 // Create file list for FFmpeg concat
 $concatFile = $sessionDir . 'concat.txt';
 $fp = fopen($concatFile, 'w');
 foreach ($uploadedFiles as $file) {
-    fwrite($fp, "file '" . $file . "'\n");
+    // Escape single quotes im Dateinamen für FFmpeg
+    $escapedFile = str_replace("'", "'\\''", $file);
+    fwrite($fp, "file '" . $escapedFile . "'\n");
 }
 fclose($fp);
 
