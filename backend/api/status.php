@@ -1,29 +1,40 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-
-// Lade Konfiguration
+// Lade Sicherheitsfunktionen und Konfiguration
+require_once __DIR__ . '/../security.php';
 $config = require __DIR__ . '/../config.php';
+
+// Setze sichere Header
+header('Content-Type: application/json');
+setSecurityHeaders();
+setCorsHeaders(['GET', 'OPTIONS']);
+
+// Handle preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 $sessionId = basename($_GET['id'] ?? '');
 
-if (empty($sessionId) || !preg_match('/^[a-f0-9]{32}$/', $sessionId)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Ungültige Session-ID']);
-    exit;
+if (!isValidSessionId($sessionId)) {
+    sendJsonError(400, 'Ungültige Session-ID');
 }
 
 $sessionDir = __DIR__ . '/../temp/' . $sessionId . '/';
 $metaFile = $sessionDir . 'meta.json';
 
 if (!file_exists($metaFile)) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Session nicht gefunden']);
-    exit;
+    sendJsonError(404, 'Session nicht gefunden');
 }
 
 $meta = json_decode(file_get_contents($metaFile), true);
+
+// Validiere Extension aus Meta-Daten
 $extension = $meta['output_extension'] ?? 'webm';
+if (!isValidExtension($extension)) {
+    $extension = 'webm'; // Fallback auf sicheren Wert
+}
+
 $outputFile = $sessionDir . 'playlist.' . $extension;
 $logFile = $sessionDir . 'ffmpeg.log';
 
@@ -68,7 +79,7 @@ function getTotalDuration($sessionDir) {
                 'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
                 escapeshellarg($filePath)
             );
-            $duration = trim(shell_exec($cmd));
+            $duration = trim(shell_exec($cmd) ?? '');
             if (is_numeric($duration)) {
                 $totalDuration += floatval($duration);
             }
@@ -80,8 +91,14 @@ function getTotalDuration($sessionDir) {
 
 // Check if FFmpeg process is still running (nur im direkten Modus oder wenn aus Queue gestartet)
 if (isset($meta['pid'])) {
-    $pidCheck = shell_exec("ps -p {$meta['pid']} -o pid=");
-    $isRunning = !empty(trim($pidCheck));
+    // SICHERHEIT: Validiere PID bevor sie verwendet wird
+    if (!isValidPid($meta['pid'])) {
+        logSecurityEvent('invalid_pid', ['session_id' => $sessionId, 'pid' => $meta['pid']]);
+        $isRunning = false;
+    } else {
+        // Sichere Methode: Prüfe über /proc Dateisystem statt shell_exec
+        $isRunning = isProcessRunning($meta['pid']);
+    }
 
     if ($isRunning === false && file_exists($outputFile)) {
         $meta['status'] = 'done';
