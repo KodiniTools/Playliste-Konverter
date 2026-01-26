@@ -9,7 +9,6 @@ import FormatSelector from './components/FormatSelector.vue'
 import ConversionProgress from './components/ConversionProgress.vue'
 import DownloadButton from './components/DownloadButton.vue'
 import SettingsSwitcher from './components/SettingsSwitcher.vue'
-import FAQ from './components/FAQ.vue'
 import SizeWarning from './components/SizeWarning.vue'
 import ToastContainer from './components/ToastContainer.vue'
 
@@ -89,11 +88,6 @@ onMounted(() => {
       <div v-if="store.errorMessage" class="mt-4 p-4 bg-secondary-light/20 dark:bg-secondary-dark/30 border border-secondary dark:border-secondary-dark rounded-lg">
         <p class="text-secondary-dark dark:text-secondary-light">{{ store.errorMessage }}</p>
         <button @click="store.reset" class="mt-2 text-secondary dark:text-secondary-light underline">{{ t('error.reset') }}</button>
-      </div>
-
-      <!-- FAQ Section -->
-      <div class="mt-12">
-        <FAQ />
       </div>
     </div>
   </div>
