@@ -198,6 +198,21 @@
       font-size: 0.875rem;
     }
 
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: var(--bg-card);
+    }
+
     /* Hero Section */
     .hero {
       min-height: 100vh;
@@ -597,6 +612,7 @@
         <span data-i18n="nav.logo">Playlist Konverter</span>
       </a>
       <div class="nav-controls">
+        <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
         <button class="control-btn lang-btn" id="langToggle" title="Switch language">
           <span id="langText">EN</span>
         </button>
@@ -841,6 +857,7 @@
     const translations = {
       de: {
         'nav.logo': 'Playlist Konverter',
+        'nav.faq': 'FAQ',
         'hero.badge': 'Kostenlos & Ohne Registrierung',
         'hero.title1': 'Audio-Dateien',
         'hero.title2': 'einfach zusammenfügen',
@@ -884,6 +901,7 @@
       },
       en: {
         'nav.logo': 'Playlist Converter',
+        'nav.faq': 'FAQ',
         'hero.badge': 'Free & No Registration',
         'hero.title1': 'Merge Audio Files',
         'hero.title2': 'with ease',

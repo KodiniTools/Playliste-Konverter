@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Häufig gestellte Fragen zum Playlist Konverter - Audio-Dateien zusammenfügen im Browser.">
+  <title>FAQ - Playlist Konverter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Color Palette */
+      --accent: #F2E28E;
+      --accent-dark: #D4C46E;
+      --accent-light: #F7EDB5;
+      --secondary: #A28680;
+      --secondary-dark: #8A716B;
+      --secondary-light: #BFA29C;
+      --muted: #5E5F69;
+      --muted-dark: #4A4B54;
+      --muted-light: #75767F;
+      --neutral: #AEAFB7;
+      --neutral-dark: #9A9BA3;
+      --neutral-light: #C4C5CB;
+      --dark: #0C0C10;
+      --dark-lighter: #18181F;
+      --dark-card: #1E1E26;
+
+      /* Light mode defaults */
+      --bg-primary: var(--neutral-light);
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: var(--dark);
+      --text-secondary: var(--muted);
+      --text-muted: var(--neutral-dark);
+      --border-color: var(--neutral);
+    }
+
+    html.dark {
+      --bg-primary: var(--dark);
+      --bg-secondary: var(--dark-lighter);
+      --bg-card: var(--dark-card);
+      --text-primary: var(--neutral-light);
+      --text-secondary: var(--neutral);
+      --text-muted: var(--muted-light);
+      --border-color: var(--muted);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Global SSI Navigation and Footer - transparent background */
+    body > *:not(.page-nav):not(.faq-hero):not(.faq-content):not(.cta):not(script),
+    body > nav:not(.page-nav),
+    body > header,
+    body > footer,
+    body > div:not(.faq-hero):not(.faq-content):not(.cta) {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Dark mode: transparent background and light text for SSI includes */
+    html.dark body > *:not(.page-nav):not(.faq-hero):not(.faq-content):not(.cta):not(script),
+    html.dark body > nav:not(.page-nav),
+    html.dark body > header,
+    html.dark body > footer,
+    html.dark body > div:not(.faq-hero):not(.faq-content):not(.cta) {
+      color: var(--neutral-light) !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* All text in global nav/footer for dark mode */
+    html.dark body > nav:not(.page-nav),
+    html.dark body > nav:not(.page-nav) *,
+    html.dark body > header,
+    html.dark body > header *,
+    html.dark body > footer,
+    html.dark body > footer * {
+      color: var(--neutral-light) !important;
+    }
+
+    /* Links in global nav/footer for dark mode */
+    html.dark body > nav:not(.page-nav) a,
+    html.dark body > header a,
+    html.dark body > footer a {
+      color: var(--accent) !important;
+    }
+
+    html.dark body > nav:not(.page-nav) a:hover,
+    html.dark body > header a:hover,
+    html.dark body > footer a:hover {
+      color: var(--accent-dark) !important;
+    }
+
+    /* Dropdown menus in dark mode need solid background */
+    html.dark body > nav:not(.page-nav) ul,
+    html.dark body > nav:not(.page-nav) [class*="dropdown"],
+    html.dark body > nav:not(.page-nav) [class*="menu"],
+    html.dark body > header ul,
+    html.dark body > header [class*="dropdown"],
+    html.dark body > header [class*="menu"] {
+      background-color: var(--dark-card) !important;
+      border-color: var(--muted) !important;
+    }
+
+    /* Page Navigation */
+    .page-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    html.dark .page-nav {
+      background: rgba(24, 24, 31, 0.95);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .home-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .home-link:hover {
+      background: var(--accent);
+      color: var(--dark);
+      border-color: var(--accent);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .control-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:hover {
+      background: var(--accent);
+      color: var(--dark);
+      border-color: var(--accent);
+    }
+
+    .lang-btn {
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* FAQ Hero Section */
+    .faq-hero {
+      padding: 8rem 1.5rem 4rem;
+      text-align: center;
+      background: var(--bg-primary);
+    }
+
+    .faq-hero-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .faq-hero-description {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* FAQ Content Section */
+    .faq-content {
+      padding: 4rem 1.5rem 6rem;
+      background: var(--bg-secondary);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .faq-item:hover {
+      border-color: var(--accent);
+    }
+
+    .faq-item.active {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px -5px rgba(242, 226, 142, 0.2);
+    }
+
+    .faq-question {
+      width: 100%;
+      padding: 1.5rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      text-align: left;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: color 0.2s ease;
+    }
+
+    .faq-question:hover {
+      color: var(--accent);
+    }
+
+    .faq-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      color: var(--accent);
+      transition: transform 0.3s ease;
+    }
+
+    .faq-item.active .faq-icon {
+      transform: rotate(180deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 500px;
+    }
+
+    .faq-answer-content {
+      padding: 0 1.5rem 1.5rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 6rem 1.5rem;
+      text-align: center;
+      background: var(--bg-primary);
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark) 100%);
+      border-radius: 24px;
+      padding: 4rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    html:not(.dark) .cta-box {
+      background: linear-gradient(135deg, var(--muted) 0%, var(--muted-dark) 100%);
+    }
+
+    .cta-glow {
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+      background: var(--accent);
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .cta-description {
+      color: var(--neutral);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--dark);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px rgba(242, 226, 142, 0.4);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .faq-question {
+        font-size: 1rem;
+        padding: 1.25rem;
+      }
+
+      .faq-answer-content {
+        padding: 0 1.25rem 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!--#include virtual="/partials/nav.html" -->
+
+  <!-- Page Navigation -->
+  <nav class="page-nav">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="./" class="home-link" title="Home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </a>
+        <a href="./app.html" class="logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0C0C10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <span data-i18n="nav.logo">Playlist Konverter</span>
+        </a>
+      </div>
+      <div class="nav-controls">
+        <button class="control-btn lang-btn" id="langToggle" title="Switch language">
+          <span id="langText">EN</span>
+        </button>
+        <button class="control-btn" id="themeToggle" title="Toggle theme">
+          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- FAQ Hero Section -->
+  <section class="faq-hero">
+    <h1 class="faq-hero-title" data-i18n="faq.title">Häufig gestellte Fragen</h1>
+    <p class="faq-hero-description" data-i18n="faq.description">
+      Hier findest du Antworten auf die häufigsten Fragen zum Playlist Konverter.
+    </p>
+  </section>
+
+  <!-- FAQ Content Section -->
+  <section class="faq-content">
+    <div class="container">
+      <div class="faq-list" id="faqList">
+        <!-- FAQ items will be populated by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div class="cta-glow"></div>
+        <div class="cta-content">
+          <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
+          <p class="cta-description" data-i18n="cta.description">
+            Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.
+          </p>
+          <a href="./app.html" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span data-i18n="cta.button">Zur Anwendung</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!--#include virtual="/partials/footer.html" -->
+
+  <script>
+    // Translations
+    const translations = {
+      de: {
+        'nav.logo': 'Playlist Konverter',
+        'faq.title': 'Häufig gestellte Fragen',
+        'faq.description': 'Hier findest du Antworten auf die häufigsten Fragen zum Playlist Konverter.',
+        'cta.title': 'Bereit zum Starten?',
+        'cta.description': 'Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.',
+        'cta.button': 'Zur Anwendung'
+      },
+      en: {
+        'nav.logo': 'Playlist Converter',
+        'faq.title': 'Frequently Asked Questions',
+        'faq.description': 'Find answers to the most common questions about the Playlist Converter.',
+        'cta.title': 'Ready to Start?',
+        'cta.description': 'Convert your audio files now - free and without registration.',
+        'cta.button': 'Go to App'
+      }
+    };
+
+    // FAQ Data
+    const faqData = {
+      de: [
+        {
+          q: 'Was macht dieser Konverter?',
+          a: 'Der Playlist Konverter kombiniert mehrere Audio-Dateien (MP3 oder WAV) zu einer einzigen Datei. Die Tracks werden in der von dir festgelegten Reihenfolge zusammengefügt. Du kannst zwischen verschiedenen Ausgabeformaten und Qualitätsstufen wählen.'
+        },
+        {
+          q: 'Werden meine Dateien auf einen Server hochgeladen?',
+          a: 'Nein! Die komplette Verarbeitung erfolgt direkt in deinem Browser. Deine Dateien verlassen niemals dein Gerät und werden nicht auf einen Server übertragen. Das bedeutet maximale Privatsphäre und schnelle Verarbeitung.'
+        },
+        {
+          q: 'Welche Eingabeformate werden unterstützt?',
+          a: 'Aktuell werden MP3 und WAV Dateien als Eingabeformat unterstützt. Diese sind die gängigsten Audioformate und decken die meisten Anwendungsfälle ab.'
+        },
+        {
+          q: 'Welche Ausgabeformate sind verfügbar?',
+          a: 'Du kannst zwischen drei Ausgabeformaten wählen: WebM (kompakt, modern mit Opus-Codec), MP3 (universell kompatibel) und OGG (Open Source mit Vorbis-Codec). Jedes Format hat seine Vorteile je nach Verwendungszweck.'
+        },
+        {
+          q: 'Was bedeuten die verschiedenen Bitraten?',
+          a: 'Die Bitrate bestimmt die Audioqualität und Dateigröße. Niedrig (64 kbps) eignet sich für Sprachaufnahmen, Standard (128 kbps) für normale Musik, Hoch (192 kbps) für bessere Qualität, Sehr hoch (256 kbps) für audiophile Ansprüche, und Maximum (320 kbps) für die beste verfügbare Qualität.'
+        },
+        {
+          q: 'Wie viele Dateien kann ich gleichzeitig konvertieren?',
+          a: 'Du kannst bis zu 50 Audio-Tracks gleichzeitig hochladen und konvertieren. Die Dateien werden in der Reihenfolge zusammengefügt, die du per Drag & Drop festlegst.'
+        },
+        {
+          q: 'Gibt es eine Größenbeschränkung?',
+          a: 'Da die Verarbeitung in deinem Browser stattfindet, hängt die maximale Größe von deinem verfügbaren Arbeitsspeicher ab. Für die meisten Geräte sollten Playlists bis zu mehreren hundert MB problemlos funktionieren.'
+        },
+        {
+          q: 'Wie lange dauert die Konvertierung?',
+          a: 'Die Dauer hängt von der Anzahl und Größe deiner Dateien sowie der Leistung deines Geräts ab. Da alles lokal verarbeitet wird, gibt es keine Upload-Zeiten. Kleine Playlists werden in Sekunden konvertiert, größere können einige Minuten dauern.'
+        },
+        {
+          q: 'Kann ich die Reihenfolge der Tracks ändern?',
+          a: 'Ja! Du kannst die Tracks per Drag & Drop in der Liste verschieben, bevor du die Konvertierung startest. Die Tracks werden dann in genau dieser Reihenfolge zusammengefügt.'
+        },
+        {
+          q: 'Funktioniert der Konverter auf mobilen Geräten?',
+          a: 'Ja, der Konverter ist vollständig responsiv und funktioniert auf Smartphones und Tablets. Beachte jedoch, dass die Verarbeitung auf mobilen Geräten je nach Leistung länger dauern kann.'
+        },
+        {
+          q: 'Was ist der Unterschied zwischen den Formaten?',
+          a: 'WebM mit Opus-Codec bietet die beste Kompression bei hoher Qualität und ist ideal für moderne Anwendungen. MP3 ist das universellste Format und wird von praktisch allen Geräten unterstützt. OGG mit Vorbis ist ein Open-Source-Format mit guter Qualität, das besonders in Spielen und Linux-Umgebungen beliebt ist.'
+        },
+        {
+          q: 'Muss ich mich registrieren?',
+          a: 'Nein, der Playlist Konverter ist komplett kostenlos und erfordert keine Registrierung. Du kannst sofort loslegen.'
+        }
+      ],
+      en: [
+        {
+          q: 'What does this converter do?',
+          a: 'The Playlist Converter combines multiple audio files (MP3 or WAV) into a single file. The tracks are merged in the order you specify. You can choose between different output formats and quality levels.'
+        },
+        {
+          q: 'Are my files uploaded to a server?',
+          a: 'No! All processing happens directly in your browser. Your files never leave your device and are not transferred to any server. This means maximum privacy and fast processing.'
+        },
+        {
+          q: 'Which input formats are supported?',
+          a: 'Currently, MP3 and WAV files are supported as input formats. These are the most common audio formats and cover most use cases.'
+        },
+        {
+          q: 'Which output formats are available?',
+          a: 'You can choose between three output formats: WebM (compact, modern with Opus codec), MP3 (universal compatibility), and OGG (open source with Vorbis codec). Each format has its advantages depending on your use case.'
+        },
+        {
+          q: 'What do the different bitrates mean?',
+          a: 'The bitrate determines audio quality and file size. Low (64 kbps) is suitable for voice recordings, Standard (128 kbps) for normal music, High (192 kbps) for better quality, Very High (256 kbps) for audiophile demands, and Maximum (320 kbps) for the best available quality.'
+        },
+        {
+          q: 'How many files can I convert at once?',
+          a: 'You can upload and convert up to 50 audio tracks simultaneously. The files will be merged in the order you set via drag & drop.'
+        },
+        {
+          q: 'Is there a size limit?',
+          a: 'Since processing happens in your browser, the maximum size depends on your available RAM. For most devices, playlists up to several hundred MB should work without issues.'
+        },
+        {
+          q: 'How long does the conversion take?',
+          a: 'The duration depends on the number and size of your files as well as your device\'s performance. Since everything is processed locally, there are no upload times. Small playlists are converted in seconds, larger ones may take a few minutes.'
+        },
+        {
+          q: 'Can I change the order of tracks?',
+          a: 'Yes! You can reorder tracks via drag & drop in the list before starting the conversion. The tracks will then be merged in exactly that order.'
+        },
+        {
+          q: 'Does the converter work on mobile devices?',
+          a: 'Yes, the converter is fully responsive and works on smartphones and tablets. However, note that processing on mobile devices may take longer depending on performance.'
+        },
+        {
+          q: 'What is the difference between the formats?',
+          a: 'WebM with Opus codec offers the best compression with high quality and is ideal for modern applications. MP3 is the most universal format and is supported by virtually all devices. OGG with Vorbis is an open-source format with good quality, particularly popular in games and Linux environments.'
+        },
+        {
+          q: 'Do I need to register?',
+          a: 'No, the Playlist Converter is completely free and requires no registration. You can start right away.'
+        }
+      ]
+    };
+
+    // Current language
+    let currentLang = localStorage.getItem('landing-locale') || 'de';
+
+    // Theme Management
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcons(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcons(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcons(isDark);
+    }
+
+    function updateThemeIcons(isDark) {
+      document.getElementById('sunIcon').style.display = isDark ? 'none' : 'block';
+      document.getElementById('moonIcon').style.display = isDark ? 'block' : 'none';
+    }
+
+    // Language Management
+    function initLanguage() {
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'de' ? 'en' : 'de';
+      localStorage.setItem('landing-locale', currentLang);
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+      document.documentElement.lang = currentLang;
+    }
+
+    function updateLanguage(lang) {
+      // Update static elements
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      // Rebuild FAQ list
+      renderFAQ(lang);
+    }
+
+    // FAQ Rendering
+    function renderFAQ(lang) {
+      const faqList = document.getElementById('faqList');
+      const faqs = faqData[lang] || faqData.de;
+
+      faqList.innerHTML = faqs.map((faq, index) => `
+        <div class="faq-item" data-index="${index}">
+          <button class="faq-question" onclick="toggleFAQ(${index})">
+            <span>${faq.q}</span>
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-content">${faq.a}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleFAQ(index) {
+      const items = document.querySelectorAll('.faq-item');
+      items.forEach((item, i) => {
+        if (i === index) {
+          item.classList.toggle('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    // Event Listeners
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+
+    // Initialize
+    initTheme();
+    initLanguage();
+  </script>
+</body>
+</html>
