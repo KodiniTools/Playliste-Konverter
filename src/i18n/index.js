@@ -39,6 +39,10 @@ const messages = {
       totalSize: 'Gesamtgröße',
       removeAll: 'Alle entfernen'
     },
+    preview: {
+      play: 'Track abspielen',
+      pause: 'Pausieren'
+    },
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
       converting: 'Konvertierung läuft...',
@@ -162,6 +166,10 @@ const messages = {
       tracks: 'Tracks',
       totalSize: 'Total size',
       removeAll: 'Remove all'
+    },
+    preview: {
+      play: 'Play track',
+      pause: 'Pause'
     },
     conversion: {
       uploading: 'Uploading files...',
