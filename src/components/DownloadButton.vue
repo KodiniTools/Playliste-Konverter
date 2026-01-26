@@ -1,9 +1,20 @@
 <script setup>
+import { computed } from 'vue'
 import { useConverterStore } from '../stores/converter'
 import { useI18n } from 'vue-i18n'
 
 const store = useConverterStore()
 const { t } = useI18n()
+
+// Format-Konfigurationen für File Picker
+const formatConfigs = {
+  webm: { description: 'WebM Audio', mimeType: 'audio/webm', extension: '.webm' },
+  mp3: { description: 'MP3 Audio', mimeType: 'audio/mpeg', extension: '.mp3' },
+  ogg: { description: 'OGG Audio', mimeType: 'audio/ogg', extension: '.ogg' }
+}
+
+const currentFormat = computed(() => store.outputFormat || 'mp3')
+const formatConfig = computed(() => formatConfigs[currentFormat.value] || formatConfigs.mp3)
 
 function formatFileSize(bytes) {
   if (!bytes) return null
@@ -15,15 +26,18 @@ function formatFileSize(bytes) {
 }
 
 async function handleDownload() {
+  const config = formatConfig.value
+  const filename = `playlist${config.extension}`
+
   try {
     // Prüfe ob File System Access API verfügbar ist
     if ('showSaveFilePicker' in window) {
       // Moderne Browser: Zeige "Speichern unter"-Dialog
       const fileHandle = await window.showSaveFilePicker({
-        suggestedName: 'playlist.webm',
+        suggestedName: filename,
         types: [{
-          description: 'WebM Audio',
-          accept: { 'audio/webm': ['.webm'] }
+          description: config.description,
+          accept: { [config.mimeType]: [config.extension] }
         }]
       })
 
@@ -68,7 +82,7 @@ async function handleDownload() {
       @click="handleDownload"
       class="inline-block bg-accent dark:bg-accent text-dark px-6 py-3 rounded-lg hover:bg-accent-dark dark:hover:bg-accent-dark font-semibold transition-colors cursor-pointer shadow-sm hover:shadow-md"
     >
-      {{ t('download.button') }}
+      {{ t('download.button', { format: currentFormat }) }}
     </button>
 
     <button
