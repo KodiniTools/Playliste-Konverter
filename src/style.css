@@ -93,6 +93,20 @@ html.dark body > header [class*="menu"] {
   border-color: #5E5F69 !important; /* muted */
 }
 
+/* Home link styles */
+@layer components {
+  .home-link {
+    @apply flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200;
+    @apply bg-neutral-light/50 text-muted hover:bg-accent hover:text-dark;
+    @apply dark:bg-dark-card dark:text-neutral dark:hover:bg-accent dark:hover:text-dark;
+    @apply border border-neutral dark:border-muted;
+  }
+
+  .home-link:hover {
+    @apply border-accent;
+  }
+}
+
 /* PayPal donation button styles */
 @layer components {
   .donate-btn {
