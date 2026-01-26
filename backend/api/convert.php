@@ -15,11 +15,25 @@ $config = require __DIR__ . '/../config.php';
 $input = json_decode(file_get_contents('php://input'), true);
 $sessionId = $input['session_id'] ?? '';
 $outputFormat = $input['format'] ?? $config['default_format'] ?? 'webm';
+$bitrate = intval($input['bitrate'] ?? $config['default_bitrate'] ?? 192);
 
 // Validiere Format
 $supportedFormats = array_keys($config['output_formats'] ?? ['webm' => []]);
 if (!in_array($outputFormat, $supportedFormats)) {
     $outputFormat = $config['default_format'] ?? 'webm';
+}
+
+// Validiere Bitrate
+$availableBitrates = $config['available_bitrates'] ?? [64, 128, 192, 256, 320];
+$formatConfig = $config['output_formats'][$outputFormat];
+$maxBitrate = $formatConfig['max_bitrate'] ?? 320;
+
+if (!in_array($bitrate, $availableBitrates)) {
+    $bitrate = $config['default_bitrate'] ?? 192;
+}
+// Begrenze Bitrate auf Format-Maximum
+if ($bitrate > $maxBitrate) {
+    $bitrate = $maxBitrate;
 }
 
 if (empty($sessionId) || !preg_match('/^[a-f0-9]{32}$/', $sessionId)) {
@@ -44,7 +58,6 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     // Queue-Modus: Füge Job zur Queue hinzu
     require_once __DIR__ . '/../queue.php';
 
-    $formatConfig = $config['output_formats'][$outputFormat] ?? $config['output_formats']['webm'];
     $extension = $formatConfig['extension'];
 
     $queue = new ConversionQueue();
@@ -55,13 +68,15 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     $meta['queue_position'] = $queue->getQueuePosition($sessionId);
     $meta['output_format'] = $outputFormat;
     $meta['output_extension'] = $extension;
+    $meta['bitrate'] = $bitrate;
     file_put_contents($metaFile, json_encode($meta));
 
     echo json_encode([
         'success' => true,
         'message' => 'In Warteschlange eingereiht',
         'queue_position' => $meta['queue_position'],
-        'format' => $outputFormat
+        'format' => $outputFormat,
+        'bitrate' => $bitrate
     ]);
 
 } else {
@@ -69,12 +84,14 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     $formatConfig = $config['output_formats'][$outputFormat] ?? $config['output_formats']['webm'];
     $extension = $formatConfig['extension'];
     $ffmpegCodec = $formatConfig['ffmpeg_codec'];
+    $bitrateFlag = $formatConfig['bitrate_flag'] ?? '-b:a';
 
     $meta['status'] = 'converting';
     $meta['progress'] = 0;
     $meta['start_time'] = time();
     $meta['output_format'] = $outputFormat;
     $meta['output_extension'] = $extension;
+    $meta['bitrate'] = $bitrate;
     file_put_contents($metaFile, json_encode($meta));
 
     // Start FFmpeg in background
@@ -83,9 +100,11 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     $logFile = $sessionDir . 'ffmpeg.log';
 
     $cmd = sprintf(
-        'ffmpeg -f concat -safe 0 -i %s %s -threads 4 -y %s > %s 2>&1 & echo $!',
+        'ffmpeg -f concat -safe 0 -i %s %s %s %dk -threads 4 -y %s > %s 2>&1 & echo $!',
         escapeshellarg($concatFile),
         $ffmpegCodec,
+        $bitrateFlag,
+        $bitrate,
         escapeshellarg($outputFile),
         escapeshellarg($logFile)
     );
@@ -94,6 +113,6 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
     $meta['pid'] = trim($pid);
     file_put_contents($metaFile, json_encode($meta));
 
-    echo json_encode(['success' => true, 'message' => 'Konvertierung gestartet', 'format' => $outputFormat]);
+    echo json_encode(['success' => true, 'message' => 'Konvertierung gestartet', 'format' => $outputFormat, 'bitrate' => $bitrate]);
 }
 
