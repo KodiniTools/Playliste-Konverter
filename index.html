@@ -82,6 +82,16 @@
       background-color: transparent !important;
     }
 
+    /* All text in global nav/footer for dark mode */
+    html.dark body > nav:not(.hero-nav),
+    html.dark body > nav:not(.hero-nav) *,
+    html.dark body > header,
+    html.dark body > header *,
+    html.dark body > footer,
+    html.dark body > footer * {
+      color: var(--neutral-light) !important;
+    }
+
     /* Links in global nav/footer for dark mode */
     html.dark body > nav:not(.hero-nav) a,
     html.dark body > header a,
@@ -704,7 +714,7 @@
           </div>
           <h3 class="feature-title" data-i18n="features.privacy.title">Datenschutz</h3>
           <p class="feature-description" data-i18n="features.privacy.description">
-            Alle Dateien werden nach der Konvertierung automatisch vom Server gelöscht.
+            Deine Dateien verlassen nie deinen Browser - die komplette Verarbeitung erfolgt lokal auf deinem Gerät.
           </p>
         </div>
         <div class="feature-card">
@@ -847,7 +857,7 @@
         'features.preview.title': 'Audio-Vorschau',
         'features.preview.description': 'Höre dir jeden Track vor der Konvertierung an, um sicherzustellen, dass alles stimmt.',
         'features.privacy.title': 'Datenschutz',
-        'features.privacy.description': 'Alle Dateien werden nach der Konvertierung automatisch vom Server gelöscht.',
+        'features.privacy.description': 'Deine Dateien verlassen nie deinen Browser - die komplette Verarbeitung erfolgt lokal auf deinem Gerät.',
         'features.realtime.title': 'Echtzeit-Fortschritt',
         'features.realtime.description': 'Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.',
         'features.formats.title': 'Mehrere Formate',
@@ -890,7 +900,7 @@
         'features.preview.title': 'Audio Preview',
         'features.preview.description': 'Listen to each track before conversion to make sure everything is correct.',
         'features.privacy.title': 'Privacy',
-        'features.privacy.description': 'All files are automatically deleted from the server after conversion.',
+        'features.privacy.description': 'Your files never leave your browser - all processing happens locally on your device.',
         'features.realtime.title': 'Real-time Progress',
         'features.realtime.description': 'Track upload and conversion progress in real-time.',
         'features.formats.title': 'Multiple Formats',
