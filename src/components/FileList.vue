@@ -203,6 +203,9 @@ onUnmounted(() => {
           v-if="currentlyPlaying === item.id"
           class="flex items-center gap-1.5 flex-shrink-0"
           @click.stop
+          @mousedown.stop
+          @dragstart.stop.prevent
+          draggable="false"
         >
           <!-- Volume Icon -->
           <svg
