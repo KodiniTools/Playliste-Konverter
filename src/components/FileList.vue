@@ -241,7 +241,7 @@ onUnmounted(() => {
             step="0.05"
             :value="audioVolume"
             @input="setVolume(parseFloat($event.target.value))"
-            :title="t('preview.volume')"
+            :title="`${t('preview.volume')}: ${Math.round(audioVolume * 100)}% — ${t('preview.volumeHint')}`"
             class="volume-slider w-16 h-1.5 bg-neutral dark:bg-muted rounded-full appearance-none cursor-pointer accent-accent"
           />
         </div>
