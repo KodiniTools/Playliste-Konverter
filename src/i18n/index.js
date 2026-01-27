@@ -41,7 +41,8 @@ const messages = {
     preview: {
       play: 'Track abspielen',
       pause: 'Pausieren',
-      volume: 'Lautstärke'
+      volume: 'Lautstärke',
+      volumeHint: 'Nur Vorschau - keine Auswirkung auf die Ausgabedatei'
     },
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
@@ -132,7 +133,8 @@ const messages = {
     preview: {
       play: 'Play track',
       pause: 'Pause',
-      volume: 'Volume'
+      volume: 'Volume',
+      volumeHint: 'Preview only - does not affect output file'
     },
     conversion: {
       uploading: 'Uploading files...',
