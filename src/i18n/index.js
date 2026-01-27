@@ -40,7 +40,8 @@ const messages = {
     },
     preview: {
       play: 'Track abspielen',
-      pause: 'Pausieren'
+      pause: 'Pausieren',
+      volume: 'Lautstärke'
     },
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
@@ -130,7 +131,8 @@ const messages = {
     },
     preview: {
       play: 'Play track',
-      pause: 'Pause'
+      pause: 'Pause',
+      volume: 'Volume'
     },
     conversion: {
       uploading: 'Uploading files...',

@@ -13,6 +13,7 @@ const currentlyPlaying = ref(null) // ID des aktuell spielenden Tracks
 const audioElement = ref(null)
 const audioProgress = ref(0)
 const audioDuration = ref(0)
+const audioVolume = ref(0.7) // Lautstärke (0-1), Standard 70%
 const audioObjectUrls = new Map() // Cache für Object URLs
 
 function onDragStart(index) {
@@ -96,6 +97,9 @@ function togglePlay(item) {
       audioProgress.value = 0
     })
 
+    // Setze Lautstärke
+    audioElement.value.volume = audioVolume.value
+
     audioElement.value.play()
   }
 }
@@ -107,6 +111,13 @@ function stopPlayback() {
   }
   currentlyPlaying.value = null
   audioProgress.value = 0
+}
+
+function setVolume(value) {
+  audioVolume.value = value
+  if (audioElement.value) {
+    audioElement.value.volume = value
+  }
 }
 
 function handleRemoveFile(id) {
@@ -187,6 +198,54 @@ onUnmounted(() => {
           </svg>
         </button>
 
+        <!-- Volume Slider (nur sichtbar wenn dieser Track spielt) -->
+        <div
+          v-if="currentlyPlaying === item.id"
+          class="flex items-center gap-1.5 flex-shrink-0"
+          @click.stop
+        >
+          <!-- Volume Icon -->
+          <svg
+            class="w-4 h-4 text-muted dark:text-neutral flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              v-if="audioVolume > 0.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"
+            />
+            <path
+              v-else-if="audioVolume > 0"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15.536 8.464a5 5 0 010 7.072M11 5L6 9H2v6h4l5 4V5z"
+            />
+            <path
+              v-else
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+            />
+          </svg>
+          <!-- Volume Slider -->
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            :value="audioVolume"
+            @input="setVolume(parseFloat($event.target.value))"
+            :title="t('preview.volume')"
+            class="volume-slider w-16 h-1.5 bg-neutral dark:bg-muted rounded-full appearance-none cursor-pointer accent-accent"
+          />
+        </div>
+
         <!-- Track Info -->
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-dark dark:text-neutral-light truncate">{{ item.name }}</p>
@@ -218,3 +277,64 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Volume Slider Styling */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.volume-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: #AEAFB7;
+  border-radius: 3px;
+}
+
+.dark .volume-slider::-webkit-slider-runnable-track {
+  background: #5E5F69;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #F2E28E;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+  transition: transform 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.volume-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: #AEAFB7;
+  border-radius: 3px;
+}
+
+.dark .volume-slider::-moz-range-track {
+  background: #5E5F69;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #F2E28E;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+</style>
