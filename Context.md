@@ -240,6 +240,17 @@ Separate Seite mit häufig gestellten Fragen:
 - Navigation zurück zur App
 - Mehrsprachig unterstützt (DE/EN)
 
+### Anleitungs-Seite (`funktion.html`)
+
+Detaillierte Benutzeranleitung für Erstbenutzer:
+
+- Schnellstart-Guide in 5 Schritten
+- 8 ausführliche Anleitungs-Sektionen
+- Größenwarnungen und Format-Tabellen
+- Tipps und Hinweise zu allen Funktionen
+- Zweisprachig (DE/EN) mit Theme-Unterstützung
+- Home-Icon mit Verweis auf Hauptseite
+
 ---
 
 ## Technologie-Stack
@@ -273,6 +284,7 @@ Separate Seite mit häufig gestellten Fragen:
 ├── index.html                    # Landing-Page (statisch)
 ├── app.html                      # Vue App-Einstiegspunkt
 ├── faq.html                      # FAQ-Seite (statisch)
+├── funktion.html                 # Anleitungs-Seite (statisch)
 │
 ├── src/                          # Vue 3 Frontend
 │   ├── components/               # Vue-Komponenten
