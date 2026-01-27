@@ -14,9 +14,15 @@ const audioElement = ref(null)
 const audioProgress = ref(0)
 const audioDuration = ref(0)
 const audioVolume = ref(0.7) // Lautstärke (0-1), Standard 70%
+const isAdjustingVolume = ref(false) // Verhindert Drag während Volume-Änderung
 const audioObjectUrls = new Map() // Cache für Object URLs
 
-function onDragStart(index) {
+function onDragStart(e, index) {
+  // Verhindere Drag wenn Volume-Slider benutzt wird
+  if (isAdjustingVolume.value) {
+    e.preventDefault()
+    return
+  }
   draggedIndex = index
 }
 
@@ -120,6 +126,17 @@ function setVolume(value) {
   }
 }
 
+function startVolumeAdjust() {
+  isAdjustingVolume.value = true
+}
+
+function endVolumeAdjust() {
+  // Kurze Verzögerung, um sicherzustellen, dass Drag nicht startet
+  setTimeout(() => {
+    isAdjustingVolume.value = false
+  }, 100)
+}
+
 function handleRemoveFile(id) {
   // Stoppe Wiedergabe falls dieser Track spielt
   if (currentlyPlaying.value === id) {
@@ -164,7 +181,7 @@ onUnmounted(() => {
         v-for="(item, index) in store.files"
         :key="item.id"
         draggable="true"
-        @dragstart="onDragStart(index)"
+        @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"
         @dragend="onDragEnd"
         :class="[
@@ -244,9 +261,13 @@ onUnmounted(() => {
             step="0.05"
             :value="audioVolume"
             @input="setVolume(parseFloat($event.target.value))"
-            @mousedown.stop
-            @pointerdown.stop
-            @touchstart.stop
+            @mousedown.stop="startVolumeAdjust"
+            @mouseup="endVolumeAdjust"
+            @mouseleave="endVolumeAdjust"
+            @pointerdown.stop="startVolumeAdjust"
+            @pointerup="endVolumeAdjust"
+            @touchstart.stop="startVolumeAdjust"
+            @touchend="endVolumeAdjust"
             @dragstart.stop.prevent
             draggable="false"
             :title="`${t('preview.volume')}: ${Math.round(audioVolume * 100)}% — ${t('preview.volumeHint')}`"
