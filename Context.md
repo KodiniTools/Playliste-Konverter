@@ -8,14 +8,49 @@
 
 - Multi-Datei-Upload mit Drag & Drop
 - Track-Neuordnung per Drag & Drop
-- Audio-Vorschau für einzelne Tracks
+- Audio-Vorschau für einzelne Tracks mit Fortschrittsanzeige
 - Mehrere Ausgabeformate: WebM (Opus), MP3, OGG (Vorbis)
 - Konfigurierbare Audio-Qualität (64-320 kbps)
-- Echtzeit-Fortschrittsanzeige mit Upload-Geschwindigkeit
+- Echtzeit-Fortschrittsanzeige mit Upload-Geschwindigkeit und Zeitschätzung
+- Gestaffelte Größenwarnungen mit Zeitschätzungen
 - Optionales Warteschlangen-System für hohe Last
 - Automatische Bereinigung temporärer Dateien
 - Zweisprachige Oberfläche (Deutsch/Englisch)
 - Dark Mode-Unterstützung
+- File System Access API für modernen Download-Dialog
+- LocalStorage-Persistierung für Einstellungen
+
+---
+
+## Seiten & Routes
+
+### Landing-Page (`index.html`)
+
+Die Startseite präsentiert die Anwendung mit:
+
+- **Hero-Section**: Überschrift, Beschreibung und Call-to-Action Buttons
+- **Features-Section**: 7 Feature-Karten (Drag & Drop, Reihenfolge, Vorschau, Datenschutz, Echtzeit-Fortschritt, Mehrere Formate)
+- **How-It-Works**: 3-Schritte-Anleitung
+- **Formate-Section**: Vorstellung der Ausgabeformate (WebM, MP3, OGG)
+- **CTA-Section**: Direkter Zugriff zur App
+- Responsive Design mit Animationen und Gradient-Effekten
+
+### App-Seite (`app.html`)
+
+Die Haupt-Anwendung als Vue 3 Single Page Application mit:
+
+- Vollständiger Konverter-Funktionalität
+- Alle Vue-Komponenten integriert
+- Theme- und Spracheinstellungen
+
+### FAQ-Seite (`faq.html`)
+
+Separate Seite mit häufig gestellten Fragen:
+
+- Umfangreiche Q&A-Sammlung
+- Gleiches Design-System wie Landing-Page
+- Navigation zurück zur App
+- Mehrsprachig unterstützt (DE/EN)
 
 ---
 
@@ -47,20 +82,23 @@
 
 ```
 /Playliste-Konverter/
+├── index.html                    # Landing-Page (statisch)
+├── app.html                      # Vue App-Einstiegspunkt
+├── faq.html                      # FAQ-Seite (statisch)
+│
 ├── src/                          # Vue 3 Frontend
 │   ├── components/               # Vue-Komponenten
 │   │   ├── FileUploader.vue      # Drag & Drop Upload
-│   │   ├── FileList.vue          # Playlist-Verwaltung
+│   │   ├── FileList.vue          # Playlist-Verwaltung mit Audio-Vorschau
 │   │   ├── FormatSelector.vue    # Format/Bitrate-Auswahl
-│   │   ├── ConversionProgress.vue # Fortschrittsanzeige
-│   │   ├── DownloadButton.vue    # Datei-Download
-│   │   ├── SizeWarning.vue       # Größenwarnungen
+│   │   ├── ConversionProgress.vue # Fortschrittsanzeige mit Zeitschätzung
+│   │   ├── DownloadButton.vue    # Datei-Download mit File System API
+│   │   ├── SizeWarning.vue       # Gestaffelte Größenwarnungen
 │   │   ├── SettingsSwitcher.vue  # Theme/Sprache-Umschalter
-│   │   ├── FAQ.vue               # FAQ-Bereich
 │   │   └── ToastContainer.vue    # Benachrichtigungen
 │   ├── stores/                   # Pinia State Management
 │   │   ├── converter.js          # Haupt-Konvertierungslogik
-│   │   ├── ui.js                 # Theme & Locale
+│   │   ├── ui.js                 # Theme & Locale mit LocalStorage
 │   │   └── toast.js              # Toast-Benachrichtigungen
 │   ├── i18n/                     # Internationalisierung
 │   │   └── index.js              # DE/EN Übersetzungen
@@ -88,9 +126,70 @@
 ├── vite.config.js                # Vite-Konfiguration
 ├── tailwind.config.js            # Tailwind-Theme
 ├── postcss.config.js             # PostCSS-Konfiguration
-├── index.html                    # HTML-Einstiegspunkt
 └── README.md                     # Projekt-Dokumentation
 ```
+
+---
+
+## UI-Komponenten (Detail)
+
+### FileUploader.vue
+- Drag-and-Drop Zone für Audio-Dateien
+- Alternativ: Datei-Auswahl via Button
+- Unterstützte Formate: MP3, WAV
+- Visuelles Feedback beim Hovern (Border-Highlight)
+
+### FileList.vue
+- Playlist-Anzeige mit Track-Nummern
+- Größen-Anzeige pro Track und Gesamtgröße
+- **Audio-Vorschau**: Play/Pause Buttons mit Fortschrittsbalken
+- Fortschrittsanzeige zeigt aktuelle Position in Sekunden
+- Drag-and-Drop zum Umsortieren von Tracks
+- Einzelne Datei entfernen oder alle auf einmal löschen
+- Maximale Scroll-Höhe mit Overflow
+
+### FormatSelector.vue
+- Format-Auswahl: WebM (Opus), MP3, OGG (Vorbis)
+- Bitrate-Auswahl: 64, 128, 192, 256, 320 kbps
+- Format-spezifische Bitrate-Limits
+- Beschreibungen und Hinweise zur Audioqualität
+- Visuelle Selektions-Indikatoren
+
+### SizeWarning.vue
+Gestaffelte Warnungen basierend auf Dateigröße:
+- **Grün** (< 500 MB): Alles OK
+- **Gelb** (500-800 MB): Größere Playlist, 3-5 Minuten Wartezeit
+- **Orange** (800 MB - 1 GB): Sehr große Playlist, 5-7 Minuten Wartezeit
+- **Rot** (> 1 GB): Zu groß, Konvertierung deaktiviert
+
+### ConversionProgress.vue
+- Kombinierter Progress-Bar (Upload + Konvertierung)
+- Upload: 0-30% der Anzeige
+- Konvertierung: 30-100% der Anzeige
+- Prozentuale Fortschrittsanzeige
+- Upload-Geschwindigkeit (KB/s oder MB/s)
+- Geschätzte Restzeit
+- Abbrechen-Button mit Loading-Status
+
+### DownloadButton.vue
+- Success-Anzeige mit Checkmark-Icon
+- Dateigrößen-Anzeige der konvertierten Datei
+- **File System Access API**: Speichern-Dialog für moderne Browser
+- Fallback für ältere Browser: Direkter Download
+- Link zum Starten einer neuen Konvertierung
+
+### ToastContainer.vue
+- Toast-Benachrichtigungen: Success, Error, Info, Warning
+- Auto-Dismiss nach konfigurierbarer Zeit
+- Slide-in/Slide-out Animationen
+- Manuelle Dismiss-Option
+- Farbcodiert nach Nachrichtentyp
+
+### SettingsSwitcher.vue
+- Theme Toggle: Light/Dark Mode
+- Sprach-Switch: Deutsch ↔ Englisch
+- Icon-basierte Buttons
+- Einstellungen werden in LocalStorage gespeichert
 
 ---
 
@@ -297,3 +396,104 @@ Unterstützte Sprachen:
 - Upload-Geschwindigkeitsberechnung in Bytes/Sekunde
 - Zeitschätzung: verbleibende_bytes / aktuelle_geschwindigkeit
 - Backend-Fortschritt aus FFmpeg-Logs geparst
+
+---
+
+## Benutzer-Workflows
+
+### Workflow 1: Audio-Dateien konvertieren
+
+1. Datei(en) hochladen via Drag-Drop oder Datei-Auswahl
+2. Toast-Bestätigung: "X Dateien hinzugefügt"
+3. Playlist wird angezeigt mit Größen-Warnung
+4. Optional: Audio-Vorschau spielen (Play-Button)
+5. Format und Bitrate auswählen
+6. "N Track(s) konvertieren" Button klicken
+7. Upload-Progress mit Geschwindigkeit und Restzeit
+8. Konvertierungs-Progress mit flüssiger Animation
+9. Dateigrößen-Anzeige nach Fertigstellung
+10. Download-Dialog oder direkter Download
+
+### Workflow 2: Track-Reihenfolge ändern
+
+1. In Playlist auf Track klicken und halten
+2. Zu gewünschter Position ziehen
+3. Track springt sofort an neue Position
+4. Neue Reihenfolge wird für Konvertierung verwendet
+
+### Workflow 3: Audio-Vorschau
+
+1. Play-Button auf Playlist-Item klicken
+2. Player startet und zeigt aktuellen Progress
+3. Musik spielt im Browser
+4. Fortschrittsbalken zeigt Position in Sekunden
+5. Pause-Button stoppt die Wiedergabe
+
+### Workflow 4: Größen-Management
+
+1. Dateien hinzufügen
+2. System prüft Gesamtgröße kontinuierlich
+3. Entsprechende Warnung wird angezeigt:
+   - Grün: Alles OK
+   - Gelb: Große Datei (3-5 min Wartezeit)
+   - Orange: Sehr große Datei (5-7 min Wartezeit)
+   - Rot: Zu groß (Button deaktiviert)
+4. Dateien entfernen, um Limit zu unterschreiten
+
+### Workflow 5: Theme & Sprache wechseln
+
+1. Settings-Buttons in Kopfzeile nutzen
+2. Sprache wechseln: DE ↔ EN
+3. Theme wechseln: Light ↔ Dark
+4. Einstellungen werden in LocalStorage gespeichert
+5. Beim nächsten Besuch automatisch wiederhergestellt
+
+### Workflow 6: Konvertierung abbrechen
+
+1. Während Upload/Konvertierung: "Abbrechen" klicken
+2. Button zeigt "Wird abgebrochen..."
+3. Alle Requests werden abgebrochen
+4. Toast: "Vorgang abgebrochen"
+5. Rückkehr zum Anfangszustand
+
+---
+
+## Technische Highlights
+
+### LocalStorage-Persistierung
+
+Folgende Einstellungen werden im Browser gespeichert:
+- **Theme**: Light/Dark Mode Präferenz
+- **Locale**: Sprach-Einstellung (de/en)
+- **Output-Format**: Zuletzt gewähltes Format
+- **Bitrate**: Zuletzt gewählte Bitrate
+
+### File System Access API
+
+- Moderner Download-Dialog für unterstützte Browser
+- "Speichern unter"-Funktionalität
+- Automatischer Fallback für ältere Browser
+
+### Progress-Berechnung
+
+- **Upload-Phase** (0-30%): Basierend auf übertragenen Bytes
+- **Konvertierungs-Phase** (30-100%): Basierend auf FFmpeg-Log
+- Simulierte flüssige Animation für bessere UX
+- Keine hackigen Sprünge im Fortschrittsbalken
+
+### Session-Management
+
+- Session-ID: 32-Zeichen Hex-String
+- Temporäre Dateien in `backend/temp/{session_id}/`
+- Automatische Bereinigung nach Download
+- Cronjob-basierte Bereinigung alter Sessions (1 Stunde)
+
+### FFmpeg-Integration
+
+- Concat-Demuxer für nahtloses Zusammenfügen
+- Codec-Auswahl basierend auf Ausgabeformat:
+  - WebM → libopus
+  - MP3 → libmp3lame
+  - OGG → libvorbis
+- Hintergrund-Ausführung mit PID-Tracking
+- Fortschritts-Parsing aus Log-Dateien
