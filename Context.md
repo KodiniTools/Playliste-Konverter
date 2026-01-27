@@ -22,6 +22,194 @@
 
 ---
 
+## Benutzeranleitung für Erstbenutzer
+
+### Schnellstart in 5 Schritten
+
+1. **App öffnen** → Besuche die Landing-Page und klicke auf "App starten"
+2. **Dateien hochladen** → Ziehe MP3/WAV-Dateien in den Upload-Bereich
+3. **Reihenfolge anpassen** → Ziehe Tracks in die gewünschte Reihenfolge
+4. **Format wählen** → Wähle Ausgabeformat und Qualität
+5. **Konvertieren & Download** → Klicke "Konvertieren" und lade die Datei herunter
+
+---
+
+### Schritt-für-Schritt Anleitung
+
+#### 1. Die App starten
+
+Öffne die Anwendung im Browser. Du landest auf der **Landing-Page**, die dir einen Überblick über alle Funktionen gibt. Klicke auf den Button **"App starten"** oder **"Jetzt ausprobieren"**, um zur Konverter-Anwendung zu gelangen.
+
+> **Tipp:** Die App funktioniert am besten in modernen Browsern wie Chrome, Firefox, Edge oder Safari.
+
+#### 2. Audio-Dateien hochladen
+
+Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
+
+**Option A: Drag & Drop (empfohlen)**
+- Öffne den Datei-Explorer deines Computers
+- Wähle die gewünschten MP3- oder WAV-Dateien aus
+- Ziehe sie direkt in den markierten Upload-Bereich
+- Lasse die Maustaste los
+
+**Option B: Datei-Auswahl**
+- Klicke auf den Button **"Dateien auswählen"**
+- Navigiere zu deinen Audio-Dateien
+- Wähle eine oder mehrere Dateien aus
+- Bestätige mit "Öffnen"
+
+**Unterstützte Formate:**
+- MP3 (.mp3)
+- WAV (.wav)
+
+**Limits:**
+- Maximale Dateigröße pro Datei: 100 MB
+- Maximale Anzahl Dateien: 50
+- Maximale Gesamtgröße: 1 GB
+
+> **Hinweis:** Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"
+
+#### 3. Die Playlist verwalten
+
+Nach dem Upload siehst du deine Dateien in einer Liste:
+
+**Reihenfolge ändern:**
+- Klicke auf einen Track und halte die Maustaste gedrückt
+- Ziehe den Track an die gewünschte Position
+- Lasse los – die neue Reihenfolge wird sofort übernommen
+
+**Audio-Vorschau:**
+- Klicke auf den **Play-Button** (▶) neben einem Track
+- Die Musik wird im Browser abgespielt
+- Ein Fortschrittsbalken zeigt die aktuelle Position
+- Klicke erneut zum Pausieren (⏸)
+
+**Dateien entfernen:**
+- Einzelne Datei: Klicke auf das **X** neben dem Track
+- Alle Dateien: Klicke auf **"Alle entfernen"**
+
+#### 4. Größenwarnungen verstehen
+
+Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße:
+
+| Farbe | Größe | Bedeutung |
+|-------|-------|-----------|
+| 🟢 Grün | < 500 MB | Alles OK – schnelle Konvertierung |
+| 🟡 Gelb | 500-800 MB | Größere Playlist – ca. 3-5 Minuten Wartezeit |
+| 🟠 Orange | 800 MB - 1 GB | Sehr große Playlist – ca. 5-7 Minuten Wartezeit |
+| 🔴 Rot | > 1 GB | Zu groß – bitte Dateien entfernen |
+
+> **Wichtig:** Bei roter Warnung ist der Konvertieren-Button deaktiviert. Entferne Dateien, um unter das Limit zu kommen.
+
+#### 5. Ausgabeformat und Qualität wählen
+
+**Format auswählen:**
+
+| Format | Codec | Beschreibung | Empfohlen für |
+|--------|-------|--------------|---------------|
+| **WebM** | Opus | Modernes Format, beste Qualität bei kleiner Größe | Web, moderne Player |
+| **MP3** | LAME | Universell kompatibel | Alle Geräte |
+| **OGG** | Vorbis | Open-Source Alternative | Linux, Open-Source |
+
+**Bitrate (Qualität) wählen:**
+
+| Bitrate | Qualität | Dateigröße | Empfohlen für |
+|---------|----------|------------|---------------|
+| 64 kbps | Niedrig | Sehr klein | Sprache, Podcasts |
+| 128 kbps | Standard | Klein | Allgemeine Nutzung |
+| 192 kbps | Gut | Mittel | Musik-Streaming |
+| 256 kbps | Hoch | Größer | Hochwertige Musik |
+| 320 kbps | Maximum | Groß | Audiophile Qualität |
+
+> **Tipp:** Für die meisten Anwendungsfälle ist 128-192 kbps eine gute Wahl. Höhere Bitraten lohnen sich nur bei hochwertigen Quell-Dateien.
+
+#### 6. Konvertierung starten
+
+1. Überprüfe deine Playlist und Einstellungen
+2. Klicke auf den Button **"X Track(s) konvertieren"**
+3. Die Konvertierung startet automatisch
+
+**Was passiert während der Konvertierung:**
+
+- **Upload (0-30%)**: Deine Dateien werden hochgeladen
+  - Zeigt Upload-Geschwindigkeit (z.B. "2.5 MB/s")
+  - Zeigt geschätzte Restzeit
+
+- **Konvertierung (30-100%)**: Server fügt Dateien zusammen
+  - Fortschrittsbalken bewegt sich gleichmäßig
+  - Bei großen Dateien kann dies einige Minuten dauern
+
+**Konvertierung abbrechen:**
+- Klicke jederzeit auf **"Abbrechen"**
+- Die App kehrt zum Ausgangszustand zurück
+
+#### 7. Datei herunterladen
+
+Nach erfolgreicher Konvertierung:
+
+1. Ein **grüner Erfolgs-Hinweis** erscheint
+2. Die **Dateigröße** der konvertierten Datei wird angezeigt
+3. Klicke auf **"Download"**
+
+**Download-Optionen:**
+
+- **Moderne Browser (Chrome, Edge)**: Es öffnet sich ein "Speichern unter"-Dialog
+- **Andere Browser**: Die Datei wird direkt heruntergeladen
+
+> **Hinweis:** Nach dem Download wird die Datei automatisch vom Server gelöscht.
+
+#### 8. Einstellungen anpassen
+
+Oben rechts findest du zwei Buttons:
+
+**Theme wechseln (☀/🌙):**
+- Klicke auf das Sonnen- oder Mond-Symbol
+- Wechselt zwischen hellem und dunklem Modus
+- Deine Präferenz wird gespeichert
+
+**Sprache wechseln (DE/EN):**
+- Klicke auf das Sprach-Symbol
+- Wechselt zwischen Deutsch und Englisch
+- Deine Präferenz wird gespeichert
+
+---
+
+### Häufige Fragen beim ersten Mal
+
+**"Warum kann ich nicht konvertieren?"**
+- Prüfe die Größenwarnung – ist sie rot?
+- Sind überhaupt Dateien hochgeladen?
+- Sind die Dateien im richtigen Format (MP3/WAV)?
+
+**"Warum dauert es so lange?"**
+- Große Playlists (>500 MB) benötigen mehr Zeit
+- Die Konvertierungszeit hängt von der Gesamtgröße ab
+- Bei langsamer Internetverbindung dauert der Upload länger
+
+**"Wo finde ich meine Datei?"**
+- Prüfe deinen Download-Ordner
+- Bei "Speichern unter" hast du den Speicherort selbst gewählt
+
+**"Kann ich die gleiche Playlist nochmal konvertieren?"**
+- Klicke auf **"Neue Konvertierung starten"**
+- Lade die Dateien erneut hoch
+
+**"Werden meine Dateien gespeichert?"**
+- Nein! Alle Dateien werden nach dem Download automatisch gelöscht
+- Deine Dateien werden nicht dauerhaft auf dem Server gespeichert
+
+---
+
+### Tipps für beste Ergebnisse
+
+1. **Qualität der Quelldateien**: Verwende hochwertige Ausgangsdateien – die Konvertierung kann Qualität nicht verbessern
+2. **Einheitliche Qualität**: Mische keine sehr unterschiedlichen Qualitätsstufen
+3. **Reihenfolge prüfen**: Nutze die Vorschau, um die richtige Reihenfolge sicherzustellen
+4. **Format passend wählen**: WebM für Web, MP3 für maximale Kompatibilität
+5. **Stabile Verbindung**: Nutze eine stabile Internetverbindung für große Uploads
+
+---
+
 ## Seiten & Routes
 
 ### Landing-Page (`index.html`)
