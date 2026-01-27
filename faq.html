@@ -188,6 +188,32 @@
       justify-content: center;
     }
 
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: var(--bg-card);
+    }
+
+    .nav-link.active {
+      color: var(--accent);
+      background: var(--bg-card);
+    }
+
     .nav-controls {
       display: flex;
       align-items: center;
@@ -405,6 +431,12 @@
     }
 
     /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
     @media (max-width: 640px) {
       .faq-question {
         font-size: 1rem;
@@ -438,6 +470,10 @@
           </div>
           <span data-i18n="nav.logo">Playlist Konverter</span>
         </a>
+      </div>
+      <div class="nav-links">
+        <a href="./faq.html" class="nav-link active" data-i18n="nav.faq">FAQ</a>
+        <a href="./funktion.html" class="nav-link" data-i18n="nav.guide">Anleitung</a>
       </div>
       <div class="nav-controls">
         <button class="control-btn lang-btn" id="langToggle" title="Switch language">
@@ -508,6 +544,8 @@
     const translations = {
       de: {
         'nav.logo': 'Playlist Konverter',
+        'nav.faq': 'FAQ',
+        'nav.guide': 'Anleitung',
         'faq.title': 'Häufig gestellte Fragen',
         'faq.description': 'Hier findest du Antworten auf die häufigsten Fragen zum Playlist Konverter.',
         'cta.title': 'Bereit zum Starten?',
@@ -516,6 +554,8 @@
       },
       en: {
         'nav.logo': 'Playlist Converter',
+        'nav.faq': 'FAQ',
+        'nav.guide': 'Guide',
         'faq.title': 'Frequently Asked Questions',
         'faq.description': 'Find answers to the most common questions about the Playlist Converter.',
         'cta.title': 'Ready to Start?',

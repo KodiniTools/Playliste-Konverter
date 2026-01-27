@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Detaillierte Anleitung zur Nutzung des Playlist Konverters - Schritt für Schritt erklärt.">
+  <title>Anleitung - Playlist Konverter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Color Palette */
+      --accent: #F2E28E;
+      --accent-dark: #D4C46E;
+      --accent-light: #F7EDB5;
+      --secondary: #A28680;
+      --secondary-dark: #8A716B;
+      --secondary-light: #BFA29C;
+      --muted: #5E5F69;
+      --muted-dark: #4A4B54;
+      --muted-light: #75767F;
+      --neutral: #AEAFB7;
+      --neutral-dark: #9A9BA3;
+      --neutral-light: #C4C5CB;
+      --dark: #0C0C10;
+      --dark-lighter: #18181F;
+      --dark-card: #1E1E26;
+
+      /* Light mode defaults */
+      --bg-primary: var(--neutral-light);
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: var(--dark);
+      --text-secondary: var(--muted);
+      --text-muted: var(--neutral-dark);
+      --border-color: var(--neutral);
+
+      /* Status colors */
+      --success: #22c55e;
+      --warning: #eab308;
+      --warning-orange: #f97316;
+      --danger: #ef4444;
+    }
+
+    html.dark {
+      --bg-primary: var(--dark);
+      --bg-secondary: var(--dark-lighter);
+      --bg-card: var(--dark-card);
+      --text-primary: var(--neutral-light);
+      --text-secondary: var(--neutral);
+      --text-muted: var(--muted-light);
+      --border-color: var(--muted);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Global SSI Navigation and Footer - transparent background */
+    body > *:not(.page-nav):not(.guide-hero):not(.guide-content):not(.quickstart):not(.cta):not(script),
+    body > nav:not(.page-nav),
+    body > header,
+    body > footer,
+    body > div:not(.guide-hero):not(.guide-content):not(.quickstart):not(.cta) {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Dark mode: transparent background and light text for SSI includes */
+    html.dark body > *:not(.page-nav):not(.guide-hero):not(.guide-content):not(.quickstart):not(.cta):not(script),
+    html.dark body > nav:not(.page-nav),
+    html.dark body > header,
+    html.dark body > footer,
+    html.dark body > div:not(.guide-hero):not(.guide-content):not(.quickstart):not(.cta) {
+      color: var(--neutral-light) !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* All text in global nav/footer for dark mode */
+    html.dark body > nav:not(.page-nav),
+    html.dark body > nav:not(.page-nav) *,
+    html.dark body > header,
+    html.dark body > header *,
+    html.dark body > footer,
+    html.dark body > footer * {
+      color: var(--neutral-light) !important;
+    }
+
+    /* Links in global nav/footer for dark mode */
+    html.dark body > nav:not(.page-nav) a,
+    html.dark body > header a,
+    html.dark body > footer a {
+      color: var(--accent) !important;
+    }
+
+    html.dark body > nav:not(.page-nav) a:hover,
+    html.dark body > header a:hover,
+    html.dark body > footer a:hover {
+      color: var(--accent-dark) !important;
+    }
+
+    /* Dropdown menus in dark mode need solid background */
+    html.dark body > nav:not(.page-nav) ul,
+    html.dark body > nav:not(.page-nav) [class*="dropdown"],
+    html.dark body > nav:not(.page-nav) [class*="menu"],
+    html.dark body > header ul,
+    html.dark body > header [class*="dropdown"],
+    html.dark body > header [class*="menu"] {
+      background-color: var(--dark-card) !important;
+      border-color: var(--muted) !important;
+    }
+
+    /* Page Navigation */
+    .page-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    html.dark .page-nav {
+      background: rgba(24, 24, 31, 0.95);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .home-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .home-link:hover {
+      background: var(--accent);
+      color: var(--dark);
+      border-color: var(--accent);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: var(--bg-card);
+    }
+
+    .nav-link.active {
+      color: var(--accent);
+      background: var(--bg-card);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .control-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:hover {
+      background: var(--accent);
+      color: var(--dark);
+      border-color: var(--accent);
+    }
+
+    .lang-btn {
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Guide Hero Section */
+    .guide-hero {
+      padding: 8rem 1.5rem 4rem;
+      text-align: center;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .guide-hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, var(--accent) 0%, transparent 50%);
+      opacity: 0.08;
+      pointer-events: none;
+    }
+
+    html.dark .guide-hero-bg {
+      opacity: 0.04;
+    }
+
+    .guide-hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .guide-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 50px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .guide-hero-badge svg {
+      color: var(--accent);
+    }
+
+    .guide-hero-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .guide-hero-description {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Quickstart Section */
+    .quickstart {
+      padding: 4rem 1.5rem;
+      background: var(--bg-secondary);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--dark);
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .quickstart-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .quickstart-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .quickstart-step:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .quickstart-number {
+      width: 40px;
+      height: 40px;
+      background: var(--accent);
+      color: var(--dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.125rem;
+      margin: 0 auto 1rem;
+    }
+
+    .quickstart-text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Guide Content Section */
+    .guide-content {
+      padding: 4rem 1.5rem 6rem;
+      background: var(--bg-primary);
+    }
+
+    .guide-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .guide-section:hover {
+      border-color: var(--accent);
+    }
+
+    .guide-section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+    }
+
+    .guide-section-number {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      color: var(--dark);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .guide-section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .guide-section-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .guide-section-content p {
+      margin-bottom: 1rem;
+    }
+
+    .guide-section-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .guide-tip {
+      background: var(--bg-secondary);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .guide-tip-title {
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .guide-tip-text {
+      font-size: 0.95rem;
+    }
+
+    .guide-options {
+      display: grid;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .guide-option {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+
+    .guide-option-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .guide-option-text {
+      font-size: 0.95rem;
+    }
+
+    /* Warning Table */
+    .warning-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    .warning-table th,
+    .warning-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .warning-table th {
+      background: var(--bg-secondary);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .warning-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .status-green { background: var(--success); }
+    .status-yellow { background: var(--warning); }
+    .status-orange { background: var(--warning-orange); }
+    .status-red { background: var(--danger); }
+
+    /* Format/Bitrate Tables */
+    .format-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    .format-table th,
+    .format-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .format-table th {
+      background: var(--bg-secondary);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .format-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .format-table code {
+      background: var(--bg-secondary);
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      color: var(--accent);
+    }
+
+    /* Steps List */
+    .steps-list {
+      list-style: none;
+      counter-reset: step-counter;
+      margin: 1.5rem 0;
+    }
+
+    .steps-list li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .steps-list li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      color: var(--dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 6rem 1.5rem;
+      text-align: center;
+      background: var(--bg-secondary);
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark) 100%);
+      border-radius: 24px;
+      padding: 4rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    html:not(.dark) .cta-box {
+      background: linear-gradient(135deg, var(--muted) 0%, var(--muted-dark) 100%);
+    }
+
+    .cta-glow {
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+      background: var(--accent);
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .cta-description {
+      color: var(--neutral);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--dark);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px rgba(242, 226, 142, 0.4);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .quickstart-steps {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .guide-section {
+        padding: 1.5rem;
+      }
+
+      .guide-section-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .warning-table,
+      .format-table {
+        font-size: 0.85rem;
+      }
+
+      .warning-table th,
+      .warning-table td,
+      .format-table th,
+      .format-table td {
+        padding: 0.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .quickstart-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!--#include virtual="/partials/nav.html" -->
+
+  <!-- Page Navigation -->
+  <nav class="page-nav">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="https://kodinitools.com/playlistkonverter/" class="home-link" title="Home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </a>
+        <a href="./app.html" class="logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0C0C10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <span data-i18n="nav.logo">Playlist Konverter</span>
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
+        <a href="./funktion.html" class="nav-link active" data-i18n="nav.guide">Anleitung</a>
+      </div>
+      <div class="nav-controls">
+        <button class="control-btn lang-btn" id="langToggle" title="Switch language">
+          <span id="langText">EN</span>
+        </button>
+        <button class="control-btn" id="themeToggle" title="Toggle theme">
+          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Guide Hero Section -->
+  <section class="guide-hero">
+    <div class="guide-hero-bg"></div>
+    <div class="guide-hero-content">
+      <div class="guide-hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        <span data-i18n="guide.badge">Schritt-für-Schritt Anleitung</span>
+      </div>
+      <h1 class="guide-hero-title" data-i18n="guide.title">So nutzt du den Playlist Konverter</h1>
+      <p class="guide-hero-description" data-i18n="guide.description">
+        Eine detaillierte Anleitung für Erstbenutzer - von Upload bis Download erklärt.
+      </p>
+    </div>
+  </section>
+
+  <!-- Quickstart Section -->
+  <section class="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="quickstart.tag">Schnellstart</span>
+        <h2 class="section-title" data-i18n="quickstart.title">In 5 Schritten zum Ziel</h2>
+      </div>
+      <div class="quickstart-steps" id="quickstartSteps">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Guide Content Section -->
+  <section class="guide-content">
+    <div class="container" id="guideContent">
+      <!-- Populated by JavaScript -->
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div class="cta-glow"></div>
+        <div class="cta-content">
+          <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
+          <p class="cta-description" data-i18n="cta.description">
+            Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.
+          </p>
+          <a href="./app.html" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span data-i18n="cta.button">Zur Anwendung</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!--#include virtual="/partials/footer.html" -->
+
+  <script>
+    // Translations
+    const translations = {
+      de: {
+        'nav.logo': 'Playlist Konverter',
+        'nav.faq': 'FAQ',
+        'nav.guide': 'Anleitung',
+        'guide.badge': 'Schritt-für-Schritt Anleitung',
+        'guide.title': 'So nutzt du den Playlist Konverter',
+        'guide.description': 'Eine detaillierte Anleitung für Erstbenutzer - von Upload bis Download erklärt.',
+        'quickstart.tag': 'Schnellstart',
+        'quickstart.title': 'In 5 Schritten zum Ziel',
+        'cta.title': 'Bereit zum Starten?',
+        'cta.description': 'Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.',
+        'cta.button': 'Zur Anwendung'
+      },
+      en: {
+        'nav.logo': 'Playlist Converter',
+        'nav.faq': 'FAQ',
+        'nav.guide': 'Guide',
+        'guide.badge': 'Step-by-Step Guide',
+        'guide.title': 'How to use the Playlist Converter',
+        'guide.description': 'A detailed guide for first-time users - from upload to download.',
+        'quickstart.tag': 'Quickstart',
+        'quickstart.title': 'Get it done in 5 steps',
+        'cta.title': 'Ready to Start?',
+        'cta.description': 'Convert your audio files now - free and without registration.',
+        'cta.button': 'Go to App'
+      }
+    };
+
+    // Quickstart Data
+    const quickstartData = {
+      de: [
+        'App öffnen',
+        'Dateien hochladen',
+        'Reihenfolge anpassen',
+        'Format wählen',
+        'Konvertieren & Download'
+      ],
+      en: [
+        'Open App',
+        'Upload Files',
+        'Arrange Order',
+        'Choose Format',
+        'Convert & Download'
+      ]
+    };
+
+    // Guide Content Data
+    const guideData = {
+      de: [
+        {
+          title: 'Die App starten',
+          content: `
+            <p>Öffne die Anwendung im Browser. Du landest auf der <strong>Landing-Page</strong>, die dir einen Überblick über alle Funktionen gibt. Klicke auf den Button <strong>"App starten"</strong> oder <strong>"Jetzt ausprobieren"</strong>, um zur Konverter-Anwendung zu gelangen.</p>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tipp</div>
+              <div class="guide-tip-text">Die App funktioniert am besten in modernen Browsern wie Chrome, Firefox, Edge oder Safari.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Audio-Dateien hochladen',
+          content: `
+            <p>Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Option A: Drag & Drop (empfohlen)</div>
+                <div class="guide-option-text">Öffne den Datei-Explorer deines Computers, wähle die gewünschten MP3- oder WAV-Dateien aus und ziehe sie direkt in den markierten Upload-Bereich.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Option B: Datei-Auswahl</div>
+                <div class="guide-option-text">Klicke auf den Button "Dateien auswählen", navigiere zu deinen Audio-Dateien und wähle eine oder mehrere Dateien aus.</div>
+              </div>
+            </div>
+            <p><strong>Unterstützte Formate:</strong> MP3 (.mp3), WAV (.wav)</p>
+            <p><strong>Limits:</strong> Max. 100 MB pro Datei, max. 50 Dateien, max. 1 GB Gesamtgröße</p>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Hinweis</div>
+              <div class="guide-tip-text">Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"</div>
+            </div>
+          `
+        },
+        {
+          title: 'Die Playlist verwalten',
+          content: `
+            <p>Nach dem Upload siehst du deine Dateien in einer Liste:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Reihenfolge ändern</div>
+                <div class="guide-option-text">Klicke auf einen Track und halte die Maustaste gedrückt. Ziehe den Track an die gewünschte Position und lasse los.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Audio-Vorschau</div>
+                <div class="guide-option-text">Klicke auf den Play-Button (▶) neben einem Track. Die Musik wird im Browser abgespielt und ein Fortschrittsbalken zeigt die aktuelle Position.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Dateien entfernen</div>
+                <div class="guide-option-text">Einzelne Datei: Klicke auf das X neben dem Track. Alle Dateien: Klicke auf "Alle entfernen".</div>
+              </div>
+            </div>
+          `
+        },
+        {
+          title: 'Größenwarnungen verstehen',
+          content: `
+            <p>Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße deiner Dateien:</p>
+            <table class="warning-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Größe</th>
+                  <th>Bedeutung</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="status-dot status-green"></span>Grün</td>
+                  <td>&lt; 500 MB</td>
+                  <td>Alles OK - schnelle Konvertierung</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-yellow"></span>Gelb</td>
+                  <td>500-800 MB</td>
+                  <td>Größere Playlist - ca. 3-5 Minuten</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-orange"></span>Orange</td>
+                  <td>800 MB - 1 GB</td>
+                  <td>Sehr große Playlist - ca. 5-7 Minuten</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-red"></span>Rot</td>
+                  <td>&gt; 1 GB</td>
+                  <td>Zu groß - bitte Dateien entfernen</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Wichtig</div>
+              <div class="guide-tip-text">Bei roter Warnung ist der Konvertieren-Button deaktiviert. Entferne Dateien, um unter das Limit zu kommen.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Format und Qualität wählen',
+          content: `
+            <p><strong>Verfügbare Formate:</strong></p>
+            <table class="format-table">
+              <thead>
+                <tr>
+                  <th>Format</th>
+                  <th>Codec</th>
+                  <th>Empfohlen für</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>WebM</code></td>
+                  <td>Opus</td>
+                  <td>Web, moderne Player</td>
+                </tr>
+                <tr>
+                  <td><code>MP3</code></td>
+                  <td>LAME</td>
+                  <td>Alle Geräte (universell)</td>
+                </tr>
+                <tr>
+                  <td><code>OGG</code></td>
+                  <td>Vorbis</td>
+                  <td>Linux, Open-Source</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 1.5rem;"><strong>Bitrate (Qualität):</strong></p>
+            <table class="format-table">
+              <thead>
+                <tr>
+                  <th>Bitrate</th>
+                  <th>Qualität</th>
+                  <th>Empfohlen für</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>64 kbps</code></td>
+                  <td>Niedrig</td>
+                  <td>Sprache, Podcasts</td>
+                </tr>
+                <tr>
+                  <td><code>128 kbps</code></td>
+                  <td>Standard</td>
+                  <td>Allgemeine Nutzung</td>
+                </tr>
+                <tr>
+                  <td><code>192 kbps</code></td>
+                  <td>Gut</td>
+                  <td>Musik-Streaming</td>
+                </tr>
+                <tr>
+                  <td><code>256 kbps</code></td>
+                  <td>Hoch</td>
+                  <td>Hochwertige Musik</td>
+                </tr>
+                <tr>
+                  <td><code>320 kbps</code></td>
+                  <td>Maximum</td>
+                  <td>Audiophile Qualität</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tipp</div>
+              <div class="guide-tip-text">Für die meisten Anwendungsfälle ist 128-192 kbps eine gute Wahl. Höhere Bitraten lohnen sich nur bei hochwertigen Quell-Dateien.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Konvertierung starten',
+          content: `
+            <ol class="steps-list">
+              <li>Überprüfe deine Playlist und Einstellungen</li>
+              <li>Klicke auf den Button <strong>"X Track(s) konvertieren"</strong></li>
+              <li>Die Konvertierung startet automatisch</li>
+            </ol>
+            <p><strong>Was passiert während der Konvertierung:</strong></p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Upload (0-30%)</div>
+                <div class="guide-option-text">Deine Dateien werden hochgeladen. Du siehst die Upload-Geschwindigkeit und geschätzte Restzeit.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Konvertierung (30-100%)</div>
+                <div class="guide-option-text">Der Server fügt deine Dateien zusammen. Der Fortschrittsbalken bewegt sich gleichmäßig.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Abbrechen</div>
+              <div class="guide-tip-text">Du kannst jederzeit auf "Abbrechen" klicken, um den Vorgang zu stoppen und zum Ausgangszustand zurückzukehren.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Datei herunterladen',
+          content: `
+            <p>Nach erfolgreicher Konvertierung:</p>
+            <ol class="steps-list">
+              <li>Ein <strong>grüner Erfolgs-Hinweis</strong> erscheint</li>
+              <li>Die <strong>Dateigröße</strong> der konvertierten Datei wird angezeigt</li>
+              <li>Klicke auf <strong>"Download"</strong></li>
+            </ol>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Moderne Browser (Chrome, Edge)</div>
+                <div class="guide-option-text">Es öffnet sich ein "Speichern unter"-Dialog, in dem du den Speicherort wählen kannst.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Andere Browser</div>
+                <div class="guide-option-text">Die Datei wird direkt in deinen Download-Ordner heruntergeladen.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Hinweis</div>
+              <div class="guide-tip-text">Nach dem Download wird die Datei automatisch vom Server gelöscht. Deine Daten bleiben privat.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Einstellungen anpassen',
+          content: `
+            <p>Oben rechts findest du zwei Buttons für deine persönlichen Einstellungen:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Theme wechseln (☀/🌙)</div>
+                <div class="guide-option-text">Klicke auf das Sonnen- oder Mond-Symbol, um zwischen hellem und dunklem Modus zu wechseln. Deine Präferenz wird automatisch gespeichert.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Sprache wechseln (DE/EN)</div>
+                <div class="guide-option-text">Klicke auf den Sprach-Button, um zwischen Deutsch und Englisch zu wechseln. Auch diese Einstellung wird gespeichert.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tipp</div>
+              <div class="guide-tip-text">Alle deine Einstellungen (Theme, Sprache, Format, Bitrate) werden im Browser gespeichert und sind beim nächsten Besuch automatisch wiederhergestellt.</div>
+            </div>
+          `
+        }
+      ],
+      en: [
+        {
+          title: 'Start the App',
+          content: `
+            <p>Open the application in your browser. You'll land on the <strong>Landing Page</strong>, which gives you an overview of all features. Click the <strong>"Start App"</strong> or <strong>"Try it now"</strong> button to go to the converter application.</p>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tip</div>
+              <div class="guide-tip-text">The app works best in modern browsers like Chrome, Firefox, Edge, or Safari.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Upload Audio Files',
+          content: `
+            <p>There are two ways to add files:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Option A: Drag & Drop (recommended)</div>
+                <div class="guide-option-text">Open your computer's file explorer, select the desired MP3 or WAV files, and drag them directly into the marked upload area.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Option B: File Selection</div>
+                <div class="guide-option-text">Click the "Select Files" button, navigate to your audio files, and select one or more files.</div>
+              </div>
+            </div>
+            <p><strong>Supported Formats:</strong> MP3 (.mp3), WAV (.wav)</p>
+            <p><strong>Limits:</strong> Max. 100 MB per file, max. 50 files, max. 1 GB total size</p>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Note</div>
+              <div class="guide-tip-text">After uploading, a confirmation will appear: "X files added"</div>
+            </div>
+          `
+        },
+        {
+          title: 'Manage the Playlist',
+          content: `
+            <p>After uploading, you'll see your files in a list:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Change Order</div>
+                <div class="guide-option-text">Click on a track and hold the mouse button. Drag the track to the desired position and release.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Audio Preview</div>
+                <div class="guide-option-text">Click the Play button (▶) next to a track. The music will play in the browser and a progress bar shows the current position.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Remove Files</div>
+                <div class="guide-option-text">Single file: Click the X next to the track. All files: Click "Remove All".</div>
+              </div>
+            </div>
+          `
+        },
+        {
+          title: 'Understanding Size Warnings',
+          content: `
+            <p>The app automatically shows warnings based on the total size of your files:</p>
+            <table class="warning-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Size</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="status-dot status-green"></span>Green</td>
+                  <td>&lt; 500 MB</td>
+                  <td>All OK - fast conversion</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-yellow"></span>Yellow</td>
+                  <td>500-800 MB</td>
+                  <td>Larger playlist - approx. 3-5 minutes</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-orange"></span>Orange</td>
+                  <td>800 MB - 1 GB</td>
+                  <td>Very large playlist - approx. 5-7 minutes</td>
+                </tr>
+                <tr>
+                  <td><span class="status-dot status-red"></span>Red</td>
+                  <td>&gt; 1 GB</td>
+                  <td>Too large - please remove files</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Important</div>
+              <div class="guide-tip-text">When the warning is red, the Convert button is disabled. Remove files to get under the limit.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Choose Format and Quality',
+          content: `
+            <p><strong>Available Formats:</strong></p>
+            <table class="format-table">
+              <thead>
+                <tr>
+                  <th>Format</th>
+                  <th>Codec</th>
+                  <th>Recommended for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>WebM</code></td>
+                  <td>Opus</td>
+                  <td>Web, modern players</td>
+                </tr>
+                <tr>
+                  <td><code>MP3</code></td>
+                  <td>LAME</td>
+                  <td>All devices (universal)</td>
+                </tr>
+                <tr>
+                  <td><code>OGG</code></td>
+                  <td>Vorbis</td>
+                  <td>Linux, Open-Source</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 1.5rem;"><strong>Bitrate (Quality):</strong></p>
+            <table class="format-table">
+              <thead>
+                <tr>
+                  <th>Bitrate</th>
+                  <th>Quality</th>
+                  <th>Recommended for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>64 kbps</code></td>
+                  <td>Low</td>
+                  <td>Speech, podcasts</td>
+                </tr>
+                <tr>
+                  <td><code>128 kbps</code></td>
+                  <td>Standard</td>
+                  <td>General use</td>
+                </tr>
+                <tr>
+                  <td><code>192 kbps</code></td>
+                  <td>Good</td>
+                  <td>Music streaming</td>
+                </tr>
+                <tr>
+                  <td><code>256 kbps</code></td>
+                  <td>High</td>
+                  <td>High-quality music</td>
+                </tr>
+                <tr>
+                  <td><code>320 kbps</code></td>
+                  <td>Maximum</td>
+                  <td>Audiophile quality</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tip</div>
+              <div class="guide-tip-text">For most use cases, 128-192 kbps is a good choice. Higher bitrates are only worth it with high-quality source files.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Start Conversion',
+          content: `
+            <ol class="steps-list">
+              <li>Review your playlist and settings</li>
+              <li>Click the <strong>"Convert X Track(s)"</strong> button</li>
+              <li>The conversion starts automatically</li>
+            </ol>
+            <p><strong>What happens during conversion:</strong></p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Upload (0-30%)</div>
+                <div class="guide-option-text">Your files are being uploaded. You'll see the upload speed and estimated time remaining.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Conversion (30-100%)</div>
+                <div class="guide-option-text">The server merges your files. The progress bar moves smoothly.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Cancel</div>
+              <div class="guide-tip-text">You can click "Cancel" at any time to stop the process and return to the initial state.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Download File',
+          content: `
+            <p>After successful conversion:</p>
+            <ol class="steps-list">
+              <li>A <strong>green success message</strong> appears</li>
+              <li>The <strong>file size</strong> of the converted file is displayed</li>
+              <li>Click <strong>"Download"</strong></li>
+            </ol>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Modern Browsers (Chrome, Edge)</div>
+                <div class="guide-option-text">A "Save As" dialog opens where you can choose the save location.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Other Browsers</div>
+                <div class="guide-option-text">The file is downloaded directly to your download folder.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Note</div>
+              <div class="guide-tip-text">After downloading, the file is automatically deleted from the server. Your data stays private.</div>
+            </div>
+          `
+        },
+        {
+          title: 'Adjust Settings',
+          content: `
+            <p>In the top right corner, you'll find two buttons for your personal settings:</p>
+            <div class="guide-options">
+              <div class="guide-option">
+                <div class="guide-option-title">Toggle Theme (☀/🌙)</div>
+                <div class="guide-option-text">Click the sun or moon icon to switch between light and dark mode. Your preference is automatically saved.</div>
+              </div>
+              <div class="guide-option">
+                <div class="guide-option-title">Switch Language (DE/EN)</div>
+                <div class="guide-option-text">Click the language button to switch between German and English. This setting is also saved.</div>
+              </div>
+            </div>
+            <div class="guide-tip">
+              <div class="guide-tip-title">Tip</div>
+              <div class="guide-tip-text">All your settings (theme, language, format, bitrate) are saved in the browser and automatically restored on your next visit.</div>
+            </div>
+          `
+        }
+      ]
+    };
+
+    // Current language
+    let currentLang = localStorage.getItem('landing-locale') || 'de';
+
+    // Theme Management
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcons(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcons(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcons(isDark);
+    }
+
+    function updateThemeIcons(isDark) {
+      document.getElementById('sunIcon').style.display = isDark ? 'none' : 'block';
+      document.getElementById('moonIcon').style.display = isDark ? 'block' : 'none';
+    }
+
+    // Language Management
+    function initLanguage() {
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'de' ? 'en' : 'de';
+      localStorage.setItem('landing-locale', currentLang);
+      updateLanguage(currentLang);
+      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
+      document.documentElement.lang = currentLang;
+    }
+
+    function updateLanguage(lang) {
+      // Update static elements
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      // Render quickstart steps
+      renderQuickstart(lang);
+
+      // Render guide content
+      renderGuide(lang);
+    }
+
+    // Quickstart Rendering
+    function renderQuickstart(lang) {
+      const container = document.getElementById('quickstartSteps');
+      const steps = quickstartData[lang] || quickstartData.de;
+
+      container.innerHTML = steps.map((step, index) => `
+        <div class="quickstart-step">
+          <div class="quickstart-number">${index + 1}</div>
+          <div class="quickstart-text">${step}</div>
+        </div>
+      `).join('');
+    }
+
+    // Guide Content Rendering
+    function renderGuide(lang) {
+      const container = document.getElementById('guideContent');
+      const sections = guideData[lang] || guideData.de;
+
+      container.innerHTML = sections.map((section, index) => `
+        <div class="guide-section">
+          <div class="guide-section-header">
+            <div class="guide-section-number">${index + 1}</div>
+            <h2 class="guide-section-title">${section.title}</h2>
+          </div>
+          <div class="guide-section-content">
+            ${section.content}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Event Listeners
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+
+    // Initialize
+    initTheme();
+    initLanguage();
+  </script>
+</body>
+</html>
