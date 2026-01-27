@@ -12,7 +12,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app.html'),
-        faq: resolve(__dirname, 'faq.html')
+        faq: resolve(__dirname, 'faq.html'),
+        funktion: resolve(__dirname, 'funktion.html')
       }
     }
   },
