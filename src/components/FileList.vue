@@ -318,12 +318,12 @@ onUnmounted(() => {
 .volume-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 6px;
-  background: #AEAFB7;
+  background: #c0c2c9;
   border-radius: 3px;
 }
 
 .dark .volume-slider::-webkit-slider-runnable-track {
-  background: #5E5F69;
+  background: #5a6171;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -331,7 +331,7 @@ onUnmounted(() => {
   appearance: none;
   width: 14px;
   height: 14px;
-  background: #F2E28E;
+  background: #c9984d;
   border-radius: 50%;
   cursor: pointer;
   margin-top: -4px;
@@ -345,18 +345,18 @@ onUnmounted(() => {
 .volume-slider::-moz-range-track {
   width: 100%;
   height: 6px;
-  background: #AEAFB7;
+  background: #c0c2c9;
   border-radius: 3px;
 }
 
 .dark .volume-slider::-moz-range-track {
-  background: #5E5F69;
+  background: #5a6171;
 }
 
 .volume-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  background: #F2E28E;
+  background: #c9984d;
   border-radius: 50%;
   cursor: pointer;
   border: none;

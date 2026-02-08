@@ -34,7 +34,7 @@ html.dark body > footer,
 html.dark body > footer *,
 html.dark body > div:not(#app),
 html.dark body > div:not(#app) * {
-  color: #C4C5CB !important; /* neutral-light */
+  color: #f9f2d5 !important; /* neutral-light */
   background: transparent !important;
   background-color: transparent !important;
 }
@@ -45,7 +45,7 @@ html.dark body > nav a,
 html.dark body > header a,
 html.dark body > footer a,
 html.dark body > div:not(#app) a {
-  color: #F2E28E !important; /* accent */
+  color: #c9984d !important; /* accent */
 }
 
 html.dark body > *:not(#app):not(script) a:hover,
@@ -53,7 +53,7 @@ html.dark body > nav a:hover,
 html.dark body > header a:hover,
 html.dark body > footer a:hover,
 html.dark body > div:not(#app) a:hover {
-  color: #D4C46E !important; /* accent-dark */
+  color: #b0832f !important; /* accent-dark */
 }
 
 /* Navigation dropdown z-index - must be above app header */
@@ -90,7 +90,7 @@ html.dark body > header ul,
 html.dark body > header [class*="dropdown"],
 html.dark body > header [class*="menu"] {
   background-color: #1E1E26 !important; /* dark-card */
-  border-color: #5E5F69 !important; /* muted */
+  border-color: #5a6171 !important; /* muted */
 }
 
 /* Home link styles */
