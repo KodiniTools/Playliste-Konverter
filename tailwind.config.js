@@ -26,9 +26,9 @@ export default {
           light: '#f9f2d5'
         },
         'dark': {
-          DEFAULT: '#0C0C10',
-          lighter: '#18181F',
-          card: '#1E1E26'
+          DEFAULT: '#091428',
+          lighter: '#0E1C32',
+          card: '#142640'
         }
       }
     }

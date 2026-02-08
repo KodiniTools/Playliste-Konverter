@@ -323,7 +323,7 @@ onUnmounted(() => {
 }
 
 .dark .volume-slider::-webkit-slider-runnable-track {
-  background: #5a6171;
+  background: #1e3a5f;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -350,7 +350,7 @@ onUnmounted(() => {
 }
 
 .dark .volume-slider::-moz-range-track {
-  background: #5a6171;
+  background: #1e3a5f;
 }
 
 .volume-slider::-moz-range-thumb {

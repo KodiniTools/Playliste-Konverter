@@ -4,7 +4,7 @@
 
 /* Body background for dark mode */
 html.dark body {
-  background-color: #0C0C10 !important; /* dark */
+  background-color: #091428 !important; /* dark */
 }
 
 /* Navigation and Footer styles for SSI includes */
@@ -89,8 +89,8 @@ html.dark body > nav [class*="menu"],
 html.dark body > header ul,
 html.dark body > header [class*="dropdown"],
 html.dark body > header [class*="menu"] {
-  background-color: #1E1E26 !important; /* dark-card */
-  border-color: #5a6171 !important; /* muted */
+  background-color: #142640 !important; /* dark-card */
+  border-color: #1e3a5f !important; /* border */
 }
 
 /* Home link styles */

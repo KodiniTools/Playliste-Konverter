@@ -23,9 +23,9 @@
       --neutral: #c0c2c9;
       --neutral-dark: #9a9da5;
       --neutral-light: #f9f2d5;
-      --dark: #0C0C10;
-      --dark-lighter: #18181F;
-      --dark-card: #1E1E26;
+      --dark: #091428;
+      --dark-lighter: #0E1C32;
+      --dark-card: #142640;
 
       /* Light mode defaults */
       --bg-primary: #F5F4D6;
@@ -44,13 +44,13 @@
     }
 
     html.dark {
-      --bg-primary: var(--dark);
-      --bg-secondary: var(--dark-lighter);
-      --bg-card: var(--dark-card);
-      --text-primary: var(--neutral-light);
-      --text-secondary: var(--neutral);
-      --text-muted: var(--muted-light);
-      --border-color: var(--muted);
+      --bg-primary: #091428;
+      --bg-secondary: #0E1C32;
+      --bg-card: #142640;
+      --text-primary: #f9f2d5;
+      --text-secondary: #f8e1a9;
+      --text-muted: #7A8DA0;
+      --border-color: #1e3a5f;
     }
 
     * {
@@ -134,7 +134,7 @@
     }
 
     html.dark .page-nav {
-      background: rgba(24, 24, 31, 0.95);
+      background: rgba(14, 28, 50, 0.95);
     }
 
     .nav-container {
@@ -216,37 +216,6 @@
     .nav-link.active {
       color: var(--secondary);
       background: var(--bg-card);
-    }
-
-    .nav-controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .control-btn {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 0.5rem;
-      cursor: pointer;
-      color: var(--text-secondary);
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .control-btn:hover {
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-color: var(--accent);
-    }
-
-    .lang-btn {
-      padding: 0.5rem 0.75rem;
-      font-weight: 600;
-      font-size: 0.875rem;
     }
 
     /* Guide Hero Section */
@@ -729,27 +698,6 @@
       <div class="nav-links">
         <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
         <a href="./funktion.html" class="nav-link active" data-i18n="nav.guide">Anleitung</a>
-      </div>
-      <div class="nav-controls">
-        <button class="control-btn lang-btn" id="langToggle" title="Switch language">
-          <span id="langText">EN</span>
-        </button>
-        <button class="control-btn" id="themeToggle" title="Toggle theme">
-          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        </button>
       </div>
     </div>
   </nav>
@@ -1354,36 +1302,14 @@
 
       if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
         document.documentElement.classList.add('dark');
-        updateThemeIcons(true);
       } else {
         document.documentElement.classList.remove('dark');
-        updateThemeIcons(false);
       }
-    }
-
-    function toggleTheme() {
-      const isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      updateThemeIcons(isDark);
-    }
-
-    function updateThemeIcons(isDark) {
-      document.getElementById('sunIcon').style.display = isDark ? 'none' : 'block';
-      document.getElementById('moonIcon').style.display = isDark ? 'block' : 'none';
     }
 
     // Language Management
     function initLanguage() {
       updateLanguage(currentLang);
-      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
-    }
-
-    function toggleLanguage() {
-      currentLang = currentLang === 'de' ? 'en' : 'de';
-      localStorage.setItem('landing-locale', currentLang);
-      updateLanguage(currentLang);
-      document.getElementById('langText').textContent = currentLang === 'de' ? 'EN' : 'DE';
-      document.documentElement.lang = currentLang;
     }
 
     function updateLanguage(lang) {
@@ -1433,10 +1359,6 @@
         </div>
       `).join('');
     }
-
-    // Event Listeners
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
 
     // Initialize
     initTheme();
