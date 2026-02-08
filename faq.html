@@ -11,30 +11,30 @@
   <style>
     :root {
       /* Color Palette */
-      --accent: #F2E28E;
-      --accent-dark: #D4C46E;
-      --accent-light: #F7EDB5;
-      --secondary: #A28680;
-      --secondary-dark: #8A716B;
-      --secondary-light: #BFA29C;
-      --muted: #5E5F69;
-      --muted-dark: #4A4B54;
-      --muted-light: #75767F;
-      --neutral: #AEAFB7;
-      --neutral-dark: #9A9BA3;
-      --neutral-light: #C4C5CB;
+      --accent: #c9984d;
+      --accent-dark: #b0832f;
+      --accent-light: #f8e1a9;
+      --secondary: #014f99;
+      --secondary-dark: #003971;
+      --secondary-light: #2a6db5;
+      --muted: #5a6171;
+      --muted-dark: #3d4555;
+      --muted-light: #7a8294;
+      --neutral: #c0c2c9;
+      --neutral-dark: #9a9da5;
+      --neutral-light: #f9f2d5;
       --dark: #0C0C10;
       --dark-lighter: #18181F;
       --dark-card: #1E1E26;
 
       /* Light mode defaults */
-      --bg-primary: var(--neutral-light);
+      --bg-primary: #F5F4D6;
       --bg-secondary: #ffffff;
       --bg-card: #ffffff;
-      --text-primary: var(--dark);
-      --text-secondary: var(--muted);
-      --text-muted: var(--neutral-dark);
-      --border-color: var(--neutral);
+      --text-primary: #003971;
+      --text-secondary: #4a5c72;
+      --text-muted: #7a8694;
+      --border-color: #c0c2c9;
     }
 
     html.dark {
@@ -118,10 +118,8 @@
 
     /* Page Navigation */
     .page-nav {
-      position: fixed;
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
       z-index: 50;
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
@@ -164,7 +162,7 @@
 
     .home-link:hover {
       background: var(--accent);
-      color: var(--dark);
+      color: var(--secondary-dark);
       border-color: var(--accent);
     }
 
@@ -205,12 +203,12 @@
     }
 
     .nav-link:hover {
-      color: var(--accent);
+      color: var(--secondary);
       background: var(--bg-card);
     }
 
     .nav-link.active {
-      color: var(--accent);
+      color: var(--secondary);
       background: var(--bg-card);
     }
 
@@ -235,7 +233,7 @@
 
     .control-btn:hover {
       background: var(--accent);
-      color: var(--dark);
+      color: var(--secondary-dark);
       border-color: var(--accent);
     }
 
@@ -247,7 +245,7 @@
 
     /* FAQ Hero Section */
     .faq-hero {
-      padding: 8rem 1.5rem 4rem;
+      padding: 3rem 1.5rem 3rem;
       text-align: center;
       background: var(--bg-primary);
     }
@@ -295,12 +293,12 @@
     }
 
     .faq-item:hover {
-      border-color: var(--accent);
+      border-color: var(--secondary);
     }
 
     .faq-item.active {
-      border-color: var(--accent);
-      box-shadow: 0 4px 20px -5px rgba(242, 226, 142, 0.2);
+      border-color: var(--secondary);
+      box-shadow: 0 4px 20px -5px rgba(1, 79, 153, 0.2);
     }
 
     .faq-question {
@@ -321,14 +319,14 @@
     }
 
     .faq-question:hover {
-      color: var(--accent);
+      color: var(--secondary);
     }
 
     .faq-icon {
       flex-shrink: 0;
       width: 24px;
       height: 24px;
-      color: var(--accent);
+      color: var(--secondary);
       transition: transform 0.3s ease;
     }
 
@@ -370,7 +368,7 @@
     }
 
     html:not(.dark) .cta-box {
-      background: linear-gradient(135deg, var(--muted) 0%, var(--muted-dark) 100%);
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
     }
 
     .cta-glow {
@@ -420,14 +418,14 @@
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: var(--dark);
+      background: var(--secondary);
+      color: #F5F4D6;
     }
 
     .btn-primary:hover {
-      background: var(--accent-dark);
+      background: var(--secondary-dark);
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px -10px rgba(242, 226, 142, 0.4);
+      box-shadow: 0 10px 30px -10px rgba(1, 79, 153, 0.4);
     }
 
     /* Responsive */
@@ -464,7 +462,7 @@
         </a>
         <a href="./app.html" class="logo">
           <div class="logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0C0C10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003971" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
           </div>

@@ -6,24 +6,24 @@ export default {
       colors: {
         // Custom color palette
         'accent': {
-          DEFAULT: '#F2E28E',
-          dark: '#D4C46E',
-          light: '#F7EDB5'
+          DEFAULT: '#c9984d',
+          dark: '#b0832f',
+          light: '#f8e1a9'
         },
         'secondary': {
-          DEFAULT: '#A28680',
-          dark: '#8A716B',
-          light: '#BFA29C'
+          DEFAULT: '#014f99',
+          dark: '#003971',
+          light: '#2a6db5'
         },
         'muted': {
-          DEFAULT: '#5E5F69',
-          dark: '#4A4B54',
-          light: '#75767F'
+          DEFAULT: '#5a6171',
+          dark: '#3d4555',
+          light: '#7a8294'
         },
         'neutral': {
-          DEFAULT: '#AEAFB7',
-          dark: '#9A9BA3',
-          light: '#C4C5CB'
+          DEFAULT: '#c0c2c9',
+          dark: '#9a9da5',
+          light: '#f9f2d5'
         },
         'dark': {
           DEFAULT: '#0C0C10',
