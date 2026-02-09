@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Body background for dark mode */
-html.dark body {
+/* Body background for dark mode (Tailwind class + nav.html data-theme) */
+html.dark body,
+[data-theme="dark"] body {
   background-color: #091428 !important; /* dark */
 }
 
@@ -33,7 +34,17 @@ html.dark body > header *,
 html.dark body > footer,
 html.dark body > footer *,
 html.dark body > div:not(#app),
-html.dark body > div:not(#app) * {
+html.dark body > div:not(#app) *,
+[data-theme="dark"] body > *:not(#app):not(script),
+[data-theme="dark"] body > *:not(#app):not(script) *,
+[data-theme="dark"] body > nav,
+[data-theme="dark"] body > nav *,
+[data-theme="dark"] body > header,
+[data-theme="dark"] body > header *,
+[data-theme="dark"] body > footer,
+[data-theme="dark"] body > footer *,
+[data-theme="dark"] body > div:not(#app),
+[data-theme="dark"] body > div:not(#app) * {
   color: #f9f2d5 !important; /* neutral-light */
   background: transparent !important;
   background-color: transparent !important;
@@ -44,7 +55,12 @@ html.dark body > *:not(#app):not(script) a,
 html.dark body > nav a,
 html.dark body > header a,
 html.dark body > footer a,
-html.dark body > div:not(#app) a {
+html.dark body > div:not(#app) a,
+[data-theme="dark"] body > *:not(#app):not(script) a,
+[data-theme="dark"] body > nav a,
+[data-theme="dark"] body > header a,
+[data-theme="dark"] body > footer a,
+[data-theme="dark"] body > div:not(#app) a {
   color: #c9984d !important; /* accent */
 }
 
@@ -52,7 +68,12 @@ html.dark body > *:not(#app):not(script) a:hover,
 html.dark body > nav a:hover,
 html.dark body > header a:hover,
 html.dark body > footer a:hover,
-html.dark body > div:not(#app) a:hover {
+html.dark body > div:not(#app) a:hover,
+[data-theme="dark"] body > *:not(#app):not(script) a:hover,
+[data-theme="dark"] body > nav a:hover,
+[data-theme="dark"] body > header a:hover,
+[data-theme="dark"] body > footer a:hover,
+[data-theme="dark"] body > div:not(#app) a:hover {
   color: #b0832f !important; /* accent-dark */
 }
 
@@ -88,7 +109,16 @@ html.dark body > nav [class*="dropdown"],
 html.dark body > nav [class*="menu"],
 html.dark body > header ul,
 html.dark body > header [class*="dropdown"],
-html.dark body > header [class*="menu"] {
+html.dark body > header [class*="menu"],
+[data-theme="dark"] body > *:not(#app):not(script) ul,
+[data-theme="dark"] body > *:not(#app):not(script) [class*="dropdown"],
+[data-theme="dark"] body > *:not(#app):not(script) [class*="menu"],
+[data-theme="dark"] body > nav ul,
+[data-theme="dark"] body > nav [class*="dropdown"],
+[data-theme="dark"] body > nav [class*="menu"],
+[data-theme="dark"] body > header ul,
+[data-theme="dark"] body > header [class*="dropdown"],
+[data-theme="dark"] body > header [class*="menu"] {
   background-color: #142640 !important; /* dark-card */
   border-color: #1e3a5f !important; /* border */
 }
