@@ -614,15 +614,13 @@
       ]
     };
 
-    // Current language
-    let currentLang = localStorage.getItem('landing-locale') || 'de';
+    // Sprache und Theme werden von der externen SSI-Navigation (nav.html) gesteuert.
+    let currentLang = localStorage.getItem('locale') || 'de';
 
-    // Theme Management
-    function initTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    // dark-Klasse mit data-theme synchronisieren (für CSS-Kompatibilität)
+    function syncDarkClass() {
+      const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
+      if (theme === 'dark') {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
@@ -630,10 +628,6 @@
     }
 
     // Language Management
-    function initLanguage() {
-      updateLanguage(currentLang);
-    }
-
     function updateLanguage(lang) {
       // Update static elements
       const elements = document.querySelectorAll('[data-i18n]');
@@ -679,9 +673,22 @@
       });
     }
 
+    // Auf Events der SSI-Navigation reagieren
+    window.addEventListener('theme-changed', function() {
+      syncDarkClass();
+    });
+
+    window.addEventListener('language-changed', function(e) {
+      const newLang = e.detail && e.detail.lang;
+      if (newLang && translations[newLang]) {
+        currentLang = newLang;
+        updateLanguage(newLang);
+      }
+    });
+
     // Initialize
-    initTheme();
-    initLanguage();
+    syncDarkClass();
+    updateLanguage(currentLang);
   </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { useConverterStore } from './stores/converter'
 import { useUIStore } from './stores/ui'
 import { useI18n } from 'vue-i18n'
@@ -13,12 +13,12 @@ import ToastContainer from './components/ToastContainer.vue'
 
 const store = useConverterStore()
 const uiStore = useUIStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
-onMounted(() => {
-  // Theme initialisieren beim App-Start
-  uiStore.theme // Triggert den watcher im UI store
-})
+// vue-i18n Locale mit UI-Store synchronisieren (gesteuert von SSI-Navigation)
+watch(() => uiStore.locale, (newLocale) => {
+  locale.value = newLocale
+}, { immediate: true })
 </script>
 
 <template>
