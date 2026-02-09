@@ -8,7 +8,6 @@ import FileList from './components/FileList.vue'
 import FormatSelector from './components/FormatSelector.vue'
 import ConversionProgress from './components/ConversionProgress.vue'
 import DownloadButton from './components/DownloadButton.vue'
-import SettingsSwitcher from './components/SettingsSwitcher.vue'
 import SizeWarning from './components/SizeWarning.vue'
 import ToastContainer from './components/ToastContainer.vue'
 
@@ -41,7 +40,6 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <SettingsSwitcher />
             <!-- PayPal Donation Button -->
             <form action="https://www.paypal.com/donate" method="post" target="_top" class="inline-block">
               <input type="hidden" name="hosted_button_id" value="8RGLGQ2BFMHU6" />
