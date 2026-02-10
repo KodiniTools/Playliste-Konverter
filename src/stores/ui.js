@@ -27,10 +27,33 @@ export const useUIStore = defineStore('ui', () => {
     syncDarkClass(newTheme)
   })
 
-  // Locale watcher
+  // Flag: unterdrückt Re-Dispatch wenn Sprachänderung von externem Event kam
+  let _suppressDispatch = false
+
+  // data-lang-* Elemente aktualisieren (SSI-Übersetzungsmuster:
+  // <span data-lang-de="Deutsch" data-lang-en="English"></span>)
+  function updateDataLangElements(lang) {
+    const attr = `data-lang-${lang}`
+    document.querySelectorAll(`[${attr}]`).forEach(el => {
+      el.textContent = el.getAttribute(attr)
+    })
+  }
+
+  // Locale watcher - synchronisiert lang-Attribut, dispatcht Event, aktualisiert data-lang-*
   watch(locale, (newLocale) => {
     document.documentElement.setAttribute('lang', newLocale)
-  })
+
+    // Event nur dispatchen wenn Änderung nicht von externem SSI-Event kam
+    if (!_suppressDispatch) {
+      window.dispatchEvent(new CustomEvent('language-changed', {
+        detail: { lang: newLocale }
+      }))
+    }
+    _suppressDispatch = false
+
+    // data-lang-* Elemente für SSI-Komponenten aktualisieren
+    updateDataLangElements(newLocale)
+  }, { immediate: true })
 
   // Auf Events der externen SSI-Navigation reagieren
   function onThemeChanged(event) {
@@ -43,6 +66,7 @@ export const useUIStore = defineStore('ui', () => {
   function onLanguageChanged(event) {
     const newLang = event.detail?.lang
     if (newLang && newLang !== locale.value) {
+      _suppressDispatch = true
       locale.value = newLang
     }
   }
