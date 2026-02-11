@@ -78,10 +78,11 @@ html.dark body > div:not(#app) a:hover,
 }
 
 /* Navigation dropdown z-index - must be above app header */
-body > *:not(#app):not(script),
+/* Only target semantic SSI elements (nav, header, footer) — not the cookie-banner div
+   which needs to keep its own position: fixed */
 body > nav,
 body > header,
-body > div:not(#app) {
+body > footer {
   position: relative;
   z-index: 100 !important;
 }
