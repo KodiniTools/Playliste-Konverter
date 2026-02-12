@@ -7,19 +7,19 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg p-4 border border-neutral dark:border-muted space-y-4">
+  <div class="bg-white dark:bg-dark-card rounded-lg p-3 sm:p-4 border border-neutral dark:border-muted space-y-3 sm:space-y-4">
     <!-- Format-Auswahl -->
     <div>
-      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-3">
+      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-2 sm:mb-3">
         {{ t('format.title') }}
       </h3>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-1.5 sm:gap-2">
         <button
           v-for="format in store.availableFormats"
           :key="format.id"
           @click="store.setOutputFormat(format.id)"
           :class="[
-            'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+            'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-all',
             'border-2',
             store.outputFormat === format.id
               ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent'
@@ -34,10 +34,10 @@ const { t } = useI18n()
 
     <!-- Bitrate-Auswahl -->
     <div>
-      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-3">
+      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-2 sm:mb-3">
         {{ t('bitrate.title') }}
       </h3>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-1.5 sm:gap-2">
         <button
           v-for="br in store.availableBitratesForFormat"
           :key="br.value"

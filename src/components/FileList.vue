@@ -167,13 +167,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4">
-    <div class="flex justify-between items-center mb-3">
-      <div>
-        <h3 class="font-semibold text-dark dark:text-neutral-light">{{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})</h3>
-        <p class="text-sm text-muted dark:text-neutral mt-1">{{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}</p>
+  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-3 sm:p-4">
+    <div class="flex justify-between items-center mb-3 gap-2">
+      <div class="min-w-0">
+        <h3 class="font-semibold text-dark dark:text-neutral-light text-sm sm:text-base">{{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})</h3>
+        <p class="text-xs sm:text-sm text-muted dark:text-neutral mt-1">{{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}</p>
       </div>
-      <button @click="handleRemoveAll" class="text-sm text-secondary dark:text-secondary-light hover:underline">{{ t('fileList.removeAll') }}</button>
+      <button @click="handleRemoveAll" class="text-xs sm:text-sm text-secondary dark:text-secondary-light hover:underline flex-shrink-0">{{ t('fileList.removeAll') }}</button>
     </div>
 
     <div class="space-y-2 max-h-[420px] overflow-y-auto">
@@ -185,14 +185,14 @@ onUnmounted(() => {
         @dragover="onDragOver($event, index)"
         @dragend="onDragEnd"
         :class="[
-          'flex items-center gap-3 p-3 rounded border cursor-move transition-colors',
+          'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded border cursor-move transition-colors',
           currentlyPlaying === item.id
             ? 'bg-accent/10 dark:bg-accent/20 border-accent dark:border-accent'
             : 'bg-neutral-light dark:bg-dark-lighter border-neutral dark:border-muted hover:bg-neutral/30 dark:hover:bg-muted/30'
         ]"
       >
         <!-- Track Nummer -->
-        <span class="text-muted dark:text-neutral font-mono text-sm w-8">{{ index + 1 }}.</span>
+        <span class="text-muted dark:text-neutral font-mono text-sm w-6 sm:w-8 hidden sm:inline">{{ index + 1 }}.</span>
 
         <!-- Play/Pause Button -->
         <button
@@ -215,10 +215,10 @@ onUnmounted(() => {
           </svg>
         </button>
 
-        <!-- Volume Slider (nur sichtbar wenn dieser Track spielt) -->
+        <!-- Volume Slider (nur sichtbar wenn dieser Track spielt, auf Mobile versteckt) -->
         <div
           v-if="currentlyPlaying === item.id"
-          class="flex items-center gap-1.5 flex-shrink-0"
+          class="hidden sm:flex items-center gap-1.5 flex-shrink-0"
           @click.stop
           @mousedown.stop
           @dragstart.stop.prevent

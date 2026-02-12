@@ -28,7 +28,7 @@ function getClasses(type) {
 </script>
 
 <template>
-  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+  <div class="fixed top-4 left-3 right-3 sm:left-auto sm:right-4 z-50 flex flex-col gap-2 sm:max-w-sm">
     <TransitionGroup name="toast">
       <div
         v-for="toast in toastStore.toasts"

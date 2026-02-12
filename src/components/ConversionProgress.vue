@@ -7,14 +7,14 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-6">
-    <h3 class="font-semibold text-dark dark:text-neutral-light mb-4">
+  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6">
+    <h3 class="font-semibold text-sm sm:text-base text-dark dark:text-neutral-light mb-3 sm:mb-4">
       {{ store.status === 'uploading' ? t('conversion.uploading') : t('conversion.converting') }}
     </h3>
 
     <div class="relative pt-1">
-      <div class="flex mb-2 items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="flex mb-2 items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3">
           <span class="text-xs font-semibold inline-block text-accent-dark dark:text-accent">
             {{ Math.round(store.totalProgress) }}%
           </span>
@@ -29,7 +29,7 @@ const { t } = useI18n()
         <!-- Geschätzte Restzeit -->
         <span
           v-if="store.status === 'uploading' && store.formattedTimeRemaining"
-          class="text-xs text-muted dark:text-neutral"
+          class="text-xs text-muted dark:text-neutral text-right"
         >
           {{ t('conversion.remaining') }}: {{ store.formattedTimeRemaining }}
         </span>

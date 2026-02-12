@@ -24,7 +24,7 @@ function onFileSelect(e) {
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
     :class="[
-      'border-2 border-dashed rounded-lg p-12 text-center transition',
+      'border-2 border-dashed rounded-lg p-6 sm:p-12 text-center transition',
       isDragging
         ? 'border-accent bg-accent/10 dark:bg-accent/5'
         : 'border-neutral dark:border-muted bg-white dark:bg-dark-card'
