@@ -671,11 +671,106 @@
       .format-table td {
         padding: 0.5rem;
       }
+
+      .guide-hero {
+        padding: 2rem 1rem;
+      }
+
+      .quickstart {
+        padding: 2.5rem 1rem;
+      }
+
+      .guide-content {
+        padding: 2.5rem 1rem 4rem;
+      }
+
+      .cta {
+        padding: 3rem 1rem;
+      }
+
+      .cta-box {
+        padding: 2.5rem 1.5rem;
+        border-radius: 16px;
+      }
+
+      .logo {
+        font-size: 1.25rem;
+      }
+
+      .guide-section-title {
+        font-size: 1.25rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .guide-section {
+        padding: 1.25rem;
+      }
+
+      .guide-hero-description {
+        font-size: 1rem;
+      }
+
+      .guide-options {
+        gap: 0.75rem;
+      }
+
+      .guide-option {
+        padding: 0.875rem 1rem;
+      }
+
+      .cta-box {
+        padding: 2rem 1.25rem;
+      }
+
+      .cta-description {
+        font-size: 1rem;
+      }
+
+      /* Tabellen horizontal scrollbar machen */
+      .guide-section-content {
+        overflow-x: auto;
+      }
+
+      .warning-table,
+      .format-table {
+        font-size: 0.8rem;
+        min-width: 320px;
+      }
+
+      .warning-table th,
+      .warning-table td,
+      .format-table th,
+      .format-table td {
+        padding: 0.375rem 0.5rem;
+      }
+
+      .steps-list li {
+        padding-left: 2.5rem;
+      }
     }
 
     @media (max-width: 480px) {
       .quickstart-steps {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .logo {
+        font-size: 1rem;
+      }
+
+      .nav-container {
+        padding: 0.75rem 1rem;
+      }
+
+      .guide-hero-title {
+        font-size: 1.75rem;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
       }
     }
   </style>

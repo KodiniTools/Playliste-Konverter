@@ -67,12 +67,12 @@ async function handleDownload() {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-6 text-center">
-    <svg class="mx-auto h-16 w-16 text-accent dark:text-accent-light mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6 text-center">
+    <svg class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-accent dark:text-accent-light mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-    <h3 class="text-xl font-semibold text-dark dark:text-neutral-light mb-2">{{ t('download.title') }}</h3>
-    <p class="text-muted dark:text-neutral mb-2">{{ t('download.subtitle') }}</p>
+    <h3 class="text-lg sm:text-xl font-semibold text-dark dark:text-neutral-light mb-2">{{ t('download.title') }}</h3>
+    <p class="text-sm sm:text-base text-muted dark:text-neutral mb-2">{{ t('download.subtitle') }}</p>
     <p v-if="store.outputFileSize" class="text-sm text-muted-light dark:text-neutral mb-6">
       {{ t('download.fileSize') }}: {{ formatFileSize(store.outputFileSize) }}
     </p>
