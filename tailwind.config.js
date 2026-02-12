@@ -3,6 +3,9 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["'Supreme'", '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'Roboto', 'sans-serif'],
+      },
       colors: {
         // Custom color palette
         'accent': {
