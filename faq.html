@@ -69,21 +69,24 @@
     }
 
     /* Global SSI Navigation and Footer - transparent background */
-    body > *:not(.page-nav):not(.faq-hero):not(.faq-content):not(.cta):not(script),
+    /* Only target semantic SSI elements (nav, header, footer) — not the cookie-banner div */
     body > nav:not(.page-nav),
+    body > nav:not(.page-nav) *,
     body > header,
+    body > header *,
     body > footer,
-    body > div:not(.faq-hero):not(.faq-content):not(.cta) {
+    body > footer * {
       background: transparent !important;
       background-color: transparent !important;
     }
 
     /* Dark mode: transparent background and light text for SSI includes */
-    html.dark body > *:not(.page-nav):not(.faq-hero):not(.faq-content):not(.cta):not(script),
     html.dark body > nav:not(.page-nav),
+    html.dark body > nav:not(.page-nav) *,
     html.dark body > header,
+    html.dark body > header *,
     html.dark body > footer,
-    html.dark body > div:not(.faq-hero):not(.faq-content):not(.cta) {
+    html.dark body > footer * {
       color: var(--neutral-light) !important;
       background: transparent !important;
       background-color: transparent !important;
