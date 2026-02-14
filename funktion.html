@@ -118,6 +118,17 @@
       color: var(--accent-dark) !important;
     }
 
+    /* Dropdown menus in light mode need solid background */
+    body > nav:not(.page-nav) ul,
+    body > nav:not(.page-nav) [class*="dropdown"],
+    body > nav:not(.page-nav) [class*="menu"],
+    body > header ul,
+    body > header [class*="dropdown"],
+    body > header [class*="menu"] {
+      background-color: var(--bg-card) !important;
+      border-color: var(--border-color) !important;
+    }
+
     /* Dropdown menus in dark mode need solid background */
     html.dark body > nav:not(.page-nav) ul,
     html.dark body > nav:not(.page-nav) [class*="dropdown"],

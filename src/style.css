@@ -86,6 +86,17 @@ body > header [class*="menu"] {
   z-index: 1000 !important;
 }
 
+/* Dropdown background for light mode - needs solid background to be readable */
+body > nav ul,
+body > nav [class*="dropdown"],
+body > nav [class*="menu"],
+body > header ul,
+body > header [class*="dropdown"],
+body > header [class*="menu"] {
+  background-color: var(--bg-card, #ffffff) !important;
+  border-color: var(--border-color, #c0c2c9) !important;
+}
+
 /* Dropdown background for dark mode - needs solid background to be readable */
 html.dark body > nav ul,
 html.dark body > nav [class*="dropdown"],
