@@ -4,11 +4,11 @@ import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import { useToastStore } from './toast'
 
-// Timeout für große Uploads (10 Minuten)
-const UPLOAD_TIMEOUT = 10 * 60 * 1000
+// Timeout für große Uploads (30 Minuten)
+const UPLOAD_TIMEOUT = 30 * 60 * 1000
 
-// Maximale Größe für Konvertierung (1 GB)
-const MAX_PLAYLIST_SIZE = 1024 * 1024 * 1024 // 1 GB in Bytes
+// Maximale Größe für Konvertierung (2 GB)
+const MAX_PLAYLIST_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB in Bytes
 
 // Verfügbare Ausgabeformate
 const OUTPUT_FORMATS = {

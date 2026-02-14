@@ -122,15 +122,27 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
         sendJsonError(400, 'Keine Dateien zum Konvertieren');
     }
 
-    $cmd = sprintf(
-        'ffmpeg -f concat -safe 0 -i %s %s %s %dk -threads 4 -y %s > %s 2>&1 & echo $!',
-        escapeshellarg($concatFile),
-        $ffmpegCodec,
-        $bitrateFlag,
-        $bitrate,
-        escapeshellarg($outputFile),
-        escapeshellarg($logFile)
-    );
+    // Prüfe ob Stream-Copy möglich ist (alle Inputs = Output-Format)
+    $useStreamCopy = canUseStreamCopy($sessionDir, $outputFormat);
+
+    if ($useStreamCopy) {
+        $cmd = sprintf(
+            'ffmpeg -f concat -safe 0 -i %s -c:a copy -y %s > %s 2>&1 & echo $!',
+            escapeshellarg($concatFile),
+            escapeshellarg($outputFile),
+            escapeshellarg($logFile)
+        );
+    } else {
+        $cmd = sprintf(
+            'ffmpeg -f concat -safe 0 -i %s %s %s %dk -threads 0 -y %s > %s 2>&1 & echo $!',
+            escapeshellarg($concatFile),
+            $ffmpegCodec,
+            $bitrateFlag,
+            $bitrate,
+            escapeshellarg($outputFile),
+            escapeshellarg($logFile)
+        );
+    }
 
     $pid = shell_exec($cmd);
     $pidValue = trim($pid ?? '');
@@ -152,4 +164,46 @@ if (isset($config['use_queue']) && $config['use_queue'] === true) {
         'format' => $outputFormat,
         'bitrate' => $bitrate
     ]);
+}
+
+/**
+ * Prüft ob Stream-Copy möglich ist (alle Input-Dateien haben dasselbe Format wie Output)
+ */
+function canUseStreamCopy($sessionDir, $outputFormat) {
+    $concatFile = $sessionDir . 'concat.txt';
+    if (!file_exists($concatFile)) {
+        return false;
+    }
+
+    // Mapping: Output-Format → erwarteter Input-Codec
+    $formatToCodec = [
+        'mp3' => 'mp3',
+        'ogg' => 'vorbis',
+        'webm' => 'opus'
+    ];
+
+    $expectedCodec = $formatToCodec[$outputFormat] ?? null;
+    if ($expectedCodec === null) {
+        return false;
+    }
+
+    $lines = file($concatFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (preg_match("/^file '(.+)'$/", $line, $matches)) {
+            $filePath = $sessionDir . $matches[1];
+            if (!file_exists($filePath)) {
+                return false;
+            }
+            $cmd = sprintf(
+                'ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
+                escapeshellarg($filePath)
+            );
+            $codec = trim(shell_exec($cmd) ?? '');
+            if ($codec !== $expectedCodec) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

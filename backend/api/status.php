@@ -61,8 +61,14 @@ if (isset($config['use_queue']) && $config['use_queue'] === true && $meta['statu
     }
 }
 
-// Funktion um Gesamtdauer aus concat.txt zu berechnen
-function getTotalDuration($sessionDir) {
+// Funktion um Gesamtdauer zu ermitteln (aus meta.json oder per ffprobe als Fallback)
+function getTotalDuration($sessionDir, &$meta, $metaFile) {
+    // Bereits beim Upload berechnet?
+    if (isset($meta['total_duration']) && $meta['total_duration'] > 0) {
+        return $meta['total_duration'];
+    }
+
+    // Fallback: per ffprobe berechnen
     $concatFile = $sessionDir . 'concat.txt';
     if (!file_exists($concatFile)) {
         return null;
@@ -73,8 +79,7 @@ function getTotalDuration($sessionDir) {
 
     foreach ($lines as $line) {
         if (preg_match("/^file '(.+)'$/", $line, $matches)) {
-            $filePath = $matches[1];
-            // Nutze ffprobe um Dauer zu ermitteln
+            $filePath = $sessionDir . $matches[1];
             $cmd = sprintf(
                 'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
                 escapeshellarg($filePath)
@@ -86,7 +91,35 @@ function getTotalDuration($sessionDir) {
         }
     }
 
+    // Cache für zukünftige Polls
+    if ($totalDuration > 0) {
+        $meta['total_duration'] = $totalDuration;
+        file_put_contents($metaFile, json_encode($meta));
+    }
+
     return $totalDuration > 0 ? $totalDuration : null;
+}
+
+/**
+ * Liest nur die letzten Bytes einer Datei (statt das gesamte Log)
+ */
+function readLogTail($logFile, $bytes = 4096) {
+    if (!file_exists($logFile)) {
+        return '';
+    }
+    $fileSize = filesize($logFile);
+    if ($fileSize === 0) {
+        return '';
+    }
+    $fp = fopen($logFile, 'r');
+    if ($fp === false) {
+        return '';
+    }
+    $offset = max(0, $fileSize - $bytes);
+    fseek($fp, $offset);
+    $content = fread($fp, $bytes);
+    fclose($fp);
+    return $content ?: '';
 }
 
 // Check if FFmpeg process is still running (nur im direkten Modus oder wenn aus Queue gestartet)
@@ -111,9 +144,9 @@ if (isset($meta['pid'])) {
         $meta['error'] = 'FFmpeg Fehler - siehe Log';
         file_put_contents($metaFile, json_encode($meta));
     } else {
-        // Berechne Fortschritt aus FFmpeg-Log
+        // Berechne Fortschritt aus FFmpeg-Log (nur letzten Teil lesen)
         if (file_exists($logFile)) {
-            $log = file_get_contents($logFile);
+            $log = readLogTail($logFile);
 
             // Extrahiere aktuelle Zeit aus FFmpeg-Log
             // FFmpeg gibt Zeit im Format "time=00:01:23.45" aus
@@ -122,13 +155,8 @@ if (isset($meta['pid'])) {
                 $lastMatch = end($matches);
                 $currentSeconds = $lastMatch[1] * 3600 + $lastMatch[2] * 60 + floatval($lastMatch[3]);
 
-                // Hole Gesamtdauer (einmal berechnen und cachen)
-                if (!isset($meta['total_duration'])) {
-                    $meta['total_duration'] = getTotalDuration($sessionDir);
-                    file_put_contents($metaFile, json_encode($meta));
-                }
-
-                $totalDuration = $meta['total_duration'];
+                // Hole Gesamtdauer (bereits beim Upload berechnet oder Fallback)
+                $totalDuration = getTotalDuration($sessionDir, $meta, $metaFile);
 
                 if ($totalDuration && $totalDuration > 0) {
                     // Berechne echten Fortschritt

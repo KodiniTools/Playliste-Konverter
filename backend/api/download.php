@@ -78,12 +78,19 @@ header('Content-Type: ' . $mimeType);
 header('Content-Disposition: attachment; filename="playlist.' . $safeExtension . '"');
 header('Content-Length: ' . filesize($outputFile));
 
-// Deaktiviere Output-Buffering für große Dateien
-if (ob_get_level()) {
-    ob_end_clean();
+// Nginx X-Accel-Redirect: Nginx übernimmt das File-Serving (effizienter als PHP readfile)
+// Voraussetzung: Nginx-Config mit "location /protected-temp/ { internal; alias /path/to/backend/temp/; }"
+// Wenn konfiguriert, wird der Header gesetzt und PHP gibt nichts selbst aus
+$useXAccel = isset($_SERVER['HTTP_X_ACCEL_ENABLED']);
+if ($useXAccel) {
+    header('X-Accel-Redirect: /protected-temp/' . $sessionId . '/playlist.' . $safeExtension);
+} else {
+    // Fallback: PHP streamt die Datei direkt
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    readfile($outputFile);
 }
-
-readfile($outputFile);
 
 // Cleanup after download
 $cleanup = function() use ($sessionDir) {
