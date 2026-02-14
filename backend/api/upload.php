@@ -17,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendJsonError(405, 'Method not allowed');
 }
 
-// Maximale Dateigröße pro Upload (100MB pro Datei)
-$maxFileSize = 100 * 1024 * 1024;
+// Maximale Dateigröße pro Upload (500MB pro Datei)
+$maxFileSize = 500 * 1024 * 1024;
 
 // Maximale Anzahl Dateien
-$maxFiles = 50;
+$maxFiles = 200;
 
 $uploadDir = __DIR__ . '/../temp/';
 if (!is_dir($uploadDir)) {
@@ -101,12 +101,27 @@ foreach ($uploadedFiles as $file) {
 }
 fclose($fp);
 
+// Gesamtdauer aller Dateien berechnen (für Fortschrittsanzeige)
+$totalDuration = 0;
+foreach ($uploadedFiles as $file) {
+    $filePath = $sessionDir . $file;
+    $cmd = sprintf(
+        'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
+        escapeshellarg($filePath)
+    );
+    $duration = trim(shell_exec($cmd) ?? '');
+    if (is_numeric($duration)) {
+        $totalDuration += floatval($duration);
+    }
+}
+
 // Save metadata
 file_put_contents($sessionDir . 'meta.json', json_encode([
     'session_id' => $sessionId,
     'files' => $uploadedFiles,
     'status' => 'uploaded',
-    'created_at' => time()
+    'created_at' => time(),
+    'total_duration' => $totalDuration > 0 ? $totalDuration : null
 ]));
 
 echo json_encode([

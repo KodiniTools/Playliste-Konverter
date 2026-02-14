@@ -7,9 +7,10 @@ return [
     // Queue-System aktivieren?
     // true = Konvertierungen werden in Queue eingereiht
     // false = Konvertierungen laufen direkt (wie vorher)
-    'use_queue' => false,
+    'use_queue' => true,
 
     // Maximale Anzahl gleichzeitiger Konvertierungen (nur bei use_queue = true)
+    // Faustregel: Anzahl vCPUs - 1
     'max_concurrent_jobs' => 3,
 
     // Maximales Alter für Session-Cleanup in Sekunden
