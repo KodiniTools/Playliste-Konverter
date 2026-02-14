@@ -26,20 +26,15 @@ watch(() => uiStore.locale, (newLocale) => {
   <div class="min-h-screen bg-neutral-light dark:bg-dark py-4 sm:py-8 transition-colors">
     <div class="max-w-4xl mx-auto px-3 sm:px-4">
       <header class="mb-6 sm:mb-8">
-        <div class="flex justify-between items-start mb-4 gap-2">
-          <div class="flex items-start gap-2 sm:gap-3 min-w-0">
+        <div class="flex flex-col items-center text-center mb-4 gap-2">
+          <div class="flex items-center gap-2 sm:gap-3">
             <a href="./" class="home-link flex-shrink-0" title="Home">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
               </svg>
             </a>
-            <div class="min-w-0">
-              <h1 class="text-xl sm:text-3xl font-bold text-dark dark:text-neutral-light">{{ t('app.title') }}</h1>
-              <p class="text-sm sm:text-base text-muted dark:text-neutral mt-1 sm:mt-2">{{ t('app.subtitle') }}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
+            <h1 class="text-xl sm:text-3xl font-bold text-dark dark:text-neutral-light">{{ t('app.title') }}</h1>
             <!-- PayPal Donation Button -->
             <form action="https://www.paypal.com/donate" method="post" target="_top" class="inline-block">
               <input type="hidden" name="hosted_button_id" value="8RGLGQ2BFMHU6" />
@@ -51,6 +46,7 @@ watch(() => uiStore.locale, (newLocale) => {
               </button>
             </form>
           </div>
+          <p class="text-sm sm:text-base text-muted dark:text-neutral">{{ t('app.subtitle') }}</p>
         </div>
       </header>
 
