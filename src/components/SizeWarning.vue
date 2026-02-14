@@ -18,9 +18,9 @@ const maxSizeFormatted = computed(() => formatSize(store.maxPlaylistSize))
 const currentSizeFormatted = computed(() => formatSize(store.totalSize))
 const overByFormatted = computed(() => formatSize(store.totalSize - store.maxPlaylistSize))
 
-// Gestaffelte Warnungen
-const YELLOW_WARNING_THRESHOLD = 500 * 1024 * 1024 // 500 MB
-const ORANGE_WARNING_THRESHOLD = 800 * 1024 * 1024 // 800 MB
+// Gestaffelte Warnungen (angepasst an 2 GB Limit)
+const YELLOW_WARNING_THRESHOLD = 1024 * 1024 * 1024 // 1 GB
+const ORANGE_WARNING_THRESHOLD = 1.6 * 1024 * 1024 * 1024 // 1.6 GB
 
 const isYellowWarning = computed(() => {
   return !store.isOverSizeLimit &&
