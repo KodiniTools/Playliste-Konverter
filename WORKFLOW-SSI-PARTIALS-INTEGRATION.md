@@ -72,6 +72,16 @@ body > footer, body > footer * {
 
 Die SSI-Partials werden direkt als Kinder von `<body>` injiziert. Da die Partials projektuebergreifend geteilt werden, koennen keine Tool-spezifischen Klassen vorausgesetzt werden. Der Kindkombinator `>` ist praezise genug und vermeidet Konflikte mit App-internen `<nav>`-Elementen.
 
+**CSS-Variablen-Vererbung: Warum die Partials kein eigenes CSS brauchen**
+
+Die CSS Custom Properties auf `:root` (= `<html>`) sind vererbbar. Da die Partials im
+selben DOM-Baum liegen, erben sie automatisch alle `--color-*`, `--bg-*`, `--border-*`
+Variablen. Der Dark-Mode funktioniert ueber `html.dark` / `[data-theme="dark"]` — ein
+einziges Attribut auf `<html>` schaltet die gesamte Farbpalette fuer alle Elemente um,
+inklusive der SSI-Partials. Die `!important` Overrides in `body > nav` etc. sind nur
+noetig, um *hartcodierte* Inline-Styles der Partials zu ueberschreiben (z.B. deren
+eigene `background-color`).
+
 ### 1.4 Theme-Synchronisation (Dark/Light Mode)
 
 Der Playliste-Konverter nutzt **zwei parallele Dark-Mode-Systeme**:
@@ -127,9 +137,9 @@ const i18n = createI18n({
 })
 ```
 
-**Ebene B: `data-lang-*` Attribute fuer SSI-Partials**
+**Ebene B: `data-lang-*` Attribute fuer SSI-Footer/Cookie-Banner**
 ```javascript
-// src/stores/ui.js Zeilen 35-40
+// src/stores/ui.js
 function updateDataLangElements(lang) {
   const attr = `data-lang-${lang}`
   document.querySelectorAll(`[${attr}]`).forEach(el => {
@@ -137,6 +147,34 @@ function updateDataLangElements(lang) {
   })
 }
 ```
+
+**Ebene C: `data-nav-i18n` Attribute fuer SSI-Navigation**
+
+Die SSI-Navigation (`nav.html`) enthaelt Elemente mit `data-nav-i18n` Attributen
+fuer textContent, title und aria-label. Diese werden NICHT automatisch durch die
+Nav selbst uebersetzt, sondern muessen von der jeweiligen Seite aktualisiert werden:
+
+```javascript
+// src/stores/ui.js
+function updateNavI18nElements(lang) {
+  document.querySelectorAll('[data-nav-i18n]').forEach(el => {
+    const text = el.getAttribute(`data-nav-text-${lang}`)
+    if (text) el.textContent = text
+    const title = el.getAttribute(`data-nav-title-${lang}`)
+    if (title) el.setAttribute('title', title)
+    const aria = el.getAttribute(`data-nav-aria-${lang}`)
+    if (aria) el.setAttribute('aria-label', aria)
+  })
+}
+```
+
+**Warum drei Mechanismen?**
+
+| Mechanismus | Zustaendigkeit | Elemente |
+|-------------|---------------|----------|
+| `data-lang-*` | Footer, Cookie-Banner | Einfache Texte mit beiden Sprachen als Attribute |
+| `data-nav-i18n` | SSI-Navigation | Texte, Tooltips, aria-labels in der Nav |
+| vue-i18n `$t()` | Vue-Komponenten | Alles innerhalb von `<div id="app">` |
 
 **Ablauf bei Sprachwechsel (Vue SPA):**
 
@@ -151,7 +189,8 @@ ui.js: onLanguageChanged(event)
           v
 ui.js: watch(locale)
   +---> document.documentElement.setAttribute('lang', newLang)
-  +---> updateDataLangElements(newLang)   // data-lang-* Texte ersetzen
+  +---> updateDataLangElements(newLang)   // Footer/Cookie-Banner
+  +---> updateNavI18nElements(newLang)    // SSI-Navigation
   +---> (kein language-changed Event wegen _suppressDispatch)
           |
           v
@@ -161,6 +200,7 @@ App.vue: watch(uiStore.locale)
           v
 Ergebnis:
   - Vue-Komponenten: $t() liefert neue Sprache (reaktiv)
+  - SSI-Navigation: data-nav-i18n Texte + Tooltips aktualisiert
   - SSI-Footer: data-lang-* Texte aktualisiert
   - SSI-Cookie-Banner: data-lang-* Texte aktualisiert
   - Kein Page-Reload!
@@ -453,7 +493,24 @@ function updateDataLangElements(lang) {
 }
 ```
 
-**B) Eigene Seiten-Inhalte - `data-i18n` Pattern (fuer statische Seiten):**
+**B) SSI-Navigation - `data-nav-i18n` Pattern (PFLICHT):**
+
+Die SSI-Nav hat Elemente mit `data-nav-i18n` die textContent, title und aria-label tragen:
+
+```javascript
+function updateNavI18nElements(lang) {
+  document.querySelectorAll('[data-nav-i18n]').forEach(el => {
+    const text = el.getAttribute(`data-nav-text-${lang}`)
+    if (text) el.textContent = text
+    const title = el.getAttribute(`data-nav-title-${lang}`)
+    if (title) el.setAttribute('title', title)
+    const aria = el.getAttribute(`data-nav-aria-${lang}`)
+    if (aria) el.setAttribute('aria-label', aria)
+  })
+}
+```
+
+**C) Eigene Seiten-Inhalte - `data-i18n` Pattern (fuer statische Seiten):**
 
 ```javascript
 const translations = { de: { ... }, en: { ... } };
@@ -466,7 +523,7 @@ function updateLanguage(lang) {
 }
 ```
 
-**C) Language-Event Handler mit Echo-Unterdrueckung (PFLICHT):**
+**D) Language-Event Handler mit Echo-Unterdrueckung (PFLICHT):**
 
 ```javascript
 let _suppressDispatch = false;
@@ -488,6 +545,7 @@ watch(locale, (newLocale) => {
   }
   _suppressDispatch = false;
   updateDataLangElements(newLocale);
+  updateNavI18nElements(newLocale);
 });
 ```
 
@@ -560,9 +618,11 @@ Siehe Teil 4 unten.
 | `theme-changed` Event   | SSI-Nav -> Tool     | `CustomEvent` auf `window`          | Theme-Sync                    |
 | `language-changed` Ev.  | Bidirektional       | `CustomEvent` auf `window`          | Alle i18n                     |
 | `data-lang-*`           | Tool -> SSI-Footer  | `querySelectorAll` + `textContent`  | Footer, Cookie-Banner Texte   |
+| `data-nav-i18n`         | Tool -> SSI-Nav     | `querySelectorAll` + Attribute      | Nav-Texte, Tooltips, aria     |
 | `data-i18n`             | Tool intern         | `querySelectorAll` + `textContent`  | Statische Seiten-Texte        |
 | `localStorage`          | Bidirektional       | Keys: `theme`, `locale`             | Persistenz Theme + Sprache    |
 | `lang` Attribut         | Tool -> Browser     | `setAttribute` auf `<html>`         | Screenreader, SEO             |
+| CSS Custom Properties   | `:root` -> alle     | Vererbung im DOM-Baum              | Farben, Abstande, Schatten    |
 | CSS `body > nav/footer` | Tool -> SSI-Partials| `!important` Overrides              | Hintergrund, Farben, z-index  |
 
 ---

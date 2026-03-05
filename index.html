@@ -962,8 +962,9 @@
           el.textContent = translations[lang][key];
         }
       });
-      // SSI-Partials (Footer, Cookie-Banner) nutzen data-lang-* Attribute
+      // SSI-Partials aktualisieren: Footer/Cookie-Banner + Navigation
       updateDataLangElements(lang);
+      updateNavI18nElements(lang);
     }
 
     // data-lang-* Elemente aktualisieren (SSI-Footer/Cookie-Banner)
@@ -971,6 +972,18 @@
       var attr = 'data-lang-' + lang;
       document.querySelectorAll('[' + attr + ']').forEach(function(el) {
         el.textContent = el.getAttribute(attr);
+      });
+    }
+
+    // data-nav-i18n Elemente aktualisieren (SSI-Navigation)
+    function updateNavI18nElements(lang) {
+      document.querySelectorAll('[data-nav-i18n]').forEach(function(el) {
+        var text = el.getAttribute('data-nav-text-' + lang);
+        if (text) el.textContent = text;
+        var title = el.getAttribute('data-nav-title-' + lang);
+        if (title) el.setAttribute('title', title);
+        var aria = el.getAttribute('data-nav-aria-' + lang);
+        if (aria) el.setAttribute('aria-label', aria);
       });
     }
 
