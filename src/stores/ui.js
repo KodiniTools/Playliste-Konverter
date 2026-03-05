@@ -39,6 +39,24 @@ export const useUIStore = defineStore('ui', () => {
     })
   }
 
+  // data-nav-i18n Elemente aktualisieren (SSI-Navigation:
+  // <a data-nav-i18n="key" data-nav-title-de="..." data-nav-title-en="...">)
+  function updateNavI18nElements(lang) {
+    document.querySelectorAll('[data-nav-i18n]').forEach(el => {
+      // textContent aus data-nav-text-{lang}
+      const text = el.getAttribute(`data-nav-text-${lang}`)
+      if (text) el.textContent = text
+
+      // title-Attribut aus data-nav-title-{lang}
+      const title = el.getAttribute(`data-nav-title-${lang}`)
+      if (title) el.setAttribute('title', title)
+
+      // aria-label aus data-nav-aria-{lang}
+      const aria = el.getAttribute(`data-nav-aria-${lang}`)
+      if (aria) el.setAttribute('aria-label', aria)
+    })
+  }
+
   // Locale watcher - synchronisiert lang-Attribut, dispatcht Event, aktualisiert data-lang-*
   watch(locale, (newLocale) => {
     document.documentElement.setAttribute('lang', newLocale)
@@ -51,8 +69,9 @@ export const useUIStore = defineStore('ui', () => {
     }
     _suppressDispatch = false
 
-    // data-lang-* Elemente für SSI-Komponenten aktualisieren
+    // SSI-Partials aktualisieren: Footer/Cookie-Banner + Navigation
     updateDataLangElements(newLocale)
+    updateNavI18nElements(newLocale)
   }, { immediate: true })
 
   // Auf Events der externen SSI-Navigation reagieren
