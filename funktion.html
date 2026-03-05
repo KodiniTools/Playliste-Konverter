@@ -50,7 +50,8 @@
       --danger: #ef4444;
     }
 
-    html.dark {
+    html.dark,
+    [data-theme="dark"] {
       --bg-primary: #091428;
       --bg-secondary: #0E1C32;
       --bg-card: #142640;
@@ -92,33 +93,43 @@
     html.dark body > header,
     html.dark body > header *,
     html.dark body > footer,
-    html.dark body > footer * {
+    html.dark body > footer *,
+    [data-theme="dark"] body > nav:not(.page-nav),
+    [data-theme="dark"] body > nav:not(.page-nav) *,
+    [data-theme="dark"] body > header,
+    [data-theme="dark"] body > header *,
+    [data-theme="dark"] body > footer,
+    [data-theme="dark"] body > footer * {
       color: var(--neutral-light) !important;
       background: transparent !important;
       background-color: transparent !important;
     }
 
-    /* All text in global nav/footer for dark mode */
-    html.dark body > nav:not(.page-nav),
-    html.dark body > nav:not(.page-nav) *,
-    html.dark body > header,
-    html.dark body > header *,
-    html.dark body > footer,
-    html.dark body > footer * {
-      color: var(--neutral-light) !important;
-    }
-
     /* Links in global nav/footer for dark mode */
     html.dark body > nav:not(.page-nav) a,
     html.dark body > header a,
-    html.dark body > footer a {
+    html.dark body > footer a,
+    [data-theme="dark"] body > nav:not(.page-nav) a,
+    [data-theme="dark"] body > header a,
+    [data-theme="dark"] body > footer a {
       color: var(--accent) !important;
     }
 
     html.dark body > nav:not(.page-nav) a:hover,
     html.dark body > header a:hover,
-    html.dark body > footer a:hover {
+    html.dark body > footer a:hover,
+    [data-theme="dark"] body > nav:not(.page-nav) a:hover,
+    [data-theme="dark"] body > header a:hover,
+    [data-theme="dark"] body > footer a:hover {
       color: var(--accent-dark) !important;
+    }
+
+    /* SSI Navigation: z-index for proper stacking */
+    body > nav:not(.page-nav),
+    body > header,
+    body > footer {
+      position: relative;
+      z-index: 100 !important;
     }
 
     /* Dropdown menus in light mode need solid background */
@@ -128,6 +139,7 @@
     body > header ul,
     body > header [class*="dropdown"],
     body > header [class*="menu"] {
+      z-index: 1000 !important;
       background-color: var(--bg-card) !important;
       border-color: var(--border-color) !important;
     }
@@ -138,7 +150,13 @@
     html.dark body > nav:not(.page-nav) [class*="menu"],
     html.dark body > header ul,
     html.dark body > header [class*="dropdown"],
-    html.dark body > header [class*="menu"] {
+    html.dark body > header [class*="menu"],
+    [data-theme="dark"] body > nav:not(.page-nav) ul,
+    [data-theme="dark"] body > nav:not(.page-nav) [class*="dropdown"],
+    [data-theme="dark"] body > nav:not(.page-nav) [class*="menu"],
+    [data-theme="dark"] body > header ul,
+    [data-theme="dark"] body > header [class*="dropdown"],
+    [data-theme="dark"] body > header [class*="menu"] {
       background-color: var(--dark-card) !important;
       border-color: var(--muted) !important;
     }
@@ -154,7 +172,8 @@
       transition: all 0.3s ease;
     }
 
-    html.dark .page-nav {
+    html.dark .page-nav,
+    [data-theme="dark"] .page-nav {
       background: rgba(14, 28, 50, 0.95);
     }
 
@@ -241,7 +260,8 @@
       pointer-events: none;
     }
 
-    html.dark .guide-hero-bg {
+    html.dark .guide-hero-bg,
+    [data-theme="dark"] .guide-hero-bg {
       opacity: 0.04;
     }
 
@@ -1400,19 +1420,30 @@
     // Language Management
     function updateLanguage(lang) {
       // Update static elements
-      const elements = document.querySelectorAll('[data-i18n]');
-      elements.forEach(el => {
-        const key = el.getAttribute('data-i18n');
+      var elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key]) {
           el.textContent = translations[lang][key];
         }
       });
+
+      // SSI-Partials (Footer, Cookie-Banner) nutzen data-lang-* Attribute
+      updateDataLangElements(lang);
 
       // Render quickstart steps
       renderQuickstart(lang);
 
       // Render guide content
       renderGuide(lang);
+    }
+
+    // data-lang-* Elemente aktualisieren (SSI-Footer/Cookie-Banner)
+    function updateDataLangElements(lang) {
+      var attr = 'data-lang-' + lang;
+      document.querySelectorAll('[' + attr + ']').forEach(function(el) {
+        el.textContent = el.getAttribute(attr);
+      });
     }
 
     // Quickstart Rendering
@@ -1452,9 +1483,10 @@
     });
 
     window.addEventListener('language-changed', function(e) {
-      const newLang = e.detail && e.detail.lang;
+      var newLang = e.detail && e.detail.lang;
       if (newLang && translations[newLang]) {
         currentLang = newLang;
+        document.documentElement.setAttribute('lang', newLang);
         updateLanguage(newLang);
       }
     });

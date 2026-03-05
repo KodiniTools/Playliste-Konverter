@@ -1,305 +1,315 @@
 # Workflow: SSI-Partials Integration & Synchronisation
 
-## Referenz-Implementierung: Bildkonverter
+## Referenz-Implementierung: Playliste-Konverter
 
-Dieses Dokument beschreibt exakt, wie der **Bildkonverter** die SSI-Partials (`nav.html`, `footer.html`, `cookie-banner.html`) fehlerfrei integriert hat, und liefert einen reproduzierbaren Workflow zum Reparieren anderer Tools.
+Dieses Dokument beschreibt exakt, wie der **Playliste-Konverter** die SSI-Partials (`nav.html`, `footer.html`, `cookie-banner.html`) fehlerfrei integriert hat, und liefert einen reproduzierbaren Workflow zum Reparieren anderer Tools.
 
 ---
 
-## Teil 1: Wie funktioniert es im Bildkonverter?
+## Teil 1: Wie funktioniert es im Playliste-Konverter?
 
 ### 1.1 Architektur-Ueberblick
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Apache Server (SSI-Verarbeitung)                       │
-│  ┌───────────────────────────────────────────────────┐  │
-│  │  index.html                                       │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ <!--#include virtual="/partials/nav.html"--> │  │  │
-│  │  │ <div id="app">  (Vue mountet hier)          │  │  │
-│  │  │ <!--#include virtual="/partials/footer.html">│  │  │
-│  │  │ <!--#include virtual="/partials/cookie-...-->│  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-         │                    │
-         ▼                    ▼
-┌─────────────────┐  ┌──────────────────┐
-│  SSI-Partials   │  │  Vue App (SPA)   │
-│  (statisch,     │  │  (dynamisch,     │
-│   kein eigenes  │  │   eigenes CSS    │
-│   CSS/JS)       │  │   via variables  │
-│                 │  │   .scss)         │
-└────────┬────────┘  └────────┬─────────┘
-         │                    │
-         └────────┬───────────┘
-                  ▼
-     ┌──────────────────────┐
-     │  :root CSS Custom    │
-     │  Properties          │
-     │  (variables.scss)    │
-     │  + data-theme attr   │
-     │  auf <html>          │
-     └──────────────────────┘
++---------------------------------------------------------+
+|  Apache Server (SSI-Verarbeitung)                       |
+|  +---------------------------------------------------+  |
+|  |  app.html / index.html / faq.html / funktion.html |  |
+|  |  +---------------------------------------------+  |  |
+|  |  | <!--#include virtual="/partials/nav.html"--> |  |  |
+|  |  | <div id="app">  (Vue mountet hier)           |  |  |
+|  |  | <!--#include virtual="/partials/footer.html-->|  |  |
+|  |  | <!--#include virtual="/partials/cookie-...-->  |  |  |
+|  |  +---------------------------------------------+  |  |
+|  +---------------------------------------------------+  |
++---------------------------------------------------------+
+         |                    |
+         v                    v
++-----------------+  +------------------+
+|  SSI-Partials   |  |  Vue App (SPA)   |
+|  (statisch,     |  |  (dynamisch,     |
+|   eigenes CSS   |  |   Tailwind CSS   |
+|   + JS fuer     |  |   + Pinia Store  |
+|   Theme/Lang)   |  |   fuer State)    |
++---------+-------+  +--------+---------+
+          |                    |
+          +--------+-----------+
+                   v
+      +------------------------+
+      |  Synchronisation via:  |
+      |  - CustomEvents        |
+      |  - data-theme auf      |
+      |    <html>              |
+      |  - localStorage        |
+      |  - dark CSS-Klasse     |
+      +------------------------+
 ```
 
-### 1.2 Woher nutzen die Partials die CSS-Variablen?
+### 1.2 Zwei Arten von Seiten
 
-**Die Partials bringen KEIN eigenes CSS mit.** Das ist der Schluessel.
+Der Playliste-Konverter hat **zwei verschiedene Seitentypen**, die SSI-Partials unterschiedlich integrieren:
 
-Die CSS Custom Properties werden auf `:root` (= `<html>`) definiert in `src/styles/variables.scss`:
+| Seitentyp | Dateien | SSI-Sync-Mechanismus |
+|-----------|---------|----------------------|
+| **Vue SPA** | `app.html` | Pinia Store (`ui.js`) + vue-i18n |
+| **Statische Seiten** | `index.html`, `faq.html`, `funktion.html` | Inline `<script>` mit Vanilla JS |
 
-```scss
-:root {
-  --color-primary: #014f99;
-  --color-bg: #ffffff;
-  --color-text: #212529;
-  --color-border: #dee2e6;
-  --color-accent: #c9984d;
-  // ... ~40 weitere Variablen
+### 1.3 Wie die SSI-Partials CSS erhalten
+
+**Die Partials bringen ihr eigenes CSS mit**, aber der Playliste-Konverter ueberschreibt gezielt bestimmte Stile in `src/style.css`, um Farbkonsistenz zu erzwingen:
+
+```css
+/* Navigation und Footer: transparenter Hintergrund */
+body > nav, body > nav *,
+body > header, body > header *,
+body > footer, body > footer * {
+  background: transparent !important;
+  background-color: transparent !important;
 }
-
-:root[data-theme="dark"] {
-  --color-bg: #091428;
-  --color-text: #f9f2d5;
-  --color-border: #1c3a5e;
-  // ... kompletter Palette-Swap
-}
 ```
 
-**Warum funktioniert das fuer die Partials?**
+**Warum `body > nav` statt Klassen-Selektoren?**
 
-1. CSS Custom Properties sind **vererbbar** - sie gelten fuer ALLE Kinder von `:root`
-2. Die Partials werden vom Apache **vor** dem Vue-Build in den HTML-Baum injiziert
-3. Die Partials liegen im selben DOM-Baum wie die Vue-App
-4. Wenn Vite/Vue das CSS laedt, gelten die `:root`-Variablen automatisch fuer alles
+Die SSI-Partials werden direkt als Kinder von `<body>` injiziert. Da die Partials projektuebergreifend geteilt werden, koennen keine Tool-spezifischen Klassen vorausgesetzt werden. Der Kindkombinator `>` ist praezise genug und vermeidet Konflikte mit App-internen `<nav>`-Elementen.
 
-**Reihenfolge im Browser:**
-```
-1. Apache injiziert Partials in index.html (SSI)
-2. Browser parst HTML → nav, footer, cookie-banner sind im DOM
-3. Vite laedt main.js → laedt variables.scss → :root Variablen gelten
-4. Vue mountet in #app
-5. Alles teilt dieselben :root CSS-Variablen
-```
+### 1.4 Theme-Synchronisation (Dark/Light Mode)
 
-### 1.3 Theme-Synchronisation (Dark/Light Mode)
+Der Playliste-Konverter nutzt **zwei parallele Dark-Mode-Systeme**:
 
-**Mechanismus:** `data-theme` Attribut auf `<html>`
+1. **`data-theme` Attribut auf `<html>`** - von der SSI-Navigation (`nav.html`) gesetzt
+2. **Tailwind `dark` Klasse auf `<html>`** - von der Vue-App fuer Tailwind CSS benoetigt
 
 ```
-Nutzer klickt Theme-Button (SSI-Nav)
-          │
-          ▼
+SSI-Nav setzt data-theme="dark" auf <html>
+          |
+          v
 window.dispatchEvent('theme-changed', { detail: { theme: 'dark' } })
-          │
-          ▼
-App.vue: handleGlobalThemeChange()
-          │
-          ├──► settingsStore.setTheme('dark')
-          │       │
-          │       ├──► document.documentElement.setAttribute('data-theme', 'dark')
-          │       ├──► localStorage.setItem('theme', 'dark')
-          │       └──► localStorage.setItem('bildkonverter-theme', 'dark')
-          │
-          └──► :root[data-theme="dark"] CSS-Regeln greifen
-                    │
-                    └──► ALLE Elemente (inkl. Partials) bekommen Dark-Farben
+          |
+          v
+ui.js: onThemeChanged()
+          |
+          +---> theme.value = 'dark'
+          |
+          v
+ui.js: watch(theme) -> syncDarkClass()
+          |
+          +---> document.documentElement.classList.add('dark')
+          |
+          v
+Ergebnis:
+  - <html data-theme="dark" class="dark">
+  - Tailwind dark: Klassen greifen (Vue-App)
+  - [data-theme="dark"] CSS-Regeln greifen (SSI-Partials in style.css)
 ```
 
 **Kritische Dateien:**
-- `src/stores/settingsStore.js` Zeilen 81-102: `setTheme()`
-- `src/App.vue` Zeilen 254-260: `handleGlobalThemeChange()`
-- `src/styles/variables.scss` Zeilen 281-306: `:root[data-theme="dark"]`
+- `src/stores/ui.js` Zeilen 12-18: `syncDarkClass()`
+- `src/stores/ui.js` Zeilen 59-64: `onThemeChanged()` Event-Handler
+- `src/style.css` Zeilen 13-17: Dark-Mode Body-Hintergrund
+- `src/style.css` Zeilen 31-47: Dark-Mode SSI-Element-Styling
 
-### 1.4 i18n-Synchronisation mit SSI-Partials
+**Warum zwei Systeme?**
 
-Dies ist der komplexeste Teil. Es gibt **drei separate Mechanismen**:
+Tailwind CSS (mit `darkMode: 'class'`) erwartet die Klasse `dark` auf `<html>`. Die SSI-Navigation setzt jedoch `data-theme="dark"`. Der Store synchronisiert beide.
 
-#### Mechanismus A: Vue-interne i18n (vue-i18n)
-Fuer alle Vue-Komponenten. Nutzt `$t('key')` mit Uebersetzungsdateien in `src/i18n/index.js`.
+### 1.5 i18n-Synchronisation
 
-#### Mechanismus B: `data-nav-i18n` Attribute (Externe Navigation)
-Fuer die SSI-Navigation (`nav.html`). Die Nav-Elemente tragen Attribute:
+#### Vue SPA (app.html)
 
-```html
-<!-- In nav.html (SSI-Partial): -->
-<a data-nav-i18n="nav.imageconv" href="/bildkonverter/">Bildkonverter</a>
-<button data-nav-i18n-aria="nav.themeAria" data-nav-i18n-title="nav.themeTitle">
-```
+Die Vue-App hat **zwei i18n-Ebenen**:
 
-Die Vue-App uebersetzt diese in `App.vue` Zeilen 147-175:
-
+**Ebene A: vue-i18n fuer Vue-Komponenten**
 ```javascript
-function translateExternalNav(lang) {
-  const t = navTranslations[lang]  // Lokales Uebersetzungsobjekt in App.vue
-  nav.querySelectorAll('[data-nav-i18n]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n')
-    if (t[key]) el.textContent = t[key]       // Text ersetzen
-  })
-  nav.querySelectorAll('[data-nav-i18n-aria]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n-aria')
-    if (t[key]) el.setAttribute('aria-label', t[key])  // ARIA ersetzen
-  })
-  nav.querySelectorAll('[data-nav-i18n-title]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n-title')
-    if (t[key]) el.setAttribute('title', t[key])       // Title ersetzen
-  })
-}
-```
-
-#### Mechanismus C: `data-lang-*` Attribute (Footer, Cookie-Banner)
-Fuer die anderen SSI-Partials. Elemente tragen beide Sprachen als Attribute:
-
-```html
-<!-- In footer.html / cookie-banner.html: -->
-<span data-lang-de="Impressum" data-lang-en="Imprint">Impressum</span>
-```
-
-Die Vue-App aktualisiert diese in `App.vue` Zeilen 121-140:
-
-```javascript
-function dispatchLanguageChanged(lang) {
-  window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }))
-
-  const attr = `data-lang-${lang}`
-  document.querySelectorAll(`[${attr}]`).forEach(el => {
-    const text = el.getAttribute(attr)
-    if (text) el.textContent = text
-  })
-}
-```
-
-#### Komplett-Ablauf bei Sprachwechsel:
-
-```
-Nutzer klickt "EN" in SSI-Nav
-          │
-          ▼
-App.vue: interceptExternalLangSwitcher() (Zeile 269)
-  ├──► e.preventDefault()           // Kein SSI-Reload!
-  ├──► e.stopImmediatePropagation() // Nav-eigener Handler blockiert
-  └──► settings.setLocale('en')
-          │
-          ▼
-settingsStore.setLocale('en') (Zeile 115)
-  ├──► i18n.global.locale.value = 'en'     // Vue-i18n umschalten
-  ├──► document.documentElement.lang = 'en' // HTML-Attribut
-  ├──► localStorage.setItem('locale', 'en') // Persistieren (globaler Key)
-  └──► localStorage.setItem('bildkonverter-locale', 'en') // Compat-Key
-          │
-          ▼
-App.vue: watch(settings.locale) (Zeile 212)
-  ├──► syncExternalLangButtons('en')   // Active-State der Sprach-Buttons
-  ├──► translateExternalNav('en')      // data-nav-i18n Texte ersetzen
-  └──► dispatchLanguageChanged('en')   // data-lang-* Texte + Event
-          │
-          ▼
-Ergebnis:
-  ✓ Vue-Komponenten:  $t() liefert englische Texte (reaktiv)
-  ✓ SSI-Navigation:   data-nav-i18n Texte auf Englisch
-  ✓ SSI-Footer:       data-lang-en Texte sichtbar
-  ✓ SSI-Cookie-Banner: data-lang-en Texte sichtbar
-  ✓ Kein Page-Reload!
-```
-
-### 1.5 Externe Navigation: Hoehenanpassung
-
-Die Vue-App misst die Hoehe der SSI-Navigation dynamisch:
-
-```javascript
-function updateExternalNavHeight() {
-  const externalNav = document.querySelector('.external-nav-wrapper')
-  const height = navElement.getBoundingClientRect().height
-  document.documentElement.style.setProperty('--external-nav-height', `${height}px`)
-
-  // ResizeObserver fuer dynamische Aenderungen
-  externalNavObserver = new ResizeObserver(entries => {
-    document.documentElement.style.setProperty('--external-nav-height', `${newHeight}px`)
-  })
-}
-```
-
-Der AppHeader nutzt diese Variable fuer sticky Positioning:
-```css
-position: sticky;
-top: var(--external-nav-height, 50px);
-```
-
-### 1.6 MutationObserver: Dynamisch geladene Partials
-
-Falls Partials verzoegert laden, erkennt ein MutationObserver neue DOM-Elemente:
-
-```javascript
-domMutationObserver = new MutationObserver((mutations) => {
-  // Nur auf neue ELEMENT_NODEs reagieren (nicht Text-Aenderungen)
-  const hasRelevantChanges = mutations.some(m => ...)
-
-  // Observer pausieren (verhindert Endlosschleife!)
-  domMutationObserver.disconnect()
-
-  updateExternalNavHeight()        // Nav-Hoehe neu messen
-  interceptExternalLangSwitcher()  // Lang-Buttons abfangen
-  translateExternalNav(locale)     // Nav-Texte uebersetzen
-  dispatchLanguageChanged(locale)  // Andere Partials uebersetzen
-
-  // Observer wieder aktivieren nach DOM-Settle
-  requestAnimationFrame(() => domMutationObserver.observe(...))
+// src/i18n/index.js - Uebersetzungen fuer Vue-Komponenten
+const i18n = createI18n({
+  locale: localStorage.getItem('locale') || 'de',
+  messages: { de: { ... }, en: { ... } }
 })
 ```
 
-**WICHTIG:** Ohne das Pausieren des Observers entsteht eine Endlosschleife, weil `translateExternalNav()` selbst DOM-Mutationen ausloest.
+**Ebene B: `data-lang-*` Attribute fuer SSI-Partials**
+```javascript
+// src/stores/ui.js Zeilen 35-40
+function updateDataLangElements(lang) {
+  const attr = `data-lang-${lang}`
+  document.querySelectorAll(`[${attr}]`).forEach(el => {
+    el.textContent = el.getAttribute(attr)
+  })
+}
+```
 
-### 1.7 localStorage-Key-Konvention
+**Ablauf bei Sprachwechsel (Vue SPA):**
 
-Dual-Key-System fuer Kompatibilitaet zwischen SSI-Partials und Vue-App:
+```
+SSI-Nav dispatcht 'language-changed' Event
+          |
+          v
+ui.js: onLanguageChanged(event)
+  +---> _suppressDispatch = true   // Verhindert Echo-Event
+  +---> locale.value = newLang
+          |
+          v
+ui.js: watch(locale)
+  +---> document.documentElement.setAttribute('lang', newLang)
+  +---> updateDataLangElements(newLang)   // data-lang-* Texte ersetzen
+  +---> (kein language-changed Event wegen _suppressDispatch)
+          |
+          v
+App.vue: watch(uiStore.locale)
+  +---> i18n locale.value = newLang       // Vue-Komponenten uebersetzen
+          |
+          v
+Ergebnis:
+  - Vue-Komponenten: $t() liefert neue Sprache (reaktiv)
+  - SSI-Footer: data-lang-* Texte aktualisiert
+  - SSI-Cookie-Banner: data-lang-* Texte aktualisiert
+  - Kein Page-Reload!
+```
 
-| Zweck    | Globaler Key (Partials lesen) | App-spezifischer Key (Legacy) |
-|----------|-------------------------------|-------------------------------|
-| Theme    | `theme`                       | `bildkonverter-theme`         |
-| Sprache  | `locale`                      | `bildkonverter-locale`        |
+#### Statische Seiten (index.html, faq.html, funktion.html)
 
-**Lesereihenfolge:** Globaler Key > App-spezifischer Key > Fallback
+Die statischen Seiten nutzen ein **eigenes Inline-Script** mit `data-i18n` Attributen:
+
+```html
+<!-- Im HTML: -->
+<span data-i18n="hero.title1">Audio-Dateien</span>
+
+<!-- Im Script: -->
+<script>
+  const translations = {
+    de: { 'hero.title1': 'Audio-Dateien', ... },
+    en: { 'hero.title1': 'Merge Audio Files', ... }
+  };
+
+  function updateLanguage(lang) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang]?.[key]) el.textContent = translations[lang][key];
+    });
+  }
+
+  window.addEventListener('language-changed', (e) => {
+    const newLang = e.detail?.lang;
+    if (newLang && translations[newLang]) updateLanguage(newLang);
+  });
+
+  window.addEventListener('theme-changed', syncDarkClass);
+</script>
+```
+
+**Wichtig:** Statische Seiten haben KEINE `data-lang-*` Attribute (das ist das SSI-Pattern fuer Footer/Cookie-Banner). Stattdessen nutzen sie `data-i18n` mit einem lokalen Uebersetzungsobjekt.
+
+### 1.6 localStorage-Key-Konvention
+
+**Einfaches Key-System** (kein Dual-Key wie im Bildkonverter):
+
+| Zweck    | Key (global geteilt mit SSI-Nav) |
+|----------|----------------------------------|
+| Theme    | `theme`                          |
+| Sprache  | `locale`                         |
 
 ```javascript
-const theme = ref(
-  localStorage.getItem('theme') || localStorage.getItem('bildkonverter-theme') || 'light'
-)
+// Lesen:
+const theme = localStorage.getItem('theme') || 'light'
+const locale = localStorage.getItem('locale') || 'de'
 ```
+
+Die SSI-Navigation (`nav.html`) schreibt dieselben Keys. Es gibt keine Tool-spezifischen Keys.
+
+### 1.7 CSS-Styling der SSI-Elemente (`src/style.css`)
+
+Die SSI-Partials werden durch gezielte CSS-Regeln gestylt:
+
+| Regel | Zweck |
+|-------|-------|
+| `body > nav/header/footer { background: transparent }` | Partials erben App-Hintergrund |
+| `[data-theme="dark"] body > nav * { color: #f9f2d5 }` | Dark-Mode Textfarbe |
+| `[data-theme="dark"] body > nav a { color: #c9984d }` | Dark-Mode Link-Farbe (Accent) |
+| `body > nav { position: relative; z-index: 100 }` | Nav ueber App-Content |
+| `body > nav ul { z-index: 1000 }` | Dropdown-Menues ganz oben |
+| `body > nav ul { background-color: var(--bg-card) }` | Dropdown braucht soliden Hintergrund |
+
+**Warum transparent fuer Nav/Footer, aber nicht fuer Dropdowns?**
+
+Nav und Footer sollen nahtlos in den App-Hintergrund uebergehen. Dropdown-Menues muessen jedoch einen soliden Hintergrund haben, da sie ueber anderen Inhalten schweben und sonst unleserlich waeren.
+
+**Cookie-Banner Ausnahme:**
+
+Der Cookie-Banner (`body > div` mit `position: fixed`) wird bewusst NICHT mit `background: transparent` ueberschrieben, da er seinen eigenen Hintergrund benoetigt um ueber dem Content lesbar zu bleiben.
 
 ---
 
 ## Teil 2: Haeufige Missstaende in anderen Tools
 
-### Problem 1: Eigene CSS-Variablen in Partials / Konflikte
-**Symptom:** Partials ueberschreiben `:root`-Variablen oder definieren eigene.
-**Loesung:** Partials duerfen KEINE eigenen `:root`-Variablen mitbringen. Sie muessen die vom Tool definierten Variablen nutzen.
-
-### Problem 2: Theme wechselt nicht synchron
+### Problem 1: Theme wechselt nicht synchron
 **Symptom:** Tool wechselt auf Dark, aber Nav/Footer bleiben hell (oder umgekehrt).
-**Ursache:** `data-theme` wird nicht auf `<html>` gesetzt, oder Partials nutzen keine `var(--color-*)`.
-**Loesung:** Theme muss per `document.documentElement.setAttribute('data-theme', theme)` gesetzt werden.
+**Ursache:** `dark` CSS-Klasse und `data-theme` Attribut werden nicht synchron gehalten.
+**Loesung:** Bei jedem Theme-Wechsel BEIDES setzen:
+```javascript
+document.documentElement.setAttribute('data-theme', theme)  // SSI-Partials
+document.documentElement.classList.toggle('dark', theme === 'dark')  // Tailwind
+```
 
-### Problem 3: Sprachwechsel laedt die Seite neu
-**Symptom:** Klick auf Sprach-Button in der Nav laedt die komplette Seite neu.
-**Ursache:** Das Default-Verhalten der SSI-Nav Sprach-Buttons wird nicht abgefangen.
-**Loesung:** `e.preventDefault()` + `e.stopImmediatePropagation()` im capture-Phase Handler.
+### Problem 2: SSI-Partials haben eigene Hintergrundfarbe
+**Symptom:** Farbbrueche zwischen App-Hintergrund und Nav/Footer.
+**Ursache:** Partials haben CSS mit hartcodierten `background-color` Werten.
+**Loesung:** Im Tool-CSS die Partials-Hintergruende auf `transparent` zwingen:
+```css
+body > nav, body > nav *, body > footer, body > footer * {
+  background: transparent !important;
+}
+```
+
+### Problem 3: Dropdown-Menues sind transparent/unleserlich
+**Symptom:** Navigation-Dropdowns sind durchsichtig, Text nicht lesbar.
+**Ursache:** Die `transparent !important` Regel greift auch fuer Dropdown-Menues.
+**Loesung:** Dropdown-Elemente gezielt mit solidem Hintergrund versehen:
+```css
+body > nav ul, body > nav [class*="dropdown"] {
+  background-color: #ffffff !important;
+}
+[data-theme="dark"] body > nav ul {
+  background-color: #142640 !important;
+}
+```
 
 ### Problem 4: i18n-Texte in Partials aendern sich nicht
-**Symptom:** Vue-App wechselt Sprache, aber Nav/Footer zeigen alte Sprache.
-**Ursache:** Kein `translateExternalNav()` / `dispatchLanguageChanged()` implementiert.
-**Loesung:** Beide Funktionen im App-Root-Component implementieren.
+**Symptom:** Vue-App wechselt Sprache, aber Footer zeigt alte Sprache.
+**Ursache:** `data-lang-*` Elemente werden nicht aktualisiert.
+**Loesung:** Bei jedem Sprachwechsel alle `data-lang-*` Elemente updaten:
+```javascript
+const attr = `data-lang-${lang}`
+document.querySelectorAll(`[${attr}]`).forEach(el => {
+  el.textContent = el.getAttribute(attr)
+})
+```
 
-### Problem 5: Hintergrund-Gradient und Partials passen nicht zusammen
-**Symptom:** Farbbrueche zwischen App-Hintergrund und Partials.
-**Ursache:** Partials haben eigene `background`-Definitionen statt CSS-Variablen.
-**Loesung:** Alle Hintergruende muessen `var(--color-bg)` o.ae. nutzen.
+### Problem 5: Sprachwechsel loest Echo-Event aus
+**Symptom:** Endlosschleife oder doppelte Sprachwechsel.
+**Ursache:** Tool empfaengt `language-changed` Event, aendert Locale, dispatcht erneut `language-changed`.
+**Loesung:** Flag-basierte Unterdrueckung wie in `ui.js`:
+```javascript
+let _suppressDispatch = false
 
-### Problem 6: Doppelte localStorage-Keys
-**Symptom:** Theme/Sprache springt beim Reload zurueck.
-**Ursache:** Tool schreibt nur seinen eigenen Key, liest aber den globalen nicht.
-**Loesung:** Dual-Key-System wie oben beschrieben.
+// Beim Empfang des externen Events:
+function onLanguageChanged(event) {
+  _suppressDispatch = true
+  locale.value = event.detail.lang
+}
+
+// Beim Watch:
+watch(locale, (newLocale) => {
+  if (!_suppressDispatch) {
+    window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang: newLocale } }))
+  }
+  _suppressDispatch = false
+})
+```
+
+### Problem 6: Cookie-Banner wird unsichtbar
+**Symptom:** Cookie-Banner verschwindet oder hat keinen Hintergrund.
+**Ursache:** Die `transparent !important` Regeln treffen auch den Cookie-Banner.
+**Loesung:** Cookie-Banner NICHT in die transparent-Regeln einbeziehen. Nur `body > nav`, `body > header`, `body > footer` targeten - nicht `body > div`.
 
 ---
 
@@ -309,246 +319,193 @@ const theme = ref(
 
 Fuehre diese Schritte in exakt dieser Reihenfolge durch:
 
-#### Schritt 1: CSS-Variablen pruefen
+#### Schritt 1: HTML-Struktur pruefen
 
-- [ ] `:root` Block mit allen notwendigen Custom Properties vorhanden
-- [ ] `:root[data-theme="dark"]` Block mit Dark-Mode-Override vorhanden
-- [ ] Partials nutzen KEINE eigenen `:root`-Variablen
-- [ ] Alle Farben in Partials nutzen `var(--color-*)` Syntax
-- [ ] Background des Tools nutzt CSS-Variablen: `var(--color-bg)`, `var(--color-bg-gradient)`
-
-**Minimale CSS-Variablen die vorhanden sein muessen:**
-```scss
-:root {
-  --color-primary: #014f99;
-  --color-bg: #ffffff;
-  --color-bg-secondary: #f9f2d5;
-  --color-bg-gradient: #F5F4D6;
-  --color-text: #212529;
-  --color-text-light: #6c757d;
-  --color-text-muted: #adb5bd;
-  --color-border: #dee2e6;
-  --color-accent: #c9984d;
-  --color-accent-light: #f8e1a9;
-  --color-white: #ffffff;
-  --color-success: #50e3c2;
-  --color-warning: #f8e71c;
-  --color-error: #f44336;
-  --color-info: #2196f3;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-  --transition-base: 0.2s ease;
-  --external-nav-height: 50px;
-}
-
-:root[data-theme="dark"] {
-  --color-bg: #091428;
-  --color-bg-secondary: #0E1C32;
-  --color-bg-gradient: #091428;
-  --color-text: #f9f2d5;
-  --color-text-light: #f8e1a9;
-  --color-text-muted: #7A8DA0;
-  --color-border: #1c3a5e;
-  --color-white: #142640;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.3);
-}
-```
-
-#### Schritt 2: index.html pruefen
-
-- [ ] SSI-Includes an richtiger Stelle:
+- [ ] SSI-Includes direkt als Kinder von `<body>`:
   ```html
   <body>
-    <div class="external-nav-wrapper">
-      <!--#include virtual="/partials/nav.html" -->
-    </div>
+    <!--#include virtual="/partials/nav.html" -->
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
     <!--#include virtual="/partials/footer.html" -->
     <!--#include virtual="/partials/cookie-banner.html" -->
   </body>
   ```
-- [ ] Nav in `.external-nav-wrapper` eingebettet
 - [ ] `<html lang="de">` vorhanden
+- [ ] Keine Wrapper-Elemente um die SSI-Includes (sie werden direkt als `body`-Kinder eingefuegt)
+
+#### Schritt 2: CSS fuer SSI-Elemente erstellen
+
+Minimale CSS-Regeln die in der Haupt-Stylesheet-Datei vorhanden sein muessen:
+
+```css
+/* 1. Body Dark-Mode Hintergrund */
+html.dark body,
+[data-theme="dark"] body {
+  background-color: #091428 !important;
+}
+
+/* 2. SSI-Elemente: transparenter Hintergrund (NICHT Cookie-Banner!) */
+body > nav, body > nav *,
+body > header, body > header *,
+body > footer, body > footer * {
+  background: transparent !important;
+}
+
+/* 3. Dark-Mode: helle Textfarbe fuer SSI-Elemente */
+html.dark body > nav *, html.dark body > header *, html.dark body > footer *,
+[data-theme="dark"] body > nav *, [data-theme="dark"] body > header *,
+[data-theme="dark"] body > footer * {
+  color: #f9f2d5 !important;
+  background: transparent !important;
+}
+
+/* 4. Dark-Mode: Accent-Farbe fuer Links */
+html.dark body > nav a, html.dark body > header a, html.dark body > footer a,
+[data-theme="dark"] body > nav a, [data-theme="dark"] body > header a,
+[data-theme="dark"] body > footer a {
+  color: #c9984d !important;
+}
+
+/* 5. SSI-Elemente: z-index */
+body > nav, body > header, body > footer {
+  position: relative;
+  z-index: 100 !important;
+}
+
+/* 6. Dropdown-Menues: solider Hintergrund (Light) */
+body > nav ul, body > nav [class*="dropdown"], body > nav [class*="menu"] {
+  z-index: 1000 !important;
+  background-color: #ffffff !important;
+}
+
+/* 7. Dropdown-Menues: solider Hintergrund (Dark) */
+html.dark body > nav ul, html.dark body > nav [class*="dropdown"],
+[data-theme="dark"] body > nav ul, [data-theme="dark"] body > nav [class*="dropdown"] {
+  background-color: #142640 !important;
+  border-color: #1e3a5f !important;
+}
+```
 
 #### Schritt 3: Theme-Synchronisation implementieren
 
-Im Settings-Store / State-Management:
+**Fuer Vue/Pinia-basierte Tools:**
 
 ```javascript
-// Beim Setzen des Themes:
-function setTheme(newTheme) {
-  // 1. DOM aktualisieren
-  document.documentElement.setAttribute('data-theme', newTheme)
+// stores/ui.js
+import { defineStore } from 'pinia'
+import { ref, watch } from 'vue'
 
-  // 2. Dual-Key localStorage
-  localStorage.setItem('theme', newTheme)
-  localStorage.setItem('<toolname>-theme', newTheme)
-}
+export const useUIStore = defineStore('ui', () => {
+  const theme = ref(localStorage.getItem('theme') || 'light')
+  const locale = ref(localStorage.getItem('locale') || 'de')
 
-// Beim Lesen (Initialisierung):
-const theme = localStorage.getItem('theme')
-  || localStorage.getItem('<toolname>-theme')
-  || 'light'
+  // Tailwind dark-Klasse mit data-theme synchronisieren
+  function syncDarkClass(newTheme) {
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+
+  // Initial: pruefen ob SSI-Nav schon data-theme gesetzt hat
+  const initialTheme = document.documentElement.getAttribute('data-theme')
+    || localStorage.getItem('theme') || 'light'
+  theme.value = initialTheme
+  syncDarkClass(initialTheme)
+
+  watch(theme, syncDarkClass)
+
+  // Auf Theme-Events der SSI-Nav reagieren
+  window.addEventListener('theme-changed', (e) => {
+    const newTheme = e.detail?.theme
+    if (newTheme && newTheme !== theme.value) theme.value = newTheme
+  })
+
+  return { theme, locale }
+})
 ```
 
-Im Root-Component:
+**Fuer statische Seiten (Vanilla JS):**
 
 ```javascript
-// Auf Theme-Events der SSI-Nav reagieren
-window.addEventListener('theme-changed', (e) => {
-  const newTheme = e.detail?.theme
-  if (newTheme) setTheme(newTheme)
-})
+function syncDarkClass() {
+  const theme = document.documentElement.getAttribute('data-theme')
+    || localStorage.getItem('theme') || 'light';
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+}
+
+window.addEventListener('theme-changed', syncDarkClass);
+syncDarkClass(); // Initial
 ```
 
 #### Schritt 4: i18n-Synchronisation implementieren
 
-**A) Sprach-Button Interception (PFLICHT):**
+**A) SSI-Partials (Footer, Cookie-Banner) - `data-lang-*` Pattern (PFLICHT):**
 
 ```javascript
-function interceptExternalLangSwitcher() {
-  document.querySelectorAll('.global-nav-lang-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      const targetLang = btn.getAttribute('data-lang')
-      if (targetLang) setLocale(targetLang)
-    }, { capture: true })
-  })
-}
-```
-
-**B) Nav-Uebersetzungen (PFLICHT):**
-
-```javascript
-// Uebersetzungsobjekt fuer Nav-Elemente (an eigenes Tool anpassen!)
-const navTranslations = {
-  de: { 'nav.imageconv': 'Bildkonverter', /* ... */ },
-  en: { 'nav.imageconv': 'Image Converter', /* ... */ }
-}
-
-function translateExternalNav(lang) {
-  const t = navTranslations[lang]
-  document.querySelectorAll('[data-nav-i18n]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n')
-    if (t[key]) el.textContent = t[key]
-  })
-  document.querySelectorAll('[data-nav-i18n-aria]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n-aria')
-    if (t[key]) el.setAttribute('aria-label', t[key])
-  })
-  document.querySelectorAll('[data-nav-i18n-title]').forEach(el => {
-    const key = el.getAttribute('data-nav-i18n-title')
-    if (t[key]) el.setAttribute('title', t[key])
-  })
-}
-```
-
-**C) Footer/Cookie-Banner Uebersetzungen (PFLICHT):**
-
-```javascript
-function dispatchLanguageChanged(lang) {
-  window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }))
-
+function updateDataLangElements(lang) {
   const attr = `data-lang-${lang}`
   document.querySelectorAll(`[${attr}]`).forEach(el => {
-    const text = el.getAttribute(attr)
-    if (text) el.textContent = text
+    el.textContent = el.getAttribute(attr)
   })
 }
 ```
 
-**D) localStorage Dual-Key (PFLICHT):**
+**B) Eigene Seiten-Inhalte - `data-i18n` Pattern (fuer statische Seiten):**
 
 ```javascript
-// Schreiben:
-localStorage.setItem('locale', newLocale)
-localStorage.setItem('<toolname>-locale', newLocale)
+const translations = { de: { ... }, en: { ... } };
 
-// Lesen:
-const locale = localStorage.getItem('locale')
-  || localStorage.getItem('<toolname>-locale')
-  || 'de'
-```
-
-#### Schritt 5: Externe Nav-Hoehe messen
-
-```javascript
-function updateExternalNavHeight() {
-  const wrapper = document.querySelector('.external-nav-wrapper')
-  if (!wrapper) return
-
-  const navEl = wrapper.querySelector('nav, header') || wrapper
-  const height = navEl.getBoundingClientRect().height
-  document.documentElement.style.setProperty('--external-nav-height', `${height}px`)
-
-  // ResizeObserver fuer dynamische Aenderungen
-  new ResizeObserver(entries => {
-    const h = entries[0].contentRect.height
-    document.documentElement.style.setProperty('--external-nav-height', `${h}px`)
-  }).observe(navEl)
+function updateLanguage(lang) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang]?.[key]) el.textContent = translations[lang][key];
+  });
 }
 ```
 
-#### Schritt 6: MutationObserver fuer dynamisches Laden
+**C) Language-Event Handler mit Echo-Unterdrueckung (PFLICHT):**
 
 ```javascript
-const domObserver = new MutationObserver((mutations) => {
-  const hasNewElements = mutations.some(m =>
-    m.type === 'childList' && m.addedNodes.length > 0 &&
-    Array.from(m.addedNodes).some(n => n.nodeType === Node.ELEMENT_NODE)
-  )
-  if (!hasNewElements) return
+let _suppressDispatch = false;
 
-  // WICHTIG: Observer pausieren um Endlosschleife zu verhindern!
-  domObserver.disconnect()
+// Externes Event empfangen (SSI-Nav -> Tool)
+window.addEventListener('language-changed', (e) => {
+  const newLang = e.detail?.lang;
+  if (newLang && newLang !== locale.value) {
+    _suppressDispatch = true;
+    locale.value = newLang;
+  }
+});
 
-  updateExternalNavHeight()
-  interceptExternalLangSwitcher()
-  translateExternalNav(currentLocale)
-  dispatchLanguageChanged(currentLocale)
-
-  requestAnimationFrame(() => {
-    domObserver.observe(document.body, { childList: true, subtree: true })
-  })
-})
-domObserver.observe(document.body, { childList: true, subtree: true })
-```
-
-#### Schritt 7: Watcher / Reaktive Bindungen
-
-Bei jeder Sprachaenderung muessen ALLE Synchronisations-Funktionen aufgerufen werden:
-
-```javascript
-// Vue-Beispiel:
+// Bei Locale-Aenderung (Tool -> SSI-Partials)
 watch(locale, (newLocale) => {
-  i18n.global.locale.value = newLocale
-  document.documentElement.setAttribute('lang', newLocale)
-  syncExternalLangButtons(newLocale)
-  translateExternalNav(newLocale)
-  dispatchLanguageChanged(newLocale)
-}, { immediate: true })
+  document.documentElement.setAttribute('lang', newLocale);
+  if (!_suppressDispatch) {
+    window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang: newLocale } }));
+  }
+  _suppressDispatch = false;
+  updateDataLangElements(newLocale);
+});
+```
 
-// Vanilla JS / anderes Framework:
-function onLocaleChange(newLocale) {
-  document.documentElement.setAttribute('lang', newLocale)
-  syncExternalLangButtons(newLocale)
-  translateExternalNav(newLocale)
-  dispatchLanguageChanged(newLocale)
+#### Schritt 5: Tailwind Dark-Mode konfigurieren
+
+Falls Tailwind CSS verwendet wird:
+
+```javascript
+// tailwind.config.js
+export default {
+  darkMode: 'class',  // WICHTIG: 'class' statt 'media'
+  // ...
 }
 ```
 
-#### Schritt 8: Cleanup nicht vergessen
+#### Schritt 6: Testen
 
-```javascript
-// Bei Component/App Destroy:
-resizeObserver?.disconnect()
-mutationObserver?.disconnect()
-window.removeEventListener('theme-changed', handler)
-abortController.abort()  // Entfernt alle Lang-Button-Listener
-```
+Siehe Teil 4 unten.
 
 ---
 
@@ -559,7 +516,8 @@ abortController.abort()  // Entfernt alle Lang-Button-Listener
 1. Tool oeffnen
 2. In SSI-Nav auf Theme-Button klicken
 3. Pruefen: Wechseln ALLE Bereiche (Nav, App, Footer, Cookie) synchron?
-4. Seite neu laden → Bleibt das Theme erhalten?
+4. DevTools: Hat <html> sowohl data-theme="dark" ALS AUCH class="dark"?
+5. Seite neu laden -> Bleibt das Theme erhalten?
 ```
 
 ### Test 2: i18n-Sync
@@ -567,45 +525,65 @@ abortController.abort()  // Entfernt alle Lang-Button-Listener
 1. Tool oeffnen (Standard: DE)
 2. In SSI-Nav auf "EN" klicken
 3. Pruefen: Laedt die Seite neu? (FEHLER wenn ja)
-4. Pruefen: Wechselt die Nav auf Englisch?
-5. Pruefen: Wechselt der Footer auf Englisch?
-6. Pruefen: Wechselt das Cookie-Banner auf Englisch?
-7. Pruefen: Wechselt der App-Inhalt auf Englisch?
-8. Seite neu laden → Bleibt die Sprache erhalten?
+4. Pruefen: Wechselt der Footer auf Englisch? (data-lang-en)
+5. Pruefen: Wechselt das Cookie-Banner auf Englisch? (data-lang-en)
+6. Pruefen: Wechselt der App-Inhalt auf Englisch?
+7. Seite neu laden -> Bleibt die Sprache erhalten?
 ```
 
-### Test 3: CSS-Variablen
+### Test 3: CSS-Konsistenz
 ```
-1. DevTools oeffnen → Elements → <html>
-2. Pruefen: Existiert data-theme="light" / "dark"?
-3. Computed Styles von :root pruefen:
-   - --color-bg vorhanden?
-   - --color-text vorhanden?
-   - --external-nav-height vorhanden?
-4. Theme wechseln → Aendern sich die Variablen-Werte?
+1. DevTools -> Elements -> body > nav inspizieren
+2. Pruefen: Ist background transparent?
+3. DevTools -> nav > ul (Dropdown) inspizieren
+4. Pruefen: Hat Dropdown einen soliden Hintergrund?
+5. Theme wechseln -> Pruefen: Dropdown-Hintergrund aendert sich?
+6. Pruefen: Gibt es Farbbrueche zwischen Nav und App-Content?
 ```
 
-### Test 4: Hintergrund-Sync
+### Test 4: Cookie-Banner
 ```
-1. DevTools → Body/App-Container inspizieren
-2. Pruefen: Nutzt background var(--color-bg) oder hartcodierte Farbe?
-3. Theme wechseln → Ist der Uebergang smooth (transition)?
-4. Gibt es Farbbrueche zwischen Nav und App-Content?
+1. Cookie-Banner oeffnen (ggf. localStorage leeren)
+2. Pruefen: Hat Banner einen sichtbaren Hintergrund?
+3. Theme wechseln: Bleibt Banner lesbar?
+4. Sprache wechseln: Aendern sich Banner-Texte?
 ```
 
 ---
 
 ## Teil 5: Zusammenfassung der Synchronisations-Kanaele
 
-| Kanal                  | Richtung              | Mechanismus                      | Betroffene Elemente          |
-|------------------------|-----------------------|----------------------------------|------------------------------|
-| CSS Custom Properties  | Tool → Partials       | `:root` Vererbung                | Alle Farben, Spacing, etc.   |
-| `data-theme` Attribut  | Bidirektional         | `setAttribute` auf `<html>`      | Theme (Light/Dark)           |
-| `theme-changed` Event  | SSI-Nav → Tool        | `CustomEvent` auf `window`       | Theme-Sync                   |
-| `language-changed` Ev. | Tool → SSI-Partials   | `CustomEvent` auf `window`       | Footer, Cookie-Banner        |
-| `data-nav-i18n`        | Tool → SSI-Nav        | `querySelectorAll` + `textContent`| Nav-Texte                   |
-| `data-lang-*`          | Tool → SSI-Partials   | `querySelectorAll` + `textContent`| Footer, Cookie-Banner Texte  |
-| `localStorage`         | Bidirektional         | Dual-Key-System                  | Persistenz Theme + Sprache   |
-| `lang` Attribut        | Tool → Browser        | `setAttribute` auf `<html>`      | Screenreader, SEO            |
-| `--external-nav-height`| SSI-Nav → Tool        | `ResizeObserver` + CSS-Variable  | Sticky Header Positioning    |
-| `MutationObserver`     | DOM → Tool            | Erkennung neuer Elemente         | Verzoegert geladene Partials |
+| Kanal                   | Richtung            | Mechanismus                         | Betroffene Elemente           |
+|-------------------------|---------------------|-------------------------------------|-------------------------------|
+| `data-theme` Attribut   | SSI-Nav -> Tool     | `setAttribute` auf `<html>`         | Theme (Light/Dark)            |
+| `dark` CSS-Klasse       | Tool intern         | `classList.add/remove` auf `<html>` | Tailwind Dark-Mode            |
+| `theme-changed` Event   | SSI-Nav -> Tool     | `CustomEvent` auf `window`          | Theme-Sync                    |
+| `language-changed` Ev.  | Bidirektional       | `CustomEvent` auf `window`          | Alle i18n                     |
+| `data-lang-*`           | Tool -> SSI-Footer  | `querySelectorAll` + `textContent`  | Footer, Cookie-Banner Texte   |
+| `data-i18n`             | Tool intern         | `querySelectorAll` + `textContent`  | Statische Seiten-Texte        |
+| `localStorage`          | Bidirektional       | Keys: `theme`, `locale`             | Persistenz Theme + Sprache    |
+| `lang` Attribut         | Tool -> Browser     | `setAttribute` auf `<html>`         | Screenreader, SEO             |
+| CSS `body > nav/footer` | Tool -> SSI-Partials| `!important` Overrides              | Hintergrund, Farben, z-index  |
+
+---
+
+## Teil 6: Dateiuebersicht - Wo ist was implementiert?
+
+### Vue SPA (`app.html`)
+
+| Datei | Verantwortung |
+|-------|---------------|
+| `app.html` | SSI-Includes, Vue-Mount-Point |
+| `src/stores/ui.js` | Theme/Locale State, SSI-Event-Handler, dark-Klasse Sync |
+| `src/App.vue` | vue-i18n Locale-Sync mit UI-Store |
+| `src/i18n/index.js` | Uebersetzungen fuer Vue-Komponenten |
+| `src/style.css` | CSS-Overrides fuer SSI-Elemente |
+| `tailwind.config.js` | `darkMode: 'class'` Konfiguration |
+
+### Statische Seiten
+
+| Datei | Verantwortung |
+|-------|---------------|
+| `index.html` | SSI-Includes, Inline-Uebersetzungen (`data-i18n`), Theme/Lang Event-Handler |
+| `faq.html` | SSI-Includes, Inline-Uebersetzungen (`data-i18n`), Theme/Lang Event-Handler |
+| `funktion.html` | SSI-Includes, Inline-Uebersetzungen (`data-i18n`), Theme/Lang Event-Handler |
