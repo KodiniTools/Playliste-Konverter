@@ -16,10 +16,8 @@ html.dark body,
   background-color: #091428 !important; /* dark */
 }
 
-/* Navigation and Footer styles for SSI includes */
-/* Only target semantic SSI elements — not the cookie-banner which needs its own background */
-body > nav,
-body > nav *,
+/* SSI Footer/Header styles - transparent background so page bg shows through */
+/* nav.html (.global-nav) handles its own background — do NOT override it */
 body > header,
 body > header *,
 body > footer,
@@ -28,15 +26,11 @@ body > footer * {
   background-color: transparent !important;
 }
 
-/* Dark theme: transparent background and light text */
-html.dark body > nav,
-html.dark body > nav *,
+/* Dark theme: light text for footer/header SSI includes */
 html.dark body > header,
 html.dark body > header *,
 html.dark body > footer,
 html.dark body > footer *,
-[data-theme="dark"] body > nav,
-[data-theme="dark"] body > nav *,
 [data-theme="dark"] body > header,
 [data-theme="dark"] body > header *,
 [data-theme="dark"] body > footer,
@@ -46,72 +40,26 @@ html.dark body > footer *,
   background-color: transparent !important;
 }
 
-/* Links in navigation and footer for dark theme */
-html.dark body > nav a,
+/* Links in footer/header for dark theme */
 html.dark body > header a,
 html.dark body > footer a,
-[data-theme="dark"] body > nav a,
 [data-theme="dark"] body > header a,
 [data-theme="dark"] body > footer a {
   color: #c9984d !important; /* accent */
 }
 
-html.dark body > nav a:hover,
 html.dark body > header a:hover,
 html.dark body > footer a:hover,
-[data-theme="dark"] body > nav a:hover,
 [data-theme="dark"] body > header a:hover,
 [data-theme="dark"] body > footer a:hover {
   color: #b0832f !important; /* accent-dark */
 }
 
-/* Navigation dropdown z-index - must be above app header */
-/* Only target semantic SSI elements (nav, header, footer) — not the cookie-banner div
-   which needs to keep its own position: fixed */
-body > nav,
+/* SSI elements z-index for proper stacking */
 body > header,
 body > footer {
   position: relative;
   z-index: 100 !important;
-}
-
-/* Dropdown menus need even higher z-index */
-body > nav ul,
-body > nav [class*="dropdown"],
-body > nav [class*="menu"],
-body > nav [class*="submenu"],
-body > header ul,
-body > header [class*="dropdown"],
-body > header [class*="menu"] {
-  z-index: 1000 !important;
-}
-
-/* Dropdown background for light mode - needs solid background to be readable */
-body > nav ul,
-body > nav [class*="dropdown"],
-body > nav [class*="menu"],
-body > header ul,
-body > header [class*="dropdown"],
-body > header [class*="menu"] {
-  background-color: var(--bg-card, #ffffff) !important;
-  border-color: var(--border-color, #c0c2c9) !important;
-}
-
-/* Dropdown background for dark mode - needs solid background to be readable */
-html.dark body > nav ul,
-html.dark body > nav [class*="dropdown"],
-html.dark body > nav [class*="menu"],
-html.dark body > header ul,
-html.dark body > header [class*="dropdown"],
-html.dark body > header [class*="menu"],
-[data-theme="dark"] body > nav ul,
-[data-theme="dark"] body > nav [class*="dropdown"],
-[data-theme="dark"] body > nav [class*="menu"],
-[data-theme="dark"] body > header ul,
-[data-theme="dark"] body > header [class*="dropdown"],
-[data-theme="dark"] body > header [class*="menu"] {
-  background-color: #142640 !important; /* dark-card */
-  border-color: #1e3a5f !important; /* border */
 }
 
 /* Home link styles */

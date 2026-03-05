@@ -39,59 +39,50 @@ export const useUIStore = defineStore('ui', () => {
     })
   }
 
-  // data-nav-i18n Elemente aktualisieren (SSI-Navigation:
-  // <a data-nav-i18n="key" data-nav-title-de="..." data-nav-title-en="...">)
-  function updateNavI18nElements(lang) {
-    document.querySelectorAll('[data-nav-i18n]').forEach(el => {
-      // textContent aus data-nav-text-{lang}
-      const text = el.getAttribute(`data-nav-text-${lang}`)
-      if (text) el.textContent = text
-
-      // title-Attribut aus data-nav-title-{lang}
-      const title = el.getAttribute(`data-nav-title-${lang}`)
-      if (title) el.setAttribute('title', title)
-
-      // aria-label aus data-nav-aria-{lang}
-      const aria = el.getAttribute(`data-nav-aria-${lang}`)
-      if (aria) el.setAttribute('aria-label', aria)
-    })
-  }
-
   // Locale watcher - synchronisiert lang-Attribut, dispatcht Event, aktualisiert data-lang-*
   watch(locale, (newLocale) => {
     document.documentElement.setAttribute('lang', newLocale)
 
     // Event nur dispatchen wenn Änderung nicht von externem SSI-Event kam
     if (!_suppressDispatch) {
-      window.dispatchEvent(new CustomEvent('language-changed', {
-        detail: { lang: newLocale }
+      window.dispatchEvent(new CustomEvent('locale-changed', {
+        detail: { locale: newLocale }
       }))
     }
     _suppressDispatch = false
 
-    // SSI-Partials aktualisieren: Footer/Cookie-Banner + Navigation
+    // SSI-Partials aktualisieren: Footer/Cookie-Banner (data-lang-*)
+    // Navigation übersetzt sich selbst via applyTranslations()
     updateDataLangElements(newLocale)
-    updateNavI18nElements(newLocale)
   }, { immediate: true })
 
-  // Auf Events der externen SSI-Navigation reagieren
-  function onThemeChanged(event) {
-    const newTheme = event.detail?.theme
-    if (newTheme && newTheme !== theme.value) {
-      theme.value = newTheme
+  // nav.html setzt data-theme direkt, dispatcht aber KEIN Event.
+  // MutationObserver erkennt Änderungen am data-theme Attribut.
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === 'data-theme') {
+        const newTheme = document.documentElement.getAttribute('data-theme') || 'light'
+        if (newTheme !== theme.value) {
+          theme.value = newTheme
+        }
+      }
     }
-  }
+  })
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  })
 
-  function onLanguageChanged(event) {
-    const newLang = event.detail?.lang
+  // nav.html dispatcht 'locale-changed' mit { detail: { locale: 'de'|'en' } }
+  function onLocaleChanged(event) {
+    const newLang = event.detail?.locale
     if (newLang && newLang !== locale.value) {
       _suppressDispatch = true
       locale.value = newLang
     }
   }
 
-  window.addEventListener('theme-changed', onThemeChanged)
-  window.addEventListener('language-changed', onLanguageChanged)
+  window.addEventListener('locale-changed', onLocaleChanged)
 
   function setLocale(newLocale) {
     locale.value = newLocale
