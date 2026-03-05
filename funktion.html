@@ -75,10 +75,8 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Global SSI Navigation and Footer - transparent background */
-    /* Only target semantic SSI elements (nav, header, footer) — not the cookie-banner div */
-    body > nav:not(.page-nav),
-    body > nav:not(.page-nav) *,
+    /* SSI Footer/Header - transparent background so page bg shows through */
+    /* nav.html (.global-nav) handles its own background — do NOT override it */
     body > header,
     body > header *,
     body > footer,
@@ -87,15 +85,11 @@
       background-color: transparent !important;
     }
 
-    /* Dark mode: transparent background and light text for SSI includes */
-    html.dark body > nav:not(.page-nav),
-    html.dark body > nav:not(.page-nav) *,
+    /* Dark mode: light text for footer/header SSI includes */
     html.dark body > header,
     html.dark body > header *,
     html.dark body > footer,
     html.dark body > footer *,
-    [data-theme="dark"] body > nav:not(.page-nav),
-    [data-theme="dark"] body > nav:not(.page-nav) *,
     [data-theme="dark"] body > header,
     [data-theme="dark"] body > header *,
     [data-theme="dark"] body > footer,
@@ -105,60 +99,26 @@
       background-color: transparent !important;
     }
 
-    /* Links in global nav/footer for dark mode */
-    html.dark body > nav:not(.page-nav) a,
+    /* Links in footer/header for dark mode */
     html.dark body > header a,
     html.dark body > footer a,
-    [data-theme="dark"] body > nav:not(.page-nav) a,
     [data-theme="dark"] body > header a,
     [data-theme="dark"] body > footer a {
       color: var(--accent) !important;
     }
 
-    html.dark body > nav:not(.page-nav) a:hover,
     html.dark body > header a:hover,
     html.dark body > footer a:hover,
-    [data-theme="dark"] body > nav:not(.page-nav) a:hover,
     [data-theme="dark"] body > header a:hover,
     [data-theme="dark"] body > footer a:hover {
       color: var(--accent-dark) !important;
     }
 
-    /* SSI Navigation: z-index for proper stacking */
-    body > nav:not(.page-nav),
+    /* SSI elements z-index for proper stacking */
     body > header,
     body > footer {
       position: relative;
       z-index: 100 !important;
-    }
-
-    /* Dropdown menus in light mode need solid background */
-    body > nav:not(.page-nav) ul,
-    body > nav:not(.page-nav) [class*="dropdown"],
-    body > nav:not(.page-nav) [class*="menu"],
-    body > header ul,
-    body > header [class*="dropdown"],
-    body > header [class*="menu"] {
-      z-index: 1000 !important;
-      background-color: var(--bg-card) !important;
-      border-color: var(--border-color) !important;
-    }
-
-    /* Dropdown menus in dark mode need solid background */
-    html.dark body > nav:not(.page-nav) ul,
-    html.dark body > nav:not(.page-nav) [class*="dropdown"],
-    html.dark body > nav:not(.page-nav) [class*="menu"],
-    html.dark body > header ul,
-    html.dark body > header [class*="dropdown"],
-    html.dark body > header [class*="menu"],
-    [data-theme="dark"] body > nav:not(.page-nav) ul,
-    [data-theme="dark"] body > nav:not(.page-nav) [class*="dropdown"],
-    [data-theme="dark"] body > nav:not(.page-nav) [class*="menu"],
-    [data-theme="dark"] body > header ul,
-    [data-theme="dark"] body > header [class*="dropdown"],
-    [data-theme="dark"] body > header [class*="menu"] {
-      background-color: var(--dark-card) !important;
-      border-color: var(--muted) !important;
     }
 
     /* Page Navigation */
@@ -1428,9 +1388,9 @@
         }
       });
 
-      // SSI-Partials aktualisieren: Footer/Cookie-Banner + Navigation
+      // SSI-Partials aktualisieren: Footer/Cookie-Banner (data-lang-*)
+      // Navigation übersetzt sich selbst via applyTranslations()
       updateDataLangElements(lang);
-      updateNavI18nElements(lang);
 
       // Render quickstart steps
       renderQuickstart(lang);
@@ -1444,18 +1404,6 @@
       var attr = 'data-lang-' + lang;
       document.querySelectorAll('[' + attr + ']').forEach(function(el) {
         el.textContent = el.getAttribute(attr);
-      });
-    }
-
-    // data-nav-i18n Elemente aktualisieren (SSI-Navigation)
-    function updateNavI18nElements(lang) {
-      document.querySelectorAll('[data-nav-i18n]').forEach(function(el) {
-        var text = el.getAttribute('data-nav-text-' + lang);
-        if (text) el.textContent = text;
-        var title = el.getAttribute('data-nav-title-' + lang);
-        if (title) el.setAttribute('title', title);
-        var aria = el.getAttribute('data-nav-aria-' + lang);
-        if (aria) el.setAttribute('aria-label', aria);
       });
     }
 
@@ -1490,13 +1438,23 @@
       `).join('');
     }
 
-    // Auf Events der SSI-Navigation reagieren
-    window.addEventListener('theme-changed', function() {
-      syncDarkClass();
+    // nav.html setzt data-theme direkt, dispatcht aber KEIN Event.
+    // MutationObserver erkennt Änderungen am data-theme Attribut.
+    var themeObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'data-theme') {
+          syncDarkClass();
+        }
+      });
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
     });
 
-    window.addEventListener('language-changed', function(e) {
-      var newLang = e.detail && e.detail.lang;
+    // nav.html dispatcht 'locale-changed' mit { detail: { locale: 'de'|'en' } }
+    window.addEventListener('locale-changed', function(e) {
+      var newLang = e.detail && e.detail.locale;
       if (newLang && translations[newLang]) {
         currentLang = newLang;
         document.documentElement.setAttribute('lang', newLang);
