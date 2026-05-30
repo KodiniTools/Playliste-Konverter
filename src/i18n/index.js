@@ -30,7 +30,8 @@ const messages = {
     uploader: {
       dropText: 'MP3 oder WAV Dateien hier ablegen',
       orText: 'oder',
-      selectButton: 'Dateien auswählen'
+      selectButton: 'Dateien auswählen',
+      selectFolderButton: 'Ordner auswählen'
     },
     fileList: {
       title: 'Playlist',
@@ -122,7 +123,8 @@ const messages = {
     uploader: {
       dropText: 'Drop MP3 or WAV files here',
       orText: 'or',
-      selectButton: 'Select files'
+      selectButton: 'Select files',
+      selectFolderButton: 'Select folder'
     },
     fileList: {
       title: 'Playlist',
