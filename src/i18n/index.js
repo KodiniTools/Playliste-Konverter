@@ -32,6 +32,10 @@ const messages = {
       orText: 'oder',
       selectButton: 'Dateien auswählen',
       selectFolderButton: 'Ordner auswählen',
+      errorFileAccess: 'Datei konnte nicht gelesen werden',
+      errorDirectoryAccess: 'Ordner konnte nicht vollständig gelesen werden',
+      errorDrop: 'Fehler beim Verarbeiten der abgelegten Dateien',
+      errorFileSelect: 'Fehler beim Lesen der ausgewählten Dateien',
     },
     fileList: {
       title: 'Playlist',
@@ -128,6 +132,10 @@ const messages = {
       orText: 'or',
       selectButton: 'Select files',
       selectFolderButton: 'Select folder',
+      errorFileAccess: 'Could not read file',
+      errorDirectoryAccess: 'Folder could not be read completely',
+      errorDrop: 'Error processing dropped files',
+      errorFileSelect: 'Error reading selected files',
     },
     fileList: {
       title: 'Playlist',
