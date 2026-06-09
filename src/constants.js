@@ -4,6 +4,9 @@ export const UPLOAD_TIMEOUT = 30 * 60 * 1000
 // Konvertierungs-Start-Timeout: 30 Sekunden
 export const CONVERT_START_TIMEOUT = 30_000
 
+// Status-Polling-Timeout pro Request: 10 Sekunden
+export const STATUS_POLL_TIMEOUT = 10_000
+
 // Maximale Playlist-Größe: 2 GB
 export const MAX_PLAYLIST_SIZE = 2 * 1024 * 1024 * 1024
 
