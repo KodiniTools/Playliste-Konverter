@@ -1,45 +1,57 @@
 <script setup>
   import { ref } from 'vue'
   import { useConverterStore } from '../stores/converter'
+  import { useToastStore } from '../stores/toast'
   import { useI18n } from 'vue-i18n'
 
   const store = useConverterStore()
+  const toastStore = useToastStore()
   const { t } = useI18n()
   const isDragging = ref(false)
 
   async function onDrop(e) {
     isDragging.value = false
 
-    const items = e.dataTransfer?.items
-    if (items && items.length > 0) {
-      const files = []
-      const promises = []
+    try {
+      const items = e.dataTransfer?.items
+      if (items && items.length > 0) {
+        const files = []
+        const promises = []
 
-      for (const item of items) {
-        const entry = item.webkitGetAsEntry?.()
-        if (entry?.isDirectory) {
-          promises.push(readDirectoryEntries(entry, files))
-        } else if (entry?.isFile) {
-          promises.push(
-            new Promise((resolve) => {
-              entry.file((f) => {
-                files.push(f)
-                resolve()
-              })
-            }),
-          )
+        for (const item of items) {
+          const entry = item.webkitGetAsEntry?.()
+          if (entry?.isDirectory) {
+            promises.push(readDirectoryEntries(entry, files))
+          } else if (entry?.isFile) {
+            promises.push(
+              new Promise((resolve) => {
+                entry.file(
+                  (f) => {
+                    files.push(f)
+                    resolve()
+                  },
+                  () => {
+                    toastStore.warning(t('uploader.errorFileAccess'))
+                    resolve()
+                  },
+                )
+              }),
+            )
+          }
+        }
+
+        await Promise.all(promises)
+        if (files.length > 0) {
+          store.addFiles(files)
+          return
         }
       }
 
-      await Promise.all(promises)
-      if (files.length > 0) {
-        store.addFiles(files)
-        return
+      if (e.dataTransfer?.files?.length) {
+        store.addFiles(e.dataTransfer.files)
       }
-    }
-
-    if (e.dataTransfer?.files?.length) {
-      store.addFiles(e.dataTransfer.files)
+    } catch {
+      toastStore.error(t('uploader.errorDrop'))
     }
   }
 
@@ -47,37 +59,59 @@
     return new Promise((resolve) => {
       const reader = dirEntry.createReader()
       const readBatch = () => {
-        reader.readEntries((entries) => {
-          if (!entries.length) {
-            resolve()
-            return
-          }
-          const promises = entries.map((entry) => {
-            if (entry.isDirectory) return readDirectoryEntries(entry, files)
-            if (entry.isFile)
-              return new Promise((res) => {
-                entry.file((f) => {
-                  files.push(f)
-                  res()
+        reader.readEntries(
+          (entries) => {
+            if (!entries.length) {
+              resolve()
+              return
+            }
+            const promises = entries.map((entry) => {
+              if (entry.isDirectory) return readDirectoryEntries(entry, files)
+              if (entry.isFile)
+                return new Promise((res) => {
+                  entry.file(
+                    (f) => {
+                      files.push(f)
+                      res()
+                    },
+                    () => {
+                      toastStore.warning(t('uploader.errorFileAccess'))
+                      res()
+                    },
+                  )
                 })
-              })
-            return Promise.resolve()
-          })
-          Promise.all(promises).then(readBatch)
-        })
+              return Promise.resolve()
+            })
+            Promise.all(promises).then(readBatch)
+          },
+          () => {
+            toastStore.warning(t('uploader.errorDirectoryAccess'))
+            resolve()
+          },
+        )
       }
       readBatch()
     })
   }
 
   function onFileSelect(e) {
-    store.addFiles(e.target.files)
-    e.target.value = ''
+    try {
+      store.addFiles(e.target.files)
+    } catch {
+      toastStore.error(t('uploader.errorFileSelect'))
+    } finally {
+      e.target.value = ''
+    }
   }
 
   function onFolderSelect(e) {
-    store.addFiles(e.target.files)
-    e.target.value = ''
+    try {
+      store.addFiles(e.target.files)
+    } catch {
+      toastStore.error(t('uploader.errorFileSelect'))
+    } finally {
+      e.target.value = ''
+    }
   }
 </script>
 
