@@ -2,6 +2,7 @@
   import { ref, onUnmounted } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useI18n } from 'vue-i18n'
+  import { formatBytes, formatTime } from '../utils/format'
 
   const store = useConverterStore()
   const { t } = useI18n()
@@ -36,25 +37,6 @@
 
   function onDragEnd() {
     draggedIndex = null
-  }
-
-  function formatSize(bytes) {
-    return (bytes / 1024 / 1024).toFixed(2) + ' MB'
-  }
-
-  function formatTotalSize(bytes) {
-    const mb = bytes / 1024 / 1024
-    if (mb >= 1024) {
-      return (mb / 1024).toFixed(2) + ' GB'
-    }
-    return mb.toFixed(2) + ' MB'
-  }
-
-  function formatTime(seconds) {
-    if (!seconds || isNaN(seconds)) return '0:00'
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   function getAudioUrl(item) {
@@ -176,7 +158,7 @@
           {{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})
         </h3>
         <p class="text-xs sm:text-sm text-muted dark:text-neutral mt-1">
-          {{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}
+          {{ t('fileList.totalSize') }}: {{ formatBytes(store.totalSize) }}
         </p>
       </div>
       <button
@@ -299,7 +281,7 @@
             {{ item.name }}
           </p>
           <div class="flex items-center gap-2">
-            <p class="text-xs text-muted dark:text-neutral">{{ formatSize(item.size) }}</p>
+            <p class="text-xs text-muted dark:text-neutral">{{ formatBytes(item.size) }}</p>
             <!-- Progress während Wiedergabe -->
             <template v-if="currentlyPlaying === item.id && audioDuration > 0">
               <span class="text-xs text-accent">

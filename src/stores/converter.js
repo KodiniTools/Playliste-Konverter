@@ -3,33 +3,13 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import { useToastStore } from './toast'
-
-// Timeout für große Uploads (30 Minuten)
-const UPLOAD_TIMEOUT = 30 * 60 * 1000
-
-// Maximale Größe für Konvertierung (2 GB)
-const MAX_PLAYLIST_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB in Bytes
-
-// Verfügbare Ausgabeformate
-const OUTPUT_FORMATS = {
-  webm: {
-    extension: 'webm',
-    label: 'WebM (Opus)',
-    description: 'Kompakt, modern',
-    maxBitrate: 256,
-  },
-  mp3: { extension: 'mp3', label: 'MP3', description: 'Universell kompatibel', maxBitrate: 320 },
-  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source', maxBitrate: 320 },
-}
-
-// Verfügbare Bitraten
-const AVAILABLE_BITRATES = [
-  { value: 64, label: '64 kbps', description: 'Niedrig' },
-  { value: 128, label: '128 kbps', description: 'Standard' },
-  { value: 192, label: '192 kbps', description: 'Hoch' },
-  { value: 256, label: '256 kbps', description: 'Sehr hoch' },
-  { value: 320, label: '320 kbps', description: 'Maximum' },
-]
+import {
+  UPLOAD_TIMEOUT,
+  CONVERT_START_TIMEOUT,
+  MAX_PLAYLIST_SIZE,
+  OUTPUT_FORMATS,
+  AVAILABLE_BITRATES,
+} from '../constants'
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
@@ -276,7 +256,7 @@ export const useConverterStore = defineStore('converter', () => {
           bitrate: bitrate.value,
         },
         {
-          timeout: 30000, // 30 Sekunden für Convert-Start
+          timeout: CONVERT_START_TIMEOUT,
           signal: abortController.signal,
         },
       )

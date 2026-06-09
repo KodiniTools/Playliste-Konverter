@@ -2,36 +2,26 @@
   import { computed } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useI18n } from 'vue-i18n'
+  import { formatBytes } from '../utils/format'
+  import { SIZE_THRESHOLD_YELLOW, SIZE_THRESHOLD_ORANGE } from '../constants'
 
   const store = useConverterStore()
   const { t } = useI18n()
 
-  function formatSize(bytes) {
-    const mb = bytes / 1024 / 1024
-    if (mb >= 1024) {
-      return (mb / 1024).toFixed(2) + ' GB'
-    }
-    return mb.toFixed(2) + ' MB'
-  }
-
-  const maxSizeFormatted = computed(() => formatSize(store.maxPlaylistSize))
-  const currentSizeFormatted = computed(() => formatSize(store.totalSize))
-  const overByFormatted = computed(() => formatSize(store.totalSize - store.maxPlaylistSize))
-
-  // Gestaffelte Warnungen (angepasst an 2 GB Limit)
-  const YELLOW_WARNING_THRESHOLD = 1024 * 1024 * 1024 // 1 GB
-  const ORANGE_WARNING_THRESHOLD = 1.6 * 1024 * 1024 * 1024 // 1.6 GB
+  const maxSizeFormatted = computed(() => formatBytes(store.maxPlaylistSize))
+  const currentSizeFormatted = computed(() => formatBytes(store.totalSize))
+  const overByFormatted = computed(() => formatBytes(store.totalSize - store.maxPlaylistSize))
 
   const isYellowWarning = computed(() => {
     return (
       !store.isOverSizeLimit &&
-      store.totalSize >= YELLOW_WARNING_THRESHOLD &&
-      store.totalSize < ORANGE_WARNING_THRESHOLD
+      store.totalSize >= SIZE_THRESHOLD_YELLOW &&
+      store.totalSize < SIZE_THRESHOLD_ORANGE
     )
   })
 
   const isOrangeWarning = computed(() => {
-    return !store.isOverSizeLimit && store.totalSize >= ORANGE_WARNING_THRESHOLD
+    return !store.isOverSizeLimit && store.totalSize >= SIZE_THRESHOLD_ORANGE
   })
 </script>
 

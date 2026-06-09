@@ -2,32 +2,18 @@
   import { computed } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useI18n } from 'vue-i18n'
+  import { formatBytes } from '../utils/format'
+  import { OUTPUT_FORMATS } from '../constants'
 
   const store = useConverterStore()
   const { t } = useI18n()
 
-  // Format-Konfigurationen für File Picker
-  const formatConfigs = {
-    webm: { description: 'WebM Audio', mimeType: 'audio/webm', extension: '.webm' },
-    mp3: { description: 'MP3 Audio', mimeType: 'audio/mpeg', extension: '.mp3' },
-    ogg: { description: 'OGG Audio', mimeType: 'audio/ogg', extension: '.ogg' },
-  }
-
   const currentFormat = computed(() => store.outputFormat || 'mp3')
-  const formatConfig = computed(() => formatConfigs[currentFormat.value] || formatConfigs.mp3)
-
-  function formatFileSize(bytes) {
-    if (!bytes) return null
-    const mb = bytes / 1024 / 1024
-    if (mb >= 1024) {
-      return (mb / 1024).toFixed(2) + ' GB'
-    }
-    return mb.toFixed(2) + ' MB'
-  }
+  const formatConfig = computed(() => OUTPUT_FORMATS[currentFormat.value] || OUTPUT_FORMATS.mp3)
 
   async function handleDownload() {
     const config = formatConfig.value
-    const filename = `playlist${config.extension}`
+    const filename = `playlist.${config.extension}`
 
     try {
       // Prüfe ob File System Access API verfügbar ist
@@ -38,7 +24,7 @@
           types: [
             {
               description: config.description,
-              accept: { [config.mimeType]: [config.extension] },
+              accept: { [config.mimeType]: ['.' + config.extension] },
             },
           ],
         })
@@ -92,7 +78,7 @@
       {{ t('download.subtitle') }}
     </p>
     <p v-if="store.outputFileSize" class="text-sm text-muted-light dark:text-neutral mb-6">
-      {{ t('download.fileSize') }}: {{ formatFileSize(store.outputFileSize) }}
+      {{ t('download.fileSize') }}: {{ formatBytes(store.outputFileSize) }}
     </p>
     <p v-else class="text-sm text-muted-light dark:text-neutral mb-6">&nbsp;</p>
 
