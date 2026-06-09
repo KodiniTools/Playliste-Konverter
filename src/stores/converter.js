@@ -25,6 +25,7 @@ export const useConverterStore = defineStore('converter', () => {
   // Für simulierten flüssigen Fortschritt
   const displayProgress = ref(0)
   const lastBackendProgress = ref(0)
+  const isIndeterminate = ref(false)
 
   // Für Zeitberechnung
   const uploadStartTime = ref(null)
@@ -163,6 +164,36 @@ export const useConverterStore = defineStore('converter', () => {
     return AVAILABLE_BITRATES.filter((b) => b.value <= maxBitrate)
   })
 
+  function stopIntervals() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+    }
+    if (smoothProgressInterval) {
+      clearInterval(smoothProgressInterval)
+      smoothProgressInterval = null
+    }
+  }
+
+  function startProgressSimulation() {
+    const startTime = Date.now()
+
+    smoothProgressInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000
+      const timeBased = 95 * (1 - Math.exp(-elapsed / 30))
+      const target = Math.max(lastBackendProgress.value, timeBased)
+
+      if (displayProgress.value < target) {
+        const diff = target - displayProgress.value
+        displayProgress.value += Math.max(0.5, diff * 0.15)
+        displayProgress.value = Math.min(95, displayProgress.value)
+      }
+
+      // Indeterminate wenn Simulation die Decke erreicht ohne Backend-Fortschritt
+      isIndeterminate.value = displayProgress.value >= 94 && lastBackendProgress.value < 5
+    }, 100)
+  }
+
   async function convert() {
     if (files.value.length === 0) {
       errorMessage.value = 'Keine Dateien ausgewählt'
@@ -242,83 +273,45 @@ export const useConverterStore = defineStore('converter', () => {
   async function pollStatus() {
     const toastStore = useToastStore()
 
-    // Starte simulierten flüssigen Fortschritt
     displayProgress.value = 0
     lastBackendProgress.value = 0
-    const conversionStartTime = Date.now()
+    isIndeterminate.value = false
 
-    smoothProgressInterval = setInterval(() => {
-      // Simuliere flüssigen Fortschritt
-      // Ziel: Von 0 auf 95% in ca. 60 Sekunden (wenn Backend keine Updates gibt)
-      const elapsedSeconds = (Date.now() - conversionStartTime) / 1000
-
-      // Berechne Zielfortschritt basierend auf Zeit (langsamer werdend)
-      // Formel: 95 * (1 - e^(-elapsed/30)) - nähert sich asymptotisch 95%
-      const timeBasedProgress = 95 * (1 - Math.exp(-elapsedSeconds / 30))
-
-      // Nimm das Maximum aus Backend-Fortschritt und zeitbasiertem Fortschritt
-      const targetProgress = Math.max(lastBackendProgress.value, timeBasedProgress)
-
-      // Bewege displayProgress sanft zum Ziel
-      if (displayProgress.value < targetProgress) {
-        const diff = targetProgress - displayProgress.value
-        displayProgress.value += Math.max(0.5, diff * 0.15)
-        displayProgress.value = Math.min(95, displayProgress.value)
-      }
-    }, 100)
+    startProgressSimulation()
 
     pollingInterval = setInterval(async () => {
       if (isCancelling.value) {
-        clearInterval(pollingInterval)
-        clearInterval(smoothProgressInterval)
-        pollingInterval = null
-        smoothProgressInterval = null
+        stopIntervals()
         return
       }
 
       try {
         const res = await fetchStatus(sessionId.value, { signal: abortController?.signal })
 
-        // Aktualisiere Backend-Fortschritt
         conversionProgress.value = res.data.progress
         lastBackendProgress.value = res.data.progress
-        console.log(`Conversion: ${res.data.status} - ${res.data.progress}%`)
 
         if (res.data.status === 'done') {
-          clearInterval(pollingInterval)
-          clearInterval(smoothProgressInterval)
-          pollingInterval = null
-          smoothProgressInterval = null
+          stopIntervals()
           displayProgress.value = 100
+          isIndeterminate.value = false
           status.value = 'done'
           downloadUrl.value = getDownloadUrl(sessionId.value)
           outputFileSize.value = res.data.file_size || null
-          console.log('Conversion done! Download:', downloadUrl.value)
           toastStore.success('Konvertierung abgeschlossen!')
         } else if (res.data.status === 'error') {
-          clearInterval(pollingInterval)
-          clearInterval(smoothProgressInterval)
-          pollingInterval = null
-          smoothProgressInterval = null
+          stopIntervals()
           status.value = 'error'
           errorMessage.value = res.data.error
-          console.error('Conversion error:', res.data.error)
           toastStore.error(res.data.error || 'Konvertierung fehlgeschlagen')
         }
       } catch (err) {
         if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
-          clearInterval(pollingInterval)
-          clearInterval(smoothProgressInterval)
-          pollingInterval = null
-          smoothProgressInterval = null
+          stopIntervals()
           return
         }
 
-        console.error('Polling error:', err)
-        clearInterval(pollingInterval)
-        clearInterval(smoothProgressInterval)
-        pollingInterval = null
-        smoothProgressInterval = null
+        stopIntervals()
         status.value = 'error'
         errorMessage.value = 'Statusabfrage fehlgeschlagen'
         toastStore.error('Verbindung zum Server verloren')
@@ -330,22 +323,12 @@ export const useConverterStore = defineStore('converter', () => {
     const toastStore = useToastStore()
     isCancelling.value = true
 
-    // Abort laufende Requests
     if (abortController) {
       abortController.abort()
       abortController = null
     }
 
-    // Polling und Fortschritts-Simulation stoppen
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      pollingInterval = null
-    }
-    if (smoothProgressInterval) {
-      clearInterval(smoothProgressInterval)
-      smoothProgressInterval = null
-    }
-
+    stopIntervals()
     toastStore.info('Vorgang wird abgebrochen...')
     reset()
   }
@@ -356,6 +339,7 @@ export const useConverterStore = defineStore('converter', () => {
     conversionProgress.value = 0
     displayProgress.value = 0
     lastBackendProgress.value = 0
+    isIndeterminate.value = false
     status.value = 'idle'
     sessionId.value = null
     downloadUrl.value = null
@@ -368,19 +352,12 @@ export const useConverterStore = defineStore('converter', () => {
     uploadSpeed.value = 0
     estimatedTimeRemaining.value = null
 
-    // Cleanup
     if (abortController) {
       abortController.abort()
       abortController = null
     }
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      pollingInterval = null
-    }
-    if (smoothProgressInterval) {
-      clearInterval(smoothProgressInterval)
-      smoothProgressInterval = null
-    }
+
+    stopIntervals()
   }
 
   return {
@@ -401,6 +378,7 @@ export const useConverterStore = defineStore('converter', () => {
     availableFormats,
     availableBitratesForFormat,
     isCancelling,
+    isIndeterminate,
     formattedUploadSpeed,
     formattedTimeRemaining,
     addFiles,

@@ -39,7 +39,10 @@
       <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-light dark:bg-muted">
         <div
           :style="{ width: store.totalProgress + '%' }"
-          class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-accent dark:bg-accent transition-all duration-300"
+          :class="[
+            'shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-accent dark:bg-accent transition-all duration-300',
+            store.isIndeterminate && 'animate-pulse',
+          ]"
         ></div>
       </div>
     </div>
