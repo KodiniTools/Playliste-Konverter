@@ -1,13 +1,15 @@
 <script setup>
-import { useConverterStore } from '../stores/converter'
-import { useI18n } from 'vue-i18n'
+  import { useConverterStore } from '../stores/converter'
+  import { useI18n } from 'vue-i18n'
 
-const store = useConverterStore()
-const { t } = useI18n()
+  const store = useConverterStore()
+  const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg p-3 sm:p-4 border border-neutral dark:border-muted space-y-3 sm:space-y-4">
+  <div
+    class="bg-white dark:bg-dark-card rounded-lg p-3 sm:p-4 border border-neutral dark:border-muted space-y-3 sm:space-y-4"
+  >
     <!-- Format-Auswahl -->
     <div>
       <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-2 sm:mb-3">
@@ -23,11 +25,13 @@ const { t } = useI18n()
             'border-2',
             store.outputFormat === format.id
               ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50'
+              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50',
           ]"
         >
           <span class="font-semibold">{{ format.label }}</span>
-          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{ t(`format.${format.id}.description`) }}</span>
+          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{
+            t(`format.${format.id}.description`)
+          }}</span>
         </button>
       </div>
     </div>
@@ -47,11 +51,13 @@ const { t } = useI18n()
             'border-2',
             store.bitrate === br.value
               ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50'
+              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50',
           ]"
         >
           <span class="font-semibold">{{ br.label }}</span>
-          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{ t(`bitrate.${br.value}`) }}</span>
+          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{
+            t(`bitrate.${br.value}`)
+          }}</span>
         </button>
       </div>
       <p class="text-xs text-muted dark:text-neutral mt-2">
