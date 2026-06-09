@@ -18,7 +18,8 @@ export const useUIStore = defineStore('ui', () => {
   }
 
   // Initiale Synchronisation: nav.html hat möglicherweise schon data-theme gesetzt
-  const initialTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light'
+  const initialTheme =
+    document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light'
   theme.value = initialTheme
   syncDarkClass(initialTheme)
 
@@ -34,27 +35,33 @@ export const useUIStore = defineStore('ui', () => {
   // <span data-lang-de="Deutsch" data-lang-en="English"></span>)
   function updateDataLangElements(lang) {
     const attr = `data-lang-${lang}`
-    document.querySelectorAll(`[${attr}]`).forEach(el => {
+    document.querySelectorAll(`[${attr}]`).forEach((el) => {
       el.textContent = el.getAttribute(attr)
     })
   }
 
   // Locale watcher - synchronisiert lang-Attribut, dispatcht Event, aktualisiert data-lang-*
-  watch(locale, (newLocale) => {
-    document.documentElement.setAttribute('lang', newLocale)
+  watch(
+    locale,
+    (newLocale) => {
+      document.documentElement.setAttribute('lang', newLocale)
 
-    // Event nur dispatchen wenn Änderung nicht von externem SSI-Event kam
-    if (!_suppressDispatch) {
-      window.dispatchEvent(new CustomEvent('locale-changed', {
-        detail: { locale: newLocale }
-      }))
-    }
-    _suppressDispatch = false
+      // Event nur dispatchen wenn Änderung nicht von externem SSI-Event kam
+      if (!_suppressDispatch) {
+        window.dispatchEvent(
+          new CustomEvent('locale-changed', {
+            detail: { locale: newLocale },
+          }),
+        )
+      }
+      _suppressDispatch = false
 
-    // SSI-Partials aktualisieren: Footer/Cookie-Banner (data-lang-*)
-    // Navigation übersetzt sich selbst via applyTranslations()
-    updateDataLangElements(newLocale)
-  }, { immediate: true })
+      // SSI-Partials aktualisieren: Footer/Cookie-Banner (data-lang-*)
+      // Navigation übersetzt sich selbst via applyTranslations()
+      updateDataLangElements(newLocale)
+    },
+    { immediate: true },
+  )
 
   // nav.html setzt data-theme direkt, dispatcht aber KEIN Event.
   // MutationObserver erkennt Änderungen am data-theme Attribut.
@@ -70,7 +77,7 @@ export const useUIStore = defineStore('ui', () => {
   })
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['data-theme']
+    attributeFilter: ['data-theme'],
   })
 
   // nav.html dispatcht 'locale-changed' mit { detail: { locale: 'de'|'en' } }
@@ -91,6 +98,6 @@ export const useUIStore = defineStore('ui', () => {
   return {
     theme,
     locale,
-    setLocale
+    setLocale,
   }
 })

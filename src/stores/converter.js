@@ -12,9 +12,14 @@ const MAX_PLAYLIST_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB in Bytes
 
 // Verfügbare Ausgabeformate
 const OUTPUT_FORMATS = {
-  webm: { extension: 'webm', label: 'WebM (Opus)', description: 'Kompakt, modern', maxBitrate: 256 },
+  webm: {
+    extension: 'webm',
+    label: 'WebM (Opus)',
+    description: 'Kompakt, modern',
+    maxBitrate: 256,
+  },
   mp3: { extension: 'mp3', label: 'MP3', description: 'Universell kompatibel', maxBitrate: 320 },
-  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source', maxBitrate: 320 }
+  ogg: { extension: 'ogg', label: 'OGG (Vorbis)', description: 'Open Source', maxBitrate: 320 },
 }
 
 // Verfügbare Bitraten
@@ -23,7 +28,7 @@ const AVAILABLE_BITRATES = [
   { value: 128, label: '128 kbps', description: 'Standard' },
   { value: 192, label: '192 kbps', description: 'Hoch' },
   { value: 256, label: '256 kbps', description: 'Sehr hoch' },
-  { value: 320, label: '320 kbps', description: 'Maximum' }
+  { value: 320, label: '320 kbps', description: 'Maximum' },
 ]
 
 export const useConverterStore = defineStore('converter', () => {
@@ -57,7 +62,7 @@ export const useConverterStore = defineStore('converter', () => {
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
-    if (status.value === 'converting') return 30 + (displayProgress.value * 0.7)
+    if (status.value === 'converting') return 30 + displayProgress.value * 0.7
     if (status.value === 'done') return 100
     return 0
   })
@@ -93,35 +98,42 @@ export const useConverterStore = defineStore('converter', () => {
 
   function addFiles(newFiles) {
     const toastStore = useToastStore()
-    const validFiles = Array.from(newFiles).filter(f =>
-      f.type === 'audio/mpeg' ||
-      f.type === 'audio/wav' ||
-      f.type === 'audio/mp3' ||
-      f.name.endsWith('.mp3') ||
-      f.name.endsWith('.wav')
+    const validFiles = Array.from(newFiles).filter(
+      (f) =>
+        f.type === 'audio/mpeg' ||
+        f.type === 'audio/wav' ||
+        f.type === 'audio/mp3' ||
+        f.name.endsWith('.mp3') ||
+        f.name.endsWith('.wav'),
     )
 
     const invalidCount = newFiles.length - validFiles.length
 
     if (validFiles.length > 0) {
-      files.value.push(...validFiles.map((f, idx) => ({
-        file: f,
-        id: Date.now() + idx,
-        name: f.name,
-        size: f.size
-      })))
-      toastStore.success(`${validFiles.length} ${validFiles.length === 1 ? 'Datei' : 'Dateien'} hinzugefügt`)
+      files.value.push(
+        ...validFiles.map((f, idx) => ({
+          file: f,
+          id: Date.now() + idx,
+          name: f.name,
+          size: f.size,
+        })),
+      )
+      toastStore.success(
+        `${validFiles.length} ${validFiles.length === 1 ? 'Datei' : 'Dateien'} hinzugefügt`,
+      )
     }
 
     if (invalidCount > 0) {
-      toastStore.warning(`${invalidCount} ${invalidCount === 1 ? 'Datei' : 'Dateien'} übersprungen (nur MP3/WAV)`)
+      toastStore.warning(
+        `${invalidCount} ${invalidCount === 1 ? 'Datei' : 'Dateien'} übersprungen (nur MP3/WAV)`,
+      )
     }
   }
 
   function removeFile(id) {
     const toastStore = useToastStore()
-    const file = files.value.find(f => f.id === id)
-    files.value = files.value.filter(f => f.id !== id)
+    const file = files.value.find((f) => f.id === id)
+    files.value = files.value.filter((f) => f.id !== id)
     if (file) {
       toastStore.info(`"${file.name}" entfernt`)
     }
@@ -152,7 +164,7 @@ export const useConverterStore = defineStore('converter', () => {
   }
 
   function setBitrate(value) {
-    const validBitrate = AVAILABLE_BITRATES.find(b => b.value === value)
+    const validBitrate = AVAILABLE_BITRATES.find((b) => b.value === value)
     if (validBitrate) {
       // Begrenze auf Format-Maximum
       const maxBitrate = currentFormatConfig.value.maxBitrate || 320
@@ -169,13 +181,13 @@ export const useConverterStore = defineStore('converter', () => {
   const availableFormats = computed(() => {
     return Object.entries(OUTPUT_FORMATS).map(([key, value]) => ({
       id: key,
-      ...value
+      ...value,
     }))
   })
 
   const availableBitratesForFormat = computed(() => {
     const maxBitrate = currentFormatConfig.value.maxBitrate || 320
-    return AVAILABLE_BITRATES.filter(b => b.value <= maxBitrate)
+    return AVAILABLE_BITRATES.filter((b) => b.value <= maxBitrate)
   })
 
   async function convert() {
@@ -211,7 +223,11 @@ export const useConverterStore = defineStore('converter', () => {
 
       console.log('Uploading to:', `${API_BASE_URL}/upload`)
       console.log('Total files:', files.value.length)
-      console.log('Total size:', files.value.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024, 'MB')
+      console.log(
+        'Total size:',
+        files.value.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024,
+        'MB',
+      )
 
       const uploadRes = await axios.post(`${API_BASE_URL}/upload`, formData, {
         timeout: UPLOAD_TIMEOUT,
@@ -224,14 +240,15 @@ export const useConverterStore = defineStore('converter', () => {
 
           // Upload-Geschwindigkeit und Restzeit berechnen
           const elapsedTime = (Date.now() - uploadStartTime.value) / 1000 // in Sekunden
-          if (elapsedTime > 0.5) { // Nur berechnen nach 0.5 Sekunden
+          if (elapsedTime > 0.5) {
+            // Nur berechnen nach 0.5 Sekunden
             uploadSpeed.value = e.loaded / elapsedTime
             const remainingBytes = e.total - e.loaded
             estimatedTimeRemaining.value = remainingBytes / uploadSpeed.value
           }
 
           console.log(`Upload progress: ${uploadProgress.value}% (${e.loaded}/${e.total} bytes)`)
-        }
+        },
       })
 
       console.log('Upload response:', uploadRes.data)
@@ -243,19 +260,29 @@ export const useConverterStore = defineStore('converter', () => {
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
-      console.log('Starting conversion for session:', sessionId.value, 'format:', outputFormat.value, 'bitrate:', bitrate.value)
-      await axios.post(`${API_BASE_URL}/convert`, {
-        session_id: sessionId.value,
-        format: outputFormat.value,
-        bitrate: bitrate.value
-      }, {
-        timeout: 30000, // 30 Sekunden für Convert-Start
-        signal: abortController.signal
-      })
+      console.log(
+        'Starting conversion for session:',
+        sessionId.value,
+        'format:',
+        outputFormat.value,
+        'bitrate:',
+        bitrate.value,
+      )
+      await axios.post(
+        `${API_BASE_URL}/convert`,
+        {
+          session_id: sessionId.value,
+          format: outputFormat.value,
+          bitrate: bitrate.value,
+        },
+        {
+          timeout: 30000, // 30 Sekunden für Convert-Start
+          signal: abortController.signal,
+        },
+      )
 
       // Poll status
       await pollStatus()
-
     } catch (err) {
       if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
         console.log('Operation cancelled by user')
@@ -313,7 +340,7 @@ export const useConverterStore = defineStore('converter', () => {
         const url = `${API_BASE_URL}/status/${sessionId.value}`
         const res = await axios.get(url, {
           timeout: 10000,
-          signal: abortController?.signal
+          signal: abortController?.signal,
         })
 
         // Aktualisiere Backend-Fortschritt
@@ -448,6 +475,6 @@ export const useConverterStore = defineStore('converter', () => {
     setBitrate,
     convert,
     cancel,
-    reset
+    reset,
   }
 })

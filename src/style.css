@@ -12,7 +12,7 @@
 
 /* Body background for dark mode (Tailwind class + nav.html data-theme) */
 html.dark body,
-[data-theme="dark"] body {
+[data-theme='dark'] body {
   background-color: #091428 !important; /* dark */
 }
 
@@ -31,10 +31,10 @@ html.dark body > header,
 html.dark body > header *,
 html.dark body > footer,
 html.dark body > footer *,
-[data-theme="dark"] body > header,
-[data-theme="dark"] body > header *,
-[data-theme="dark"] body > footer,
-[data-theme="dark"] body > footer * {
+[data-theme='dark'] body > header,
+[data-theme='dark'] body > header *,
+[data-theme='dark'] body > footer,
+[data-theme='dark'] body > footer * {
   color: #f9f2d5 !important; /* neutral-light */
   background: transparent !important;
   background-color: transparent !important;
@@ -43,15 +43,15 @@ html.dark body > footer *,
 /* Links in footer/header for dark theme */
 html.dark body > header a,
 html.dark body > footer a,
-[data-theme="dark"] body > header a,
-[data-theme="dark"] body > footer a {
+[data-theme='dark'] body > header a,
+[data-theme='dark'] body > footer a {
   color: #c9984d !important; /* accent */
 }
 
 html.dark body > header a:hover,
 html.dark body > footer a:hover,
-[data-theme="dark"] body > header a:hover,
-[data-theme="dark"] body > footer a:hover {
+[data-theme='dark'] body > header a:hover,
+[data-theme='dark'] body > footer a:hover {
   color: #b0832f !important; /* accent-dark */
 }
 

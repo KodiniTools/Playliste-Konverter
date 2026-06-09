@@ -1,13 +1,15 @@
 <script setup>
-import { useConverterStore } from '../stores/converter'
-import { useI18n } from 'vue-i18n'
+  import { useConverterStore } from '../stores/converter'
+  import { useI18n } from 'vue-i18n'
 
-const store = useConverterStore()
-const { t } = useI18n()
+  const store = useConverterStore()
+  const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6">
+  <div
+    class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6"
+  >
     <h3 class="font-semibold text-sm sm:text-base text-dark dark:text-neutral-light mb-3 sm:mb-4">
       {{ store.status === 'uploading' ? t('conversion.uploading') : t('conversion.converting') }}
     </h3>
@@ -51,10 +53,7 @@ const { t } = useI18n()
       <button
         @click="store.cancel"
         :disabled="store.isCancelling"
-        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors
-               bg-secondary/10 hover:bg-secondary/20 text-secondary dark:text-secondary-light
-               border border-secondary/30 hover:border-secondary/50
-               disabled:opacity-50 disabled:cursor-not-allowed"
+        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-secondary/10 hover:bg-secondary/20 text-secondary dark:text-secondary-light border border-secondary/30 hover:border-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span v-if="store.isCancelling">{{ t('conversion.cancelling') }}</span>
         <span v-else>{{ t('conversion.cancel') }}</span>

@@ -1,179 +1,190 @@
 <script setup>
-import { ref, onUnmounted } from 'vue'
-import { useConverterStore } from '../stores/converter'
-import { useI18n } from 'vue-i18n'
+  import { ref, onUnmounted } from 'vue'
+  import { useConverterStore } from '../stores/converter'
+  import { useI18n } from 'vue-i18n'
 
-const store = useConverterStore()
-const { t } = useI18n()
+  const store = useConverterStore()
+  const { t } = useI18n()
 
-let draggedIndex = null
+  let draggedIndex = null
 
-// Audio Preview State
-const currentlyPlaying = ref(null) // ID des aktuell spielenden Tracks
-const audioElement = ref(null)
-const audioProgress = ref(0)
-const audioDuration = ref(0)
-const audioVolume = ref(0.7) // Lautstärke (0-1), Standard 70%
-const isAdjustingVolume = ref(false) // Verhindert Drag während Volume-Änderung
-const audioObjectUrls = new Map() // Cache für Object URLs
+  // Audio Preview State
+  const currentlyPlaying = ref(null) // ID des aktuell spielenden Tracks
+  const audioElement = ref(null)
+  const audioProgress = ref(0)
+  const audioDuration = ref(0)
+  const audioVolume = ref(0.7) // Lautstärke (0-1), Standard 70%
+  const isAdjustingVolume = ref(false) // Verhindert Drag während Volume-Änderung
+  const audioObjectUrls = new Map() // Cache für Object URLs
 
-function onDragStart(e, index) {
-  // Verhindere Drag wenn Volume-Slider benutzt wird
-  if (isAdjustingVolume.value) {
-    e.preventDefault()
-    return
-  }
-  draggedIndex = index
-}
-
-function onDragOver(e, index) {
-  e.preventDefault()
-  if (draggedIndex !== null && draggedIndex !== index) {
-    store.moveFile(draggedIndex, index)
+  function onDragStart(e, index) {
+    // Verhindere Drag wenn Volume-Slider benutzt wird
+    if (isAdjustingVolume.value) {
+      e.preventDefault()
+      return
+    }
     draggedIndex = index
   }
-}
 
-function onDragEnd() {
-  draggedIndex = null
-}
-
-function formatSize(bytes) {
-  return (bytes / 1024 / 1024).toFixed(2) + ' MB'
-}
-
-function formatTotalSize(bytes) {
-  const mb = bytes / 1024 / 1024
-  if (mb >= 1024) {
-    return (mb / 1024).toFixed(2) + ' GB'
+  function onDragOver(e, index) {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      store.moveFile(draggedIndex, index)
+      draggedIndex = index
+    }
   }
-  return mb.toFixed(2) + ' MB'
-}
 
-function formatTime(seconds) {
-  if (!seconds || isNaN(seconds)) return '0:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-function getAudioUrl(item) {
-  if (!audioObjectUrls.has(item.id)) {
-    audioObjectUrls.set(item.id, URL.createObjectURL(item.file))
+  function onDragEnd() {
+    draggedIndex = null
   }
-  return audioObjectUrls.get(item.id)
-}
 
-function togglePlay(item) {
-  if (currentlyPlaying.value === item.id) {
-    // Pause aktuellen Track
+  function formatSize(bytes) {
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB'
+  }
+
+  function formatTotalSize(bytes) {
+    const mb = bytes / 1024 / 1024
+    if (mb >= 1024) {
+      return (mb / 1024).toFixed(2) + ' GB'
+    }
+    return mb.toFixed(2) + ' MB'
+  }
+
+  function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00'
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  function getAudioUrl(item) {
+    if (!audioObjectUrls.has(item.id)) {
+      audioObjectUrls.set(item.id, URL.createObjectURL(item.file))
+    }
+    return audioObjectUrls.get(item.id)
+  }
+
+  function togglePlay(item) {
+    if (currentlyPlaying.value === item.id) {
+      // Pause aktuellen Track
+      if (audioElement.value) {
+        audioElement.value.pause()
+      }
+      currentlyPlaying.value = null
+      audioProgress.value = 0
+    } else {
+      // Stoppe vorherigen Track falls vorhanden
+      if (audioElement.value) {
+        audioElement.value.pause()
+      }
+
+      // Spiele neuen Track
+      currentlyPlaying.value = item.id
+      audioProgress.value = 0
+      audioDuration.value = 0
+
+      const url = getAudioUrl(item)
+      audioElement.value = new Audio(url)
+
+      audioElement.value.addEventListener('timeupdate', () => {
+        if (audioElement.value) {
+          audioProgress.value = audioElement.value.currentTime
+        }
+      })
+
+      audioElement.value.addEventListener('loadedmetadata', () => {
+        if (audioElement.value) {
+          audioDuration.value = audioElement.value.duration
+        }
+      })
+
+      audioElement.value.addEventListener('ended', () => {
+        currentlyPlaying.value = null
+        audioProgress.value = 0
+      })
+
+      // Setze Lautstärke
+      audioElement.value.volume = audioVolume.value
+
+      audioElement.value.play()
+    }
+  }
+
+  function stopPlayback() {
     if (audioElement.value) {
       audioElement.value.pause()
+      audioElement.value = null
     }
     currentlyPlaying.value = null
     audioProgress.value = 0
-  } else {
-    // Stoppe vorherigen Track falls vorhanden
+  }
+
+  function setVolume(value) {
+    audioVolume.value = value
     if (audioElement.value) {
-      audioElement.value.pause()
+      audioElement.value.volume = value
     }
-
-    // Spiele neuen Track
-    currentlyPlaying.value = item.id
-    audioProgress.value = 0
-    audioDuration.value = 0
-
-    const url = getAudioUrl(item)
-    audioElement.value = new Audio(url)
-
-    audioElement.value.addEventListener('timeupdate', () => {
-      if (audioElement.value) {
-        audioProgress.value = audioElement.value.currentTime
-      }
-    })
-
-    audioElement.value.addEventListener('loadedmetadata', () => {
-      if (audioElement.value) {
-        audioDuration.value = audioElement.value.duration
-      }
-    })
-
-    audioElement.value.addEventListener('ended', () => {
-      currentlyPlaying.value = null
-      audioProgress.value = 0
-    })
-
-    // Setze Lautstärke
-    audioElement.value.volume = audioVolume.value
-
-    audioElement.value.play()
   }
-}
 
-function stopPlayback() {
-  if (audioElement.value) {
-    audioElement.value.pause()
-    audioElement.value = null
+  function startVolumeAdjust() {
+    isAdjustingVolume.value = true
   }
-  currentlyPlaying.value = null
-  audioProgress.value = 0
-}
 
-function setVolume(value) {
-  audioVolume.value = value
-  if (audioElement.value) {
-    audioElement.value.volume = value
+  function endVolumeAdjust() {
+    // Kurze Verzögerung, um sicherzustellen, dass Drag nicht startet
+    setTimeout(() => {
+      isAdjustingVolume.value = false
+    }, 100)
   }
-}
 
-function startVolumeAdjust() {
-  isAdjustingVolume.value = true
-}
+  function handleRemoveFile(id) {
+    // Stoppe Wiedergabe falls dieser Track spielt
+    if (currentlyPlaying.value === id) {
+      stopPlayback()
+    }
+    // Bereinige Object URL
+    if (audioObjectUrls.has(id)) {
+      URL.revokeObjectURL(audioObjectUrls.get(id))
+      audioObjectUrls.delete(id)
+    }
+    store.removeFile(id)
+  }
 
-function endVolumeAdjust() {
-  // Kurze Verzögerung, um sicherzustellen, dass Drag nicht startet
-  setTimeout(() => {
-    isAdjustingVolume.value = false
-  }, 100)
-}
-
-function handleRemoveFile(id) {
-  // Stoppe Wiedergabe falls dieser Track spielt
-  if (currentlyPlaying.value === id) {
+  function handleRemoveAll() {
     stopPlayback()
+    // Bereinige alle Object URLs
+    audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
+    audioObjectUrls.clear()
+    store.removeAllFiles()
   }
-  // Bereinige Object URL
-  if (audioObjectUrls.has(id)) {
-    URL.revokeObjectURL(audioObjectUrls.get(id))
-    audioObjectUrls.delete(id)
-  }
-  store.removeFile(id)
-}
 
-function handleRemoveAll() {
-  stopPlayback()
-  // Bereinige alle Object URLs
-  audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
-  audioObjectUrls.clear()
-  store.removeAllFiles()
-}
-
-// Cleanup beim Verlassen der Komponente
-onUnmounted(() => {
-  stopPlayback()
-  audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
-  audioObjectUrls.clear()
-})
+  // Cleanup beim Verlassen der Komponente
+  onUnmounted(() => {
+    stopPlayback()
+    audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
+    audioObjectUrls.clear()
+  })
 </script>
 
 <template>
-  <div class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-3 sm:p-4">
+  <div
+    class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-3 sm:p-4"
+  >
     <div class="flex justify-between items-center mb-3 gap-2">
       <div class="min-w-0">
-        <h3 class="font-semibold text-dark dark:text-neutral-light text-sm sm:text-base">{{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})</h3>
-        <p class="text-xs sm:text-sm text-muted dark:text-neutral mt-1">{{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}</p>
+        <h3 class="font-semibold text-dark dark:text-neutral-light text-sm sm:text-base">
+          {{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})
+        </h3>
+        <p class="text-xs sm:text-sm text-muted dark:text-neutral mt-1">
+          {{ t('fileList.totalSize') }}: {{ formatTotalSize(store.totalSize) }}
+        </p>
       </div>
-      <button @click="handleRemoveAll" class="text-xs sm:text-sm text-secondary dark:text-secondary-light hover:underline flex-shrink-0">{{ t('fileList.removeAll') }}</button>
+      <button
+        @click="handleRemoveAll"
+        class="text-xs sm:text-sm text-secondary dark:text-secondary-light hover:underline flex-shrink-0"
+      >
+        {{ t('fileList.removeAll') }}
+      </button>
     </div>
 
     <div class="space-y-2 max-h-[420px] overflow-y-auto">
@@ -188,11 +199,13 @@ onUnmounted(() => {
           'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded border cursor-move transition-colors',
           currentlyPlaying === item.id
             ? 'bg-accent/10 dark:bg-accent/20 border-accent dark:border-accent'
-            : 'bg-neutral-light dark:bg-dark-lighter border-neutral dark:border-muted hover:bg-neutral/30 dark:hover:bg-muted/30'
+            : 'bg-neutral-light dark:bg-dark-lighter border-neutral dark:border-muted hover:bg-neutral/30 dark:hover:bg-muted/30',
         ]"
       >
         <!-- Track Nummer -->
-        <span class="text-muted dark:text-neutral font-mono text-sm w-6 sm:w-8 hidden sm:inline">{{ index + 1 }}.</span>
+        <span class="text-muted dark:text-neutral font-mono text-sm w-6 sm:w-8 hidden sm:inline"
+          >{{ index + 1 }}.</span
+        >
 
         <!-- Play/Pause Button -->
         <button
@@ -202,16 +215,21 @@ onUnmounted(() => {
             'w-8 h-8 flex items-center justify-center rounded-full transition-colors flex-shrink-0',
             currentlyPlaying === item.id
               ? 'bg-accent text-dark hover:bg-accent-dark'
-              : 'bg-neutral dark:bg-muted text-dark dark:text-neutral-light hover:bg-accent hover:text-dark'
+              : 'bg-neutral dark:bg-muted text-dark dark:text-neutral-light hover:bg-accent hover:text-dark',
           ]"
         >
           <!-- Pause Icon -->
-          <svg v-if="currentlyPlaying === item.id" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+          <svg
+            v-if="currentlyPlaying === item.id"
+            class="w-4 h-4"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
           </svg>
           <!-- Play Icon -->
           <svg v-else class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z"/>
+            <path d="M8 5v14l11-7z" />
           </svg>
         </button>
 
@@ -277,7 +295,9 @@ onUnmounted(() => {
 
         <!-- Track Info -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-dark dark:text-neutral-light truncate">{{ item.name }}</p>
+          <p class="text-sm font-medium text-dark dark:text-neutral-light truncate">
+            {{ item.name }}
+          </p>
           <div class="flex items-center gap-2">
             <p class="text-xs text-muted dark:text-neutral">{{ formatSize(item.size) }}</p>
             <!-- Progress während Wiedergabe -->
@@ -288,7 +308,10 @@ onUnmounted(() => {
             </template>
           </div>
           <!-- Progress Bar während Wiedergabe -->
-          <div v-if="currentlyPlaying === item.id && audioDuration > 0" class="mt-1.5 h-1 bg-neutral dark:bg-muted rounded-full overflow-hidden">
+          <div
+            v-if="currentlyPlaying === item.id && audioDuration > 0"
+            class="mt-1.5 h-1 bg-neutral dark:bg-muted rounded-full overflow-hidden"
+          >
             <div
               class="h-full bg-accent transition-all duration-200"
               :style="{ width: `${(audioProgress / audioDuration) * 100}%` }"
@@ -297,9 +320,17 @@ onUnmounted(() => {
         </div>
 
         <!-- Remove Button -->
-        <button @click="handleRemoveFile(item.id)" class="text-secondary dark:text-secondary-light hover:text-secondary-dark dark:hover:text-secondary flex-shrink-0">
+        <button
+          @click="handleRemoveFile(item.id)"
+          class="text-secondary dark:text-secondary-light hover:text-secondary-dark dark:hover:text-secondary flex-shrink-0"
+        >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -308,62 +339,62 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Volume Slider Styling */
-.volume-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-}
+  /* Volume Slider Styling */
+  .volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
 
-.volume-slider::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 6px;
-  background: #c0c2c9;
-  border-radius: 3px;
-}
+  .volume-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: #c0c2c9;
+    border-radius: 3px;
+  }
 
-.dark .volume-slider::-webkit-slider-runnable-track {
-  background: #1e3a5f;
-}
+  .dark .volume-slider::-webkit-slider-runnable-track {
+    background: #1e3a5f;
+  }
 
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  background: #c9984d;
-  border-radius: 50%;
-  cursor: pointer;
-  margin-top: -4px;
-  transition: transform 0.15s ease;
-}
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #c9984d;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px;
+    transition: transform 0.15s ease;
+  }
 
-.volume-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
 
-.volume-slider::-moz-range-track {
-  width: 100%;
-  height: 6px;
-  background: #c0c2c9;
-  border-radius: 3px;
-}
+  .volume-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: #c0c2c9;
+    border-radius: 3px;
+  }
 
-.dark .volume-slider::-moz-range-track {
-  background: #1e3a5f;
-}
+  .dark .volume-slider::-moz-range-track {
+    background: #1e3a5f;
+  }
 
-.volume-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: #c9984d;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-  transition: transform 0.15s ease;
-}
+  .volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #c9984d;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s ease;
+  }
 
-.volume-slider::-moz-range-thumb:hover {
-  transform: scale(1.15);
-}
+  .volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+  }
 </style>
