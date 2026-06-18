@@ -18,7 +18,7 @@
       <div class="flex mb-2 items-center justify-between gap-2">
         <div class="flex items-center gap-2 sm:gap-3">
           <span class="text-xs font-semibold inline-block text-accent-dark dark:text-accent">
-            {{ Math.round(store.totalProgress) }}%
+            {{ store.status === 'uploading' ? store.uploadProgress : Math.round(store.totalProgress) }}%
           </span>
           <!-- Geschwindigkeit während Upload -->
           <span
@@ -38,7 +38,7 @@
       </div>
       <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-light dark:bg-muted">
         <div
-          :style="{ width: store.totalProgress + '%' }"
+          :style="{ width: (store.status === 'uploading' ? store.uploadProgress : store.totalProgress) + '%' }"
           :class="[
             'shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-accent dark:bg-accent transition-all duration-300',
             store.isIndeterminate && 'animate-pulse',
