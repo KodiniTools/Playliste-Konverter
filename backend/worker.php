@@ -139,6 +139,25 @@ function startConversion($sessionId) {
         $extension = $formatConfig['extension'];
     }
 
+    // Gesamtdauer berechnen (im Hintergrund, blockiert nicht den Upload)
+    if (empty($meta['total_duration'])) {
+        $totalDuration = 0;
+        foreach ($meta['files'] as $file) {
+            $filePath = $sessionDir . $file;
+            $cmd = sprintf(
+                'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
+                escapeshellarg($filePath)
+            );
+            $duration = trim(shell_exec($cmd) ?? '');
+            if (is_numeric($duration)) {
+                $totalDuration += floatval($duration);
+            }
+        }
+        if ($totalDuration > 0) {
+            $meta['total_duration'] = $totalDuration;
+        }
+    }
+
     // Update status
     $meta['status'] = 'converting';
     $meta['progress'] = 0;
