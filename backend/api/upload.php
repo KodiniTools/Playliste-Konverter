@@ -101,27 +101,13 @@ foreach ($uploadedFiles as $file) {
 }
 fclose($fp);
 
-// Gesamtdauer aller Dateien berechnen (für Fortschrittsanzeige)
-$totalDuration = 0;
-foreach ($uploadedFiles as $file) {
-    $filePath = $sessionDir . $file;
-    $cmd = sprintf(
-        'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
-        escapeshellarg($filePath)
-    );
-    $duration = trim(shell_exec($cmd) ?? '');
-    if (is_numeric($duration)) {
-        $totalDuration += floatval($duration);
-    }
-}
-
 // Save metadata
 file_put_contents($sessionDir . 'meta.json', json_encode([
     'session_id' => $sessionId,
     'files' => $uploadedFiles,
     'status' => 'uploaded',
     'created_at' => time(),
-    'total_duration' => $totalDuration > 0 ? $totalDuration : null
+    'total_duration' => null
 ]));
 
 echo json_encode([
