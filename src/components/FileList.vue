@@ -150,7 +150,7 @@
 
 <template>
   <div
-    class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-3 sm:p-4"
+    class="bg-white dark:bg-dark-card rounded-2xl border border-neutral dark:border-muted p-3 sm:p-4 shadow-sm"
   >
     <div class="flex justify-between items-center mb-3 gap-2">
       <div class="min-w-0">

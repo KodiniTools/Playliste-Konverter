@@ -36,6 +36,9 @@ const messages = {
       errorDirectoryAccess: 'Ordner konnte nicht vollständig gelesen werden',
       errorDrop: 'Fehler beim Verarbeiten der abgelegten Dateien',
       errorFileSelect: 'Fehler beim Lesen der ausgewählten Dateien',
+      pasteHint: 'zum Einfügen aus Zwischenablage',
+      noPasteFiles: 'Keine Audio-Dateien in der Zwischenablage gefunden',
+      errorPaste: 'Fehler beim Einfügen aus der Zwischenablage',
     },
     fileList: {
       title: 'Playlist',
@@ -136,6 +139,9 @@ const messages = {
       errorDirectoryAccess: 'Folder could not be read completely',
       errorDrop: 'Error processing dropped files',
       errorFileSelect: 'Error reading selected files',
+      pasteHint: 'to paste from clipboard',
+      noPasteFiles: 'No audio files found in clipboard',
+      errorPaste: 'Error pasting from clipboard',
     },
     fileList: {
       title: 'Playlist',

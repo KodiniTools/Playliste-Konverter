@@ -8,7 +8,7 @@
 
 <template>
   <div
-    class="bg-white dark:bg-dark-card rounded-lg p-3 sm:p-4 border border-neutral dark:border-muted space-y-3 sm:space-y-4"
+    class="bg-white dark:bg-dark-card rounded-2xl p-4 sm:p-5 border border-neutral dark:border-muted space-y-4 sm:space-y-5 shadow-sm"
   >
     <!-- Format-Auswahl -->
     <div>
@@ -21,11 +21,11 @@
           :key="format.id"
           @click="store.setOutputFormat(format.id)"
           :class="[
-            'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition-all',
+            'px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-medium transition-all duration-150',
             'border-2',
             store.outputFormat === format.id
-              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50',
+              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent shadow-sm'
+              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/40',
           ]"
         >
           <span class="font-semibold">{{ format.label }}</span>
@@ -47,11 +47,11 @@
           :key="br.value"
           @click="store.setBitrate(br.value)"
           :class="[
-            'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+            'px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-150',
             'border-2',
             store.bitrate === br.value
-              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/50',
+              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent shadow-sm'
+              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/40',
           ]"
         >
           <span class="font-semibold">{{ br.label }}</span>
