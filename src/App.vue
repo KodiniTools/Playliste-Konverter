@@ -1,5 +1,5 @@
 <script setup>
-  import { watch } from 'vue'
+  import { ref, watch, onMounted } from 'vue'
   import { useConverterStore } from './stores/converter'
   import { useUIStore } from './stores/ui'
   import { useI18n } from 'vue-i18n'
@@ -10,6 +10,7 @@
   import DownloadButton from './components/DownloadButton.vue'
   import SizeWarning from './components/SizeWarning.vue'
   import ToastContainer from './components/ToastContainer.vue'
+  import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
@@ -23,6 +24,44 @@
     },
     { immediate: true },
   )
+
+  // --- source=audionormalizer receiver ---
+  const sharedBanner = ref(null)
+  let sharedHandled = false
+
+  async function loadSharedFiles() {
+    if (sharedHandled) return
+    sharedHandled = true
+
+    try {
+      const records = await getSharedFiles()
+      if (!records?.length) {
+        sharedBanner.value = { type: 'warning', message: t('sharedFiles.empty') }
+        setTimeout(() => { sharedBanner.value = null }, 5000)
+        return
+      }
+
+      sharedBanner.value = { type: 'info', message: t('sharedFiles.loading', { count: records.length }) }
+
+      const files = records.map(
+        (r) => new File([r.blob], r.name, { type: r.mimeType || r.blob.type }),
+      )
+      store.addFiles(files)
+      await clearSharedFiles()
+
+      sharedBanner.value = { type: 'success', message: t('sharedFiles.loaded', { count: files.length }) }
+    } catch (err) {
+      console.error('[Playliste-Konverter] Error loading shared files:', err)
+      sharedBanner.value = { type: 'error', message: t('sharedFiles.error') }
+    }
+
+    setTimeout(() => { sharedBanner.value = null }, 6000)
+  }
+
+  onMounted(() => {
+    const source = new URLSearchParams(window.location.search).get('source')
+    if (source === 'audionormalizer') loadSharedFiles()
+  })
 </script>
 
 <template>
@@ -71,6 +110,24 @@
           <p class="text-sm sm:text-base text-muted dark:text-neutral">{{ t('app.subtitle') }}</p>
         </div>
       </header>
+
+      <!-- Shared files banner -->
+      <div
+        v-if="sharedBanner"
+        class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+        :class="{
+          'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400': sharedBanner.type === 'success',
+          'bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400': sharedBanner.type === 'error',
+          'bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400': sharedBanner.type === 'warning',
+          'bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400': sharedBanner.type === 'info',
+        }"
+      >
+        <span v-if="sharedBanner.type === 'success'">&#10003;</span>
+        <span v-else-if="sharedBanner.type === 'error'">&#10007;</span>
+        <span v-else-if="sharedBanner.type === 'warning'">&#9888;</span>
+        <span v-else>&#8505;</span>
+        <span>{{ sharedBanner.message }}</span>
+      </div>
 
       <div v-if="store.status === 'idle'" class="space-y-6">
         <FileUploader />

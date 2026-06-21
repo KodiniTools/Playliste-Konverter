@@ -103,6 +103,12 @@ const messages = {
         'Ihre Playlist ist sehr groß. Die Konvertierung kann 5-7 Minuten dauern. Bitte haben Sie Geduld.',
       estimatedTime: 'Geschätzte Zeit: 5-7 Minuten',
     },
+    sharedFiles: {
+      loading: '{count} normalisierte Datei(en) werden geladen …',
+      loaded: '{count} normalisierte Datei(en) erfolgreich geladen.',
+      empty: 'Keine gemeinsam genutzten Dateien gefunden.',
+      error: 'Fehler beim Laden der gemeinsam genutzten Dateien.',
+    },
   },
   en: {
     app: {
@@ -204,6 +210,12 @@ const messages = {
       title: 'Very Large Playlist',
       message: 'Your playlist is very large. Conversion may take 5-7 minutes. Please be patient.',
       estimatedTime: 'Estimated time: 5-7 minutes',
+    },
+    sharedFiles: {
+      loading: 'Loading {count} normalised file(s) …',
+      loaded: '{count} normalised file(s) loaded successfully.',
+      empty: 'No shared files found.',
+      error: 'Error loading shared files.',
     },
   },
 }
