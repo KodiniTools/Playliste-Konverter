@@ -151,8 +151,43 @@ vue-playlist-converter/
 ├── postcss.config.js
 ├── package.json
 ├── deploy.ps1
+├── deploy.sh
 └── README.md
 ```
+
+## Deployment
+
+### Server-seitig aus `main` (`deploy.sh`)
+
+Direkt auf dem Server in einem Git-Checkout des Repos ausführen. Das Script
+aktualisiert auf `origin/main`, baut das Frontend und synchronisiert Frontend
+und Backend in den Webroot – laufende Sessions in `backend/temp/` bleiben erhalten:
+
+```bash
+cd /opt/playliste-konverter   # Git-Checkout (NICHT der Webroot)
+./deploy.sh
+```
+
+Überschreibbare Einstellungen (Umgebungsvariablen):
+
+| Variable        | Standard                                        | Beschreibung                          |
+| --------------- | ----------------------------------------------- | ------------------------------------- |
+| `DEPLOY_DIR`    | `/var/www/kodinitools.com/playlistkonverter`    | Ziel-/Webroot-Verzeichnis             |
+| `DEPLOY_BRANCH` | `main`                                          | Zu deployender Branch                 |
+| `WEB_USER`      | `www-data`                                      | Besitzer für `backend/temp`           |
+| `RELOAD_NGINX`  | `1`                                             | `0` = Nginx-Reload überspringen       |
+
+```bash
+# Beispiel: nur ausspielen, ohne Nginx neu zu laden
+RELOAD_NGINX=0 ./deploy.sh
+```
+
+Voraussetzungen auf dem Server: `git`, `node`/`npm`, `rsync`, `ffmpeg`.
+
+### Lokal via SSH/SCP (`deploy.ps1`)
+
+Windows/PowerShell-Variante, die lokal baut und per `scp` hochlädt – siehe
+[Installation](#installation).
 
 ## API-Endpoints
 
