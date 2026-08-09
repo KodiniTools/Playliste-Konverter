@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, watch, onMounted } from 'vue'
+  import { ref, computed, watch, onMounted } from 'vue'
   import { useConverterStore } from './stores/converter'
   import { useUIStore } from './stores/ui'
   import { useI18n } from 'vue-i18n'
@@ -10,11 +10,15 @@
   import DownloadButton from './components/DownloadButton.vue'
   import SizeWarning from './components/SizeWarning.vue'
   import ToastContainer from './components/ToastContainer.vue'
+  import StickyPlayer from './components/StickyPlayer.vue'
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
   const { t, locale } = useI18n()
+
+  // Sticky-Player anzeigen, solange Tracks in der Playlist bearbeitet werden
+  const showPlayer = computed(() => store.status === 'idle' && store.files.length > 0)
 
   // vue-i18n Locale mit UI-Store synchronisieren (gesteuert von SSI-Navigation)
   watch(
@@ -66,7 +70,10 @@
 
 <template>
   <ToastContainer />
-  <div class="min-h-screen bg-neutral-light dark:bg-dark py-4 sm:py-8 transition-colors">
+  <div
+    class="min-h-screen bg-neutral-light dark:bg-dark py-4 sm:py-8 transition-colors"
+    :class="{ 'pb-28 sm:pb-24': showPlayer }"
+  >
     <div class="max-w-4xl mx-auto px-3 sm:px-4">
       <header class="mb-6 sm:mb-8">
         <div class="flex flex-col items-center text-center mb-4 gap-2">
@@ -141,7 +148,6 @@
 
         <button
           v-if="store.files.length > 0"
-          @click="store.convert"
           :disabled="store.isOverSizeLimit"
           :class="[
             'w-full py-3.5 rounded-xl font-semibold text-base transition-all duration-200',
@@ -149,6 +155,7 @@
               ? 'bg-neutral dark:bg-muted text-neutral-dark dark:text-muted-light cursor-not-allowed opacity-60'
               : 'bg-accent text-dark hover:bg-accent-dark shadow-md hover:shadow-lg hover:-translate-y-0.5',
           ]"
+          @click="store.convert"
         >
           <span class="inline-flex items-center justify-center gap-2">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,12 +181,15 @@
       >
         <p class="text-secondary-dark dark:text-secondary-light">{{ store.errorMessage }}</p>
         <button
-          @click="store.reset"
           class="mt-2 text-secondary dark:text-secondary-light underline"
+          @click="store.reset"
         >
           {{ t('error.reset') }}
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Dauerhaft sichtbarer Sticky-Player am unteren Rand -->
+  <StickyPlayer v-if="showPlayer" />
 </template>

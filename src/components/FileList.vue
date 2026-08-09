@@ -1,29 +1,16 @@
 <script setup>
-  import { ref, onUnmounted } from 'vue'
   import { useConverterStore } from '../stores/converter'
+  import { usePlayerStore } from '../stores/player'
   import { useI18n } from 'vue-i18n'
-  import { formatBytes, formatTime } from '../utils/format'
+  import { formatBytes } from '../utils/format'
 
   const store = useConverterStore()
+  const player = usePlayerStore()
   const { t } = useI18n()
 
   let draggedIndex = null
 
-  // Audio Preview State
-  const currentlyPlaying = ref(null) // ID des aktuell spielenden Tracks
-  const audioElement = ref(null)
-  const audioProgress = ref(0)
-  const audioDuration = ref(0)
-  const audioVolume = ref(0.7) // Lautstärke (0-1), Standard 70%
-  const isAdjustingVolume = ref(false) // Verhindert Drag während Volume-Änderung
-  const audioObjectUrls = new Map() // Cache für Object URLs
-
   function onDragStart(e, index) {
-    // Verhindere Drag wenn Volume-Slider benutzt wird
-    if (isAdjustingVolume.value) {
-      e.preventDefault()
-      return
-    }
     draggedIndex = index
   }
 
@@ -39,113 +26,18 @@
     draggedIndex = null
   }
 
-  function getAudioUrl(item) {
-    if (!audioObjectUrls.has(item.id)) {
-      audioObjectUrls.set(item.id, URL.createObjectURL(item.file))
-    }
-    return audioObjectUrls.get(item.id)
-  }
-
-  function togglePlay(item) {
-    if (currentlyPlaying.value === item.id) {
-      // Pause aktuellen Track
-      if (audioElement.value) {
-        audioElement.value.pause()
-      }
-      currentlyPlaying.value = null
-      audioProgress.value = 0
-    } else {
-      // Stoppe vorherigen Track falls vorhanden
-      if (audioElement.value) {
-        audioElement.value.pause()
-      }
-
-      // Spiele neuen Track
-      currentlyPlaying.value = item.id
-      audioProgress.value = 0
-      audioDuration.value = 0
-
-      const url = getAudioUrl(item)
-      audioElement.value = new Audio(url)
-
-      audioElement.value.addEventListener('timeupdate', () => {
-        if (audioElement.value) {
-          audioProgress.value = audioElement.value.currentTime
-        }
-      })
-
-      audioElement.value.addEventListener('loadedmetadata', () => {
-        if (audioElement.value) {
-          audioDuration.value = audioElement.value.duration
-        }
-      })
-
-      audioElement.value.addEventListener('ended', () => {
-        currentlyPlaying.value = null
-        audioProgress.value = 0
-      })
-
-      // Setze Lautstärke
-      audioElement.value.volume = audioVolume.value
-
-      audioElement.value.play()
-    }
-  }
-
-  function stopPlayback() {
-    if (audioElement.value) {
-      audioElement.value.pause()
-      audioElement.value = null
-    }
-    currentlyPlaying.value = null
-    audioProgress.value = 0
-  }
-
-  function setVolume(value) {
-    audioVolume.value = value
-    if (audioElement.value) {
-      audioElement.value.volume = value
-    }
-  }
-
-  function startVolumeAdjust() {
-    isAdjustingVolume.value = true
-  }
-
-  function endVolumeAdjust() {
-    // Kurze Verzögerung, um sicherzustellen, dass Drag nicht startet
-    setTimeout(() => {
-      isAdjustingVolume.value = false
-    }, 100)
+  function isActive(item) {
+    return player.currentId === item.id
   }
 
   function handleRemoveFile(id) {
-    // Stoppe Wiedergabe falls dieser Track spielt
-    if (currentlyPlaying.value === id) {
-      stopPlayback()
-    }
-    // Bereinige Object URL
-    if (audioObjectUrls.has(id)) {
-      URL.revokeObjectURL(audioObjectUrls.get(id))
-      audioObjectUrls.delete(id)
-    }
+    // Wiedergabe/URL-Cleanup übernimmt der Player-Store per Watcher
     store.removeFile(id)
   }
 
   function handleRemoveAll() {
-    stopPlayback()
-    // Bereinige alle Object URLs
-    audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
-    audioObjectUrls.clear()
     store.removeAllFiles()
   }
-
-  // Cleanup beim Verlassen der Komponente
-  onUnmounted(() => {
-    stopPlayback()
-    audioObjectUrls.forEach((url) => URL.revokeObjectURL(url))
-    audioObjectUrls.clear()
-  })
 </script>
 
 <template>
@@ -162,8 +54,8 @@
         </p>
       </div>
       <button
-        @click="handleRemoveAll"
         class="text-xs sm:text-sm text-secondary dark:text-secondary-light hover:underline flex-shrink-0"
+        @click="handleRemoveAll"
       >
         {{ t('fileList.removeAll') }}
       </button>
@@ -174,35 +66,35 @@
         v-for="(item, index) in store.files"
         :key="item.id"
         draggable="true"
-        @dragstart="onDragStart($event, index)"
-        @dragover="onDragOver($event, index)"
-        @dragend="onDragEnd"
         :class="[
           'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded border cursor-move transition-colors',
-          currentlyPlaying === item.id
+          isActive(item)
             ? 'bg-accent/10 dark:bg-accent/20 border-accent dark:border-accent'
             : 'bg-neutral-light dark:bg-dark-lighter border-neutral dark:border-muted hover:bg-neutral/30 dark:hover:bg-muted/30',
         ]"
+        @dragstart="onDragStart($event, index)"
+        @dragover="onDragOver($event, index)"
+        @dragend="onDragEnd"
       >
         <!-- Track Nummer -->
         <span class="text-muted dark:text-neutral font-mono text-sm w-6 sm:w-8 hidden sm:inline"
           >{{ index + 1 }}.</span
         >
 
-        <!-- Play/Pause Button -->
+        <!-- Play/Pause Button (Auswahl für den Sticky-Player) -->
         <button
-          @click.stop="togglePlay(item)"
-          :title="currentlyPlaying === item.id ? t('preview.pause') : t('preview.play')"
+          :title="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
           :class="[
             'w-8 h-8 flex items-center justify-center rounded-full transition-colors flex-shrink-0',
-            currentlyPlaying === item.id
+            isActive(item)
               ? 'bg-accent text-dark hover:bg-accent-dark'
               : 'bg-neutral dark:bg-muted text-dark dark:text-neutral-light hover:bg-accent hover:text-dark',
           ]"
+          @click.stop="player.toggle(item)"
         >
-          <!-- Pause Icon -->
+          <!-- Pause Icon (nur wenn dieser Track aktiv spielt) -->
           <svg
-            v-if="currentlyPlaying === item.id"
+            v-if="isActive(item) && player.isPlaying"
             class="w-4 h-4"
             fill="currentColor"
             viewBox="0 0 24 24"
@@ -215,96 +107,18 @@
           </svg>
         </button>
 
-        <!-- Volume Slider (nur sichtbar wenn dieser Track spielt, auf Mobile versteckt) -->
-        <div
-          v-if="currentlyPlaying === item.id"
-          class="hidden sm:flex items-center gap-1.5 flex-shrink-0"
-          @click.stop
-          @mousedown.stop
-          @dragstart.stop.prevent
-          draggable="false"
-        >
-          <!-- Volume Icon -->
-          <svg
-            class="w-4 h-4 text-muted dark:text-neutral flex-shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              v-if="audioVolume > 0.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"
-            />
-            <path
-              v-else-if="audioVolume > 0"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15.536 8.464a5 5 0 010 7.072M11 5L6 9H2v6h4l5 4V5z"
-            />
-            <path
-              v-else
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
-            />
-          </svg>
-          <!-- Volume Slider -->
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            :value="audioVolume"
-            @input="setVolume(parseFloat($event.target.value))"
-            @mousedown.stop="startVolumeAdjust"
-            @mouseup="endVolumeAdjust"
-            @mouseleave="endVolumeAdjust"
-            @pointerdown.stop="startVolumeAdjust"
-            @pointerup="endVolumeAdjust"
-            @touchstart.stop="startVolumeAdjust"
-            @touchend="endVolumeAdjust"
-            @dragstart.stop.prevent
-            draggable="false"
-            :title="`${t('preview.volume')}: ${Math.round(audioVolume * 100)}% — ${t('preview.volumeHint')}`"
-            class="volume-slider w-16 h-1.5 bg-neutral dark:bg-muted rounded-full appearance-none cursor-pointer accent-accent"
-          />
-        </div>
-
         <!-- Track Info -->
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-dark dark:text-neutral-light truncate">
             {{ item.name }}
           </p>
-          <div class="flex items-center gap-2">
-            <p class="text-xs text-muted dark:text-neutral">{{ formatBytes(item.size) }}</p>
-            <!-- Progress während Wiedergabe -->
-            <template v-if="currentlyPlaying === item.id && audioDuration > 0">
-              <span class="text-xs text-accent">
-                {{ formatTime(audioProgress) }} / {{ formatTime(audioDuration) }}
-              </span>
-            </template>
-          </div>
-          <!-- Progress Bar während Wiedergabe -->
-          <div
-            v-if="currentlyPlaying === item.id && audioDuration > 0"
-            class="mt-1.5 h-1 bg-neutral dark:bg-muted rounded-full overflow-hidden"
-          >
-            <div
-              class="h-full bg-accent transition-all duration-200"
-              :style="{ width: `${(audioProgress / audioDuration) * 100}%` }"
-            ></div>
-          </div>
+          <p class="text-xs text-muted dark:text-neutral">{{ formatBytes(item.size) }}</p>
         </div>
 
         <!-- Remove Button -->
         <button
-          @click="handleRemoveFile(item.id)"
           class="text-secondary dark:text-secondary-light hover:text-secondary-dark dark:hover:text-secondary flex-shrink-0"
+          @click.stop="handleRemoveFile(item.id)"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -319,64 +133,3 @@
     </div>
   </div>
 </template>
-
-<style scoped>
-  /* Volume Slider Styling */
-  .volume-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-  }
-
-  .volume-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: #c0c2c9;
-    border-radius: 3px;
-  }
-
-  .dark .volume-slider::-webkit-slider-runnable-track {
-    background: #1e3a5f;
-  }
-
-  .volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #c9984d;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: -4px;
-    transition: transform 0.15s ease;
-  }
-
-  .volume-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-
-  .volume-slider::-moz-range-track {
-    width: 100%;
-    height: 6px;
-    background: #c0c2c9;
-    border-radius: 3px;
-  }
-
-  .dark .volume-slider::-moz-range-track {
-    background: #1e3a5f;
-  }
-
-  .volume-slider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: #c9984d;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.15s ease;
-  }
-
-  .volume-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-  }
-</style>

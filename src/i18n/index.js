@@ -52,6 +52,12 @@ const messages = {
       volume: 'Lautstärke',
       volumeHint: 'Nur Vorschau - keine Auswirkung auf die Ausgabedatei',
     },
+    player: {
+      noTrack: 'Kein Track ausgewählt',
+      previous: 'Vorheriger Track',
+      next: 'Nächster Track',
+      seek: 'Position ändern',
+    },
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
       converting: 'Konvertierung läuft...',
@@ -160,6 +166,12 @@ const messages = {
       pause: 'Pause',
       volume: 'Volume',
       volumeHint: 'Preview only - does not affect output file',
+    },
+    player: {
+      noTrack: 'No track selected',
+      previous: 'Previous track',
+      next: 'Next track',
+      seek: 'Seek',
     },
     conversion: {
       uploading: 'Uploading files...',
