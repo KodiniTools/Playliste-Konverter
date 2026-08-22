@@ -1,11 +1,6 @@
 // Upload-Timeout: 30 Minuten
 export const UPLOAD_TIMEOUT = 30 * 60 * 1000
 
-// Anzahl paralleler Datei-Uploads. Mehrere gleichzeitige Verbindungen nutzen
-// die verfügbare Bandbreite deutlich besser aus als ein strikt sequenzieller
-// Upload (der zwischen den Dateien auf jede Server-Antwort wartet).
-export const UPLOAD_CONCURRENCY = 3
-
 // Konvertierungs-Start-Timeout: 30 Sekunden
 export const CONVERT_START_TIMEOUT = 30_000
 
