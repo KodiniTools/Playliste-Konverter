@@ -22,6 +22,9 @@ class ConversionQueue {
         $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Erstelle Tabelle falls nicht vorhanden
+        // Hinweis: SQLite unterstützt keine Inline-INDEX-Definitionen innerhalb
+        // von CREATE TABLE (das ist MySQL-Syntax). Indizes werden daher separat
+        // mit CREATE INDEX angelegt.
         $this->db->exec('
             CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,11 +34,13 @@ class ConversionQueue {
                 created_at INTEGER NOT NULL,
                 started_at INTEGER,
                 finished_at INTEGER,
-                error TEXT,
-                INDEX(status),
-                INDEX(priority)
+                error TEXT
             )
         ');
+
+        // Indizes separat erstellen (SQLite-konform)
+        $this->db->exec('CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(status)');
+        $this->db->exec('CREATE INDEX IF NOT EXISTS idx_queue_priority ON queue(priority)');
     }
 
     /**
