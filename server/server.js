@@ -26,7 +26,7 @@ const path = require('path')
 const crypto = require('crypto')
 
 // --- Konfiguration ---------------------------------------------------------
-const PORT = parseInt(process.env.PORT || '9015', 10)
+const PORT = parseInt(process.env.PORT || '9016', 10)
 const TEMP_DIR = process.env.TEMP_DIR || path.join(__dirname, 'temp')
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg'
 const FFPROBE = process.env.FFPROBE_PATH || 'ffprobe'

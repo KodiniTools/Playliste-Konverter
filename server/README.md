@@ -1,6 +1,6 @@
 # Playlist Konverter – Node-Konvertierungsdienst
 
-Dauerhafter Node-Dienst (unter **pm2**, Port **9015**), der die serverseitige
+Dauerhafter Node-Dienst (unter **pm2**, Port **9016**), der die serverseitige
 Konvertierung übernimmt. Er ersetzt die bisherige PHP-/Queue-Worker-Lösung, bei
 der die Konvertierung ohne laufenden Worker bei ~96 % hängen blieb.
 
@@ -35,7 +35,7 @@ npm ci --omit=dev
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 list          # playlistkonverter-server sollte "online" sein
-curl -s http://127.0.0.1:9015/health   # {"status":"ok",...}
+curl -s http://127.0.0.1:9016/health   # {"status":"ok",...}
 ```
 
 ## nginx umstellen
@@ -43,7 +43,7 @@ curl -s http://127.0.0.1:9015/health   # {"status":"ok",...}
 Den bisherigen `# ===== PLAYLIST CONVERTER =====`-Abschnitt in
 `/etc/nginx/sites-enabled/kodinitools.com` durch den Inhalt von
 [`../deploy/nginx-playlistkonverter.conf`](../deploy/nginx-playlistkonverter.conf)
-ersetzen (Frontend bleibt statisch, API/Health gehen an Port 9015), dann:
+ersetzen (Frontend bleibt statisch, API/Health gehen an Port 9016), dann:
 
 ```bash
 nginx -t && systemctl reload nginx
@@ -53,7 +53,7 @@ nginx -t && systemctl reload nginx
 
 | Variable         | Standard          | Bedeutung |
 |------------------|-------------------|-----------|
-| `PORT`           | `9015`            | Listen-Port (nur `127.0.0.1`) |
+| `PORT`           | `9016`            | Listen-Port (nur `127.0.0.1`) |
 | `TEMP_DIR`       | `<server>/temp`   | Verzeichnis für Sessions/Uploads |
 | `MAX_CONCURRENT` | `3`               | Max. gleichzeitige ffmpeg-Prozesse |
 | `FFMPEG_PATH`    | `ffmpeg`          | Pfad zur ffmpeg-Binary |

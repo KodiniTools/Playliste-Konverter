@@ -22,7 +22,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 9015,
+        PORT: 9016,
         // Optional: eigenes Temp-Verzeichnis (Standard: <server>/temp)
         // TEMP_DIR: '/var/www/kodinitools.com/playlistkonverter/server-temp',
         MAX_CONCURRENT: 3,
