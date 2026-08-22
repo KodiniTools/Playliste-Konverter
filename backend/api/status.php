@@ -38,26 +38,32 @@ if (!isValidExtension($extension)) {
 $outputFile = $sessionDir . 'playlist.' . $extension;
 $logFile = $sessionDir . 'ffmpeg.log';
 
-// Prüfe Queue-Status wenn Queue aktiviert ist
-if (isset($config['use_queue']) && $config['use_queue'] === true && $meta['status'] === 'queued') {
-    require_once __DIR__ . '/../queue.php';
+// Prüfe Queue-Status wenn Queue aktiviert ist. Fehler im Queue-System dürfen
+// die Statusabfrage nicht mit 500 abbrechen.
+if (isset($config['use_queue']) && $config['use_queue'] === true && ($meta['status'] ?? '') === 'queued') {
+    try {
+        require_once __DIR__ . '/../queue.php';
 
-    $queue = new ConversionQueue();
-    $queueStatus = $queue->getStatus($sessionId);
+        $queue = new ConversionQueue();
+        $queueStatus = $queue->getStatus($sessionId);
 
-    if ($queueStatus) {
-        $meta['queue_position'] = $queue->getQueuePosition($sessionId);
+        if ($queueStatus) {
+            $meta['queue_position'] = $queue->getQueuePosition($sessionId);
 
-        // Wenn Queue-Status "processing" ist, prüfe ob auch wirklich konvertiert wird
-        if ($queueStatus['status'] === 'processing') {
-            $meta['status'] = 'converting';
-        } elseif ($queueStatus['status'] === 'completed') {
-            $meta['status'] = 'done';
-            $meta['progress'] = 100;
-        } elseif ($queueStatus['status'] === 'failed') {
-            $meta['status'] = 'error';
-            $meta['error'] = $queueStatus['error'] ?? 'Queue-Fehler';
+            // Wenn Queue-Status "processing" ist, prüfe ob auch wirklich konvertiert wird
+            if ($queueStatus['status'] === 'processing') {
+                $meta['status'] = 'converting';
+            } elseif ($queueStatus['status'] === 'completed') {
+                $meta['status'] = 'done';
+                $meta['progress'] = 100;
+            } elseif ($queueStatus['status'] === 'failed') {
+                $meta['status'] = 'error';
+                $meta['error'] = $queueStatus['error'] ?? 'Queue-Fehler';
+            }
         }
+    } catch (Throwable $e) {
+        // Queue nicht verfügbar → Status bleibt wie in meta.json hinterlegt.
+        error_log('Queue-Status nicht verfügbar: ' . $e->getMessage());
     }
 }
 
