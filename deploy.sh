@@ -99,6 +99,21 @@ else
   echo -e "${C_YELLOW}Hinweis: chown übersprungen (keine Rechte). Ggf. mit sudo ausführen.${C_RESET}"
 fi
 
+# --- 5b. Node-Konvertierungsdienst (pm2) -----------------------------------
+# Der serverseitige Konvertierungsdienst läuft aus DIESEM Checkout heraus
+# (cwd = server/), nicht aus dem Webroot. Er wird hier (neu) gestartet.
+step "[5b] Node-Konvertierungsdienst (pm2) aktualisieren ..."
+if command -v pm2 >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+  ( cd "$SCRIPT_DIR/server" \
+    && npm ci --omit=dev \
+    && pm2 startOrReload ecosystem.config.cjs --update-env \
+    && pm2 save ) \
+    && info "playlistkonverter-server neu geladen." \
+    || echo -e "${C_YELLOW}Hinweis: Start des Node-Dienstes fehlgeschlagen – bitte manuell prüfen (pm2 logs playlistkonverter-server).${C_RESET}"
+else
+  info "pm2/node nicht gefunden – Node-Dienst-Schritt übersprungen."
+fi
+
 # --- 6. Nginx neu laden ----------------------------------------------------
 step "[6/6] Nginx testen & neu laden ..."
 if [ "$RELOAD_NGINX" = "1" ] && command -v nginx >/dev/null 2>&1; then

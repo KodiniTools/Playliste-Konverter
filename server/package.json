@@ -1,0 +1,16 @@
+{
+  "name": "playlistkonverter-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Server-seitiger Konvertierungsdienst für den Playlist Konverter (Node + ffmpeg, unter pm2).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

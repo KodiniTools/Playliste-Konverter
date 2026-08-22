@@ -21,6 +21,10 @@ Thumbs.db
 backend/temp/*
 !backend/temp/.gitkeep
 
+# Node-Konvertierungsdienst (Laufzeit)
+server/temp/
+server/node_modules/
+
 # Environment
 .env
 .env.local
