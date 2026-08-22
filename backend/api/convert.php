@@ -67,33 +67,55 @@ if (isset($meta['status']) && in_array($meta['status'], ['converting', 'queued']
 }
 
 // Prüfe ob Queue-System aktiv ist
-if (isset($config['use_queue']) && $config['use_queue'] === true) {
-    // Queue-Modus: Füge Job zur Queue hinzu
-    require_once __DIR__ . '/../queue.php';
+$useQueue = isset($config['use_queue']) && $config['use_queue'] === true;
+$queued = false;
 
-    $extension = $formatConfig['extension'];
+if ($useQueue) {
+    // Queue-Modus: Füge Job zur Queue hinzu. Schlägt das Queue-System fehl
+    // (z. B. fehlendes pdo_sqlite oder nicht beschreibbares Verzeichnis), wird
+    // NICHT mit 500 abgebrochen, sondern auf den direkten Modus zurückgefallen.
+    try {
+        require_once __DIR__ . '/../queue.php';
 
-    $queue = new ConversionQueue();
-    $queue->addToQueue($sessionId);
+        $extension = $formatConfig['extension'];
 
-    $meta['status'] = 'queued';
-    $meta['progress'] = 0;
-    $meta['queue_position'] = $queue->getQueuePosition($sessionId);
-    $meta['output_format'] = $outputFormat;
-    $meta['output_extension'] = $extension;
-    $meta['bitrate'] = $bitrate;
-    file_put_contents($metaFile, json_encode($meta));
+        $queue = new ConversionQueue();
+        $queue->addToQueue($sessionId);
 
-    echo json_encode([
-        'success' => true,
-        'message' => 'In Warteschlange eingereiht',
-        'queue_position' => $meta['queue_position'],
-        'format' => $outputFormat,
-        'bitrate' => $bitrate
-    ]);
+        // Queue-Position ist optional; ein Fehler hier darf die Konvertierung
+        // nicht verhindern.
+        $queuePosition = 1;
+        try {
+            $queuePosition = $queue->getQueuePosition($sessionId);
+        } catch (Throwable $e) {
+            // Position bleibt beim Standardwert.
+        }
 
-} else {
-    // Direkter Modus: Starte FFmpeg sofort
+        $meta['status'] = 'queued';
+        $meta['progress'] = 0;
+        $meta['queue_position'] = $queuePosition;
+        $meta['output_format'] = $outputFormat;
+        $meta['output_extension'] = $extension;
+        $meta['bitrate'] = $bitrate;
+        file_put_contents($metaFile, json_encode($meta));
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'In Warteschlange eingereiht',
+            'queue_position' => $meta['queue_position'],
+            'format' => $outputFormat,
+            'bitrate' => $bitrate
+        ]);
+
+        $queued = true;
+    } catch (Throwable $e) {
+        // Queue nicht verfügbar → Fallback auf direkten Modus (siehe unten).
+        error_log('Queue nicht verfügbar, Fallback auf Direktmodus: ' . $e->getMessage());
+    }
+}
+
+if (!$queued) {
+    // Direkter Modus (Standard oder Fallback): Starte FFmpeg sofort
     $formatConfig = $config['output_formats'][$outputFormat] ?? $config['output_formats']['webm'];
     $extension = $formatConfig['extension'];
     $ffmpegCodec = $formatConfig['ffmpeg_codec'];

@@ -11,13 +11,23 @@ class ConversionQueue {
 
     public function __construct($dbPath = null) {
         if ($dbPath === null) {
-            $dbPath = __DIR__ . '/queue.db';
+            // Datenbank im temp/-Verzeichnis ablegen. Nur dieses Verzeichnis wird
+            // beim Deployment für den Webserver-Benutzer (www-data) beschreibbar
+            // gemacht; das backend/-Verzeichnis selbst ist es i. d. R. nicht, sonst
+            // scheitert das Anlegen der SQLite-Datei mit einem 500er.
+            $dbPath = __DIR__ . '/temp/queue.db';
         }
         $this->dbPath = $dbPath;
         $this->initDatabase();
     }
 
     private function initDatabase() {
+        // Sicherstellen, dass das Zielverzeichnis existiert.
+        $dbDir = dirname($this->dbPath);
+        if (!is_dir($dbDir)) {
+            @mkdir($dbDir, 0755, true);
+        }
+
         $this->db = new PDO('sqlite:' . $this->dbPath);
         $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -47,8 +57,10 @@ class ConversionQueue {
      * Fügt eine neue Session zur Queue hinzu
      */
     public function addToQueue($sessionId, $priority = 0) {
+        // INSERT OR IGNORE: verhindert einen UNIQUE-Constraint-Fehler, falls die
+        // Session (z. B. durch einen erneuten Versuch) bereits eingereiht wurde.
         $stmt = $this->db->prepare('
-            INSERT INTO queue (session_id, status, priority, created_at)
+            INSERT OR IGNORE INTO queue (session_id, status, priority, created_at)
             VALUES (:session_id, "pending", :priority, :created_at)
         ');
 
