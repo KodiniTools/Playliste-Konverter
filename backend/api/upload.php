@@ -28,17 +28,23 @@ if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }
 
-// Chunked-Upload: Session-ID aus POST übernehmen oder neu erstellen
+// Chunked-Upload: Session-ID aus POST übernehmen oder neu erstellen.
+// Zwei unabhängige Aspekte:
+//  - $hasSession:  Request setzt eine bestehende Session fort (session_id gesetzt)
+//  - $isMultipart: Upload besteht aus mehreren Requests (total_files + chunk_index)
+// Der erste Request eines Multipart-Uploads legt die Session an und hat daher
+// noch keine session_id, ist aber trotzdem Multipart.
 $existingSessionId = $_POST['session_id'] ?? null;
 $totalFiles = isset($_POST['total_files']) ? intval($_POST['total_files']) : null;
 $chunkIndex = isset($_POST['chunk_index']) ? intval($_POST['chunk_index']) : null;
-$isChunked = $existingSessionId !== null && $totalFiles !== null && $chunkIndex !== null;
+$hasSession = $existingSessionId !== null;
+$isMultipart = $totalFiles !== null && $chunkIndex !== null;
 
-if ($isChunked && !isValidSessionId($existingSessionId)) {
+if ($hasSession && !isValidSessionId($existingSessionId)) {
     sendJsonError(400, 'Ungültige Session-ID');
 }
 
-if ($isChunked) {
+if ($hasSession) {
     $sessionId = $existingSessionId;
     $sessionDir = $uploadDir . $sessionId . '/';
     if (!is_dir($sessionDir)) {
@@ -91,7 +97,7 @@ for ($i = 0; $i < $count; $i++) {
     }
 
     // Dateiname aus order[] ableiten (global index über alle Chunks)
-    $orderVal = isset($order[$i]) ? intval($order[$i]) : ($isChunked ? $chunkIndex : $i);
+    $orderVal = isset($order[$i]) ? intval($order[$i]) : ($isMultipart ? $chunkIndex : $i);
     $orderIndex = str_pad($orderVal, 4, '0', STR_PAD_LEFT);
     $safeName = sanitizeFilename($name);
     $targetName = $orderIndex . '_' . $safeName;
@@ -103,29 +109,54 @@ for ($i = 0; $i < $count; $i++) {
 }
 
 if (empty($newFiles)) {
-    if (!$isChunked) {
+    // Nur eine ganz neu angelegte (leere) Session wieder entfernen.
+    if (!$hasSession) {
         rmdir($sessionDir);
     }
     sendJsonError(400, 'Keine gültigen Audio-Dateien');
 }
 
-// Bestehende Dateiliste lesen (Chunked-Mode) oder neu anlegen
-$metaFile = $sessionDir . 'meta.json';
-if ($isChunked && file_exists($metaFile)) {
-    $meta = json_decode(file_get_contents($metaFile), true);
-    $allFiles = array_merge($meta['files'] ?? [], $newFiles);
-} else {
-    $meta = [];
-    $allFiles = $newFiles;
+// Marker für diesen Chunk ablegen, damit parallele Uploads erkennen können,
+// wann alle Chunks eingetroffen sind (unabhängig von der Reihenfolge).
+if ($isMultipart) {
+    // Kein Punkt-Präfix, damit cleanup.php (glob '*') die Datei mit aufräumt.
+    touch($sessionDir . 'chunk_' . $chunkIndex . '.done');
 }
 
-// Sortieren nach Präfix (0001_, 0002_, …)
+$metaFile = $sessionDir . 'meta.json';
+
+// Kritischer Abschnitt: nur ein Prozess darf gleichzeitig meta.json/concat.txt
+// schreiben. Verhindert Races zwischen parallel hochgeladenen Chunks.
+$lockHandle = fopen($sessionDir . 'upload.lock', 'c');
+if ($lockHandle !== false) {
+    flock($lockHandle, LOCK_EX);
+}
+
+// Aktuelle Dateiliste immer frisch aus dem Verzeichnis lesen (statt aus meta.json
+// mergen). So gehen bei parallelen Uploads keine Einträge verloren.
+$allPaths = glob($sessionDir . '[0-9][0-9][0-9][0-9]_*') ?: [];
+$allFiles = array_map('basename', $allPaths);
 sort($allFiles);
 
-// Letzter Chunk? → concat.txt schreiben und Status auf 'uploaded' setzen
-$isLastChunk = !$isChunked || ($chunkIndex + 1 >= $totalFiles);
+// Sind alle erwarteten Chunks eingetroffen?
+if ($isMultipart) {
+    $receivedChunks = count(glob($sessionDir . 'chunk_*.done') ?: []);
+    $isComplete = $receivedChunks >= $totalFiles;
+} else {
+    $isComplete = true;
+}
 
-if ($isLastChunk) {
+// created_at aus bestehendem meta.json übernehmen
+$createdAt = time();
+if (file_exists($metaFile)) {
+    $existingMeta = json_decode(file_get_contents($metaFile), true);
+    if (isset($existingMeta['created_at'])) {
+        $createdAt = $existingMeta['created_at'];
+    }
+}
+
+if ($isComplete) {
+    // Alle Chunks da → concat.txt schreiben und Status auf 'uploaded' setzen
     $concatFile = $sessionDir . 'concat.txt';
     $fp = fopen($concatFile, 'w');
     foreach ($allFiles as $file) {
@@ -133,23 +164,19 @@ if ($isLastChunk) {
         fwrite($fp, "file '" . $escapedFile . "'\n");
     }
     fclose($fp);
+}
 
-    file_put_contents($metaFile, json_encode([
-        'session_id' => $sessionId,
-        'files' => $allFiles,
-        'status' => 'uploaded',
-        'created_at' => $meta['created_at'] ?? time(),
-        'total_duration' => null,
-    ]));
-} else {
-    // Zwischenspeichern ohne Status-Change
-    file_put_contents($metaFile, json_encode([
-        'session_id' => $sessionId,
-        'files' => $allFiles,
-        'status' => 'uploading',
-        'created_at' => $meta['created_at'] ?? time(),
-        'total_duration' => null,
-    ]));
+file_put_contents($metaFile, json_encode([
+    'session_id' => $sessionId,
+    'files' => $allFiles,
+    'status' => $isComplete ? 'uploaded' : 'uploading',
+    'created_at' => $createdAt,
+    'total_duration' => null,
+]));
+
+if ($lockHandle !== false) {
+    flock($lockHandle, LOCK_UN);
+    fclose($lockHandle);
 }
 
 echo json_encode([
@@ -157,5 +184,5 @@ echo json_encode([
     'session_id' => $sessionId,
     'file_count' => count($allFiles),
     'chunk_index' => $chunkIndex,
-    'is_last_chunk' => $isLastChunk,
+    'is_last_chunk' => $isComplete,
 ]);
