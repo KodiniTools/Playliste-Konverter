@@ -13,6 +13,8 @@ import { collectTokens, contrastRatio, normalize, parseBlock, readRelative } fro
 const base = import.meta.url
 const v2Css = readRelative(base, '../tokens-v2.css')
 const styleCss = readRelative(base, '../../style.css')
+const foundationCss = readRelative(base, '../../styles/foundation.css')
+const landingCss = readRelative(base, '../../landing/landing.css')
 const tailwindConfig = readRelative(base, '../../../tailwind.config.js')
 
 const rootBlock = parseBlock(v2Css, ':root', 'tokens-v2.css')
@@ -71,11 +73,25 @@ describe('Namespace und Einbindung', () => {
     expect(variables.filter((variable) => !variable.startsWith('--ds-'))).toEqual([])
   })
 
-  it('wird in style.css vor den Tailwind-Direktiven importiert', () => {
-    const importIndex = styleCss.indexOf("@import './design-system/tokens-v2.css';")
-    const tailwindIndex = styleCss.indexOf('@tailwind base;')
-    expect(importIndex).toBeGreaterThanOrEqual(0)
-    expect(tailwindIndex).toBeGreaterThan(importIndex)
+  it('wird von der gemeinsamen Grundlage als erstes importiert', () => {
+    const firstRule = foundationCss
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .trim()
+      .split('\n')[0]
+    expect(firstRule).toBe("@import '../design-system/tokens-v2.css';")
+  })
+
+  it('App: Grundlage liegt zwischen Tailwind-Preflight und Komponenten', () => {
+    const baseIndex = styleCss.indexOf("@import 'tailwindcss/base';")
+    const foundationIndex = styleCss.indexOf("@import './styles/foundation.css';")
+    const componentsIndex = styleCss.indexOf("@import 'tailwindcss/components';")
+    expect(baseIndex).toBeGreaterThanOrEqual(0)
+    expect(foundationIndex).toBeGreaterThan(baseIndex)
+    expect(componentsIndex).toBeGreaterThan(foundationIndex)
+  })
+
+  it('Landing-Seite: lädt dieselbe Grundlage', () => {
+    expect(landingCss).toContain("@import '../styles/foundation.css';")
   })
 
   it('wird von der Tailwind-Konfiguration nur über var(--ds-*) referenziert', () => {

@@ -16,7 +16,9 @@ und CSS konsistent und prüft den Kontrast (WCAG AA).
 | `tokens-v2.js`                | Zugriff aus JS (Port von `tokens-v2.ts`), z. B. `themeColorsV2('light')`.                                                        |
 | `__tests__/tokens-v2.spec.js` | Konsistenz JSON ↔ CSS, Light-Spiegelung, Namespace, Kontrast-Audit, Einbindung.                                                  |
 | `__tests__/tokenTestUtils.js` | CSS-Block-Parser, Token-Walker, Kontrastberechnung.                                                                              |
-| `../assets/fonts/Supreme-*`   | Supreme 400 / 500 / 700 (aus dem Collage Maker), per `@font-face` in `src/style.css` gebündelt.                                  |
+| `../styles/foundation.css`    | Gemeinsame Grundlage für App und Landing-Seite: Tokens, Supreme, Body, Farbschema, SSI-Partials, reduzierte Bewegung.            |
+| `../landing/landing.css`      | Styles der Landing-Seite (`index.html`), nur `--ds-*`, importiert die Grundlage.                                                 |
+| `../assets/fonts/Supreme-*`   | Supreme 400 / 500 / 700 (aus dem Collage Maker), per `@font-face` in `foundation.css` gebündelt.                                 |
 
 ## Theme-Mechanik
 
@@ -26,9 +28,20 @@ schreibt `localStorage.theme`. Ein Inline-Skript in `app.html` setzt `data-theme
 Paint aus `localStorage.theme`, damit es keinen Dark-Flash gibt. Standard ist Light. Ändert die
 SSI-Navigation `data-theme` direkt, übernimmt der Store das per `MutationObserver`.
 
+## Einbindung
+
+- **App (`app.html`):** `src/style.css` importiert `tailwindcss/base`, dann `styles/foundation.css`,
+  dann `tailwindcss/components` und `tailwindcss/utilities`. So steht die Body-Regel wie im
+  Collage Maker nach dem Preflight.
+- **Landing-Seite (`index.html`):** lädt `src/landing/landing.css` (Grundlage + Seitenstyles, ohne
+  Tailwind) und hat dasselbe Pre-Paint-Skript sowie dieselbe Theme-Synchronisierung wie die App.
+  Der Seiteninhalt liegt in `<main id="app" class="landing">`.
+- `faq.html` und `funktion.html` laufen noch auf eigenem Inline-CSS (v1).
+
 ## SSI-Partials
 
-Navigation, Footer und Cookie-Banner liegen außerhalb von `#app`. `src/style.css` übernimmt die
+Navigation, Footer und Cookie-Banner liegen außerhalb von `#app`; deshalb muss jeder Seiteninhalt in
+`#app` liegen. `src/styles/foundation.css` übernimmt die
 Partial-Regeln des Collage Makers: eigene Hintergründe transparent, Text `--ds-text`, Links
 `--ds-link` (Hover `--ds-accent`), Dropdowns `--ds-surface-1`, Hamburger-Icons in `currentColor`,
 Cookie-Banner unverändert und immer oben (`z-index: 10000`).
