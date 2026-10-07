@@ -24,6 +24,13 @@ const fs = require('fs')
 const fsp = require('fs/promises')
 const path = require('path')
 const crypto = require('crypto')
+const {
+  parseBytes,
+  hasRoomFor,
+  exceedsPlaylistLimit,
+  availableBytes,
+  formatGB,
+} = require('./limits')
 
 // --- Konfiguration ---------------------------------------------------------
 const PORT = parseInt(process.env.PORT || '9016', 10)
@@ -31,8 +38,12 @@ const TEMP_DIR = process.env.TEMP_DIR || path.join(__dirname, 'temp')
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg'
 const FFPROBE = process.env.FFPROBE_PATH || 'ffprobe'
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10)
-const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB pro Datei
+const MAX_FILE_SIZE = parseBytes(process.env.MAX_FILE_SIZE, 500 * 1024 ** 2) // 500 MB pro Datei
 const MAX_FILES = 200
+// Gesamtgröße pro Sitzung – gleicher Wert wie MAX_PLAYLIST_SIZE der App (src/constants.js)
+const MAX_PLAYLIST_SIZE = parseBytes(process.env.MAX_PLAYLIST_SIZE, 5 * 1024 ** 3)
+// Freier Platz, der auf der Partition des Temp-Ordners immer bleiben muss
+const MIN_FREE_SPACE = parseBytes(process.env.MIN_FREE_SPACE, 20 * 1024 ** 3)
 const SESSION_MAX_AGE = 60 * 60 * 1000 // 1 Stunde
 
 const OUTPUT_FORMATS = {
@@ -283,7 +294,35 @@ app.get('/health', (req, res) => {
 })
 
 // --- Upload ---------------------------------------------------------------
-app.post('/api/upload', upload.any(), async (req, res) => {
+
+/**
+ * Prüft vor dem Schreiben (also bevor multer die Datei annimmt), ob nach diesem
+ * Upload noch MIN_FREE_SPACE frei bleibt. Content-Length enthält die Datei plus
+ * etwas Multipart-Overhead – für die Reserve-Prüfung genau genug.
+ * Schlägt statfs selbst fehl, wird nicht blockiert (nur geloggt): ein Messfehler
+ * soll den Dienst nicht lahmlegen.
+ */
+async function ensureFreeSpace(req, res, next) {
+  try {
+    const incoming = parseInt(req.headers['content-length'] || '0', 10) || 0
+    const available = await availableBytes(TEMP_DIR)
+    if (!hasRoomFor({ available, incoming, reserve: MIN_FREE_SPACE })) {
+      // Restlichen Body verwerfen (nicht speichern), damit der Browser die
+      // Antwort sicher erhält statt eines Verbindungsabbruchs mitten im Upload.
+      req.resume()
+      return res.status(507).json({
+        error: 'Der Server hat gerade zu wenig freien Speicher. Bitte später erneut versuchen.',
+        code: 'INSUFFICIENT_STORAGE',
+      })
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Speicherprüfung fehlgeschlagen:', err.message)
+  }
+  return next()
+}
+
+app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
   try {
     const files = req.files || []
     if (files.length === 0) {
@@ -300,16 +339,37 @@ app.post('/api/upload', upload.any(), async (req, res) => {
       sessionId = crypto.randomBytes(16).toString('hex')
     }
 
+    // Gesamtgröße der Sitzung prüfen, bevor etwas in den Sitzungsordner wandert.
+    const existing = sessions.get(sessionId)
+    const requestBytes = files.reduce((sum, f) => sum + (f.size || 0), 0)
+    if (
+      exceedsPlaylistLimit({
+        current: existing?.totalBytes || 0,
+        incoming: requestBytes,
+        max: MAX_PLAYLIST_SIZE,
+      })
+    ) {
+      await cleanupTmpUploads(files)
+      // Die Sitzung kann nicht mehr fertig werden: bisherige Uploads sofort freigeben.
+      if (existing) await removeSession(sessionId)
+      return res.status(413).json({
+        error: `Die Playlist überschreitet das Maximum von ${formatGB(MAX_PLAYLIST_SIZE)}.`,
+        code: 'PLAYLIST_TOO_LARGE',
+        max_bytes: MAX_PLAYLIST_SIZE,
+      })
+    }
+
     const dir = sessionDirPath(sessionId)
     await fsp.mkdir(dir, { recursive: true })
 
-    let session = sessions.get(sessionId)
+    let session = existing
     if (!session) {
       session = {
         id: sessionId,
         status: 'uploading',
         progress: 0,
         files: [],
+        totalBytes: 0,
         createdAt: Date.now(),
         format: DEFAULT_FORMAT,
         bitrate: DEFAULT_BITRATE,
@@ -340,6 +400,7 @@ app.post('/api/upload', upload.any(), async (req, res) => {
 
       await fsp.rename(file.path, targetPath)
       session.files.push(targetName)
+      session.totalBytes = (session.totalBytes || 0) + (file.size || 0)
       stored.push(targetName)
     }
 
@@ -525,11 +586,32 @@ async function periodicCleanup() {
   }
 }
 
+// --- Fehler aus multer (z. B. Datei > 500 MB) als JSON statt HTML-500 -------
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: `Eine Datei ist größer als ${MAX_FILE_SIZE / 1024 ** 2} MB.`,
+        code: 'FILE_TOO_LARGE',
+        max_bytes: MAX_FILE_SIZE,
+      })
+    }
+    return res.status(400).json({ error: 'Upload abgelehnt: ' + err.message, code: err.code })
+  }
+  // eslint-disable-next-line no-console
+  console.error(err)
+  return res.status(500).json({ error: 'Interner Fehler', code: 'INTERNAL' })
+})
+
 // --- Start -----------------------------------------------------------------
 fs.mkdirSync(TEMP_DIR, { recursive: true })
 setInterval(periodicCleanup, 15 * 60 * 1000)
 
 app.listen(PORT, '127.0.0.1', () => {
   // eslint-disable-next-line no-console
-  console.log(`Playlist Konverter Server läuft auf http://127.0.0.1:${PORT} (temp: ${TEMP_DIR})`)
+  console.log(
+    `Playlist Konverter Server läuft auf http://127.0.0.1:${PORT} (temp: ${TEMP_DIR}, ` +
+      `max. Playlist ${formatGB(MAX_PLAYLIST_SIZE)}, Reserve ${formatGB(MIN_FREE_SPACE)})`,
+  )
 })

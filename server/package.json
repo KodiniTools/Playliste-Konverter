@@ -6,7 +6,8 @@
   "description": "Server-seitiger Konvertierungsdienst für den Playlist Konverter (Node + ffmpeg, unter pm2).",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
     "cors": "^2.8.5",

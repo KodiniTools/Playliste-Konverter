@@ -4,7 +4,7 @@ const messages = {
   de: {
     app: {
       title: 'Playlist Konverter',
-      subtitle: 'Bis zu 50 Audio-Tracks in eine Datei konvertieren',
+      subtitle: 'Mehrere Audio-Tracks zu einer Datei zusammenfügen – bis 5 GB',
     },
     format: {
       title: 'Ausgabeformat',
@@ -86,6 +86,11 @@ const messages = {
     },
     error: {
       reset: 'Zurücksetzen',
+      playlistTooLarge:
+        'Der Server hat den Upload abgelehnt: Die Playlist ist größer als {max}. Bitte Dateien entfernen.',
+      fileTooLarge: 'Der Server hat den Upload abgelehnt: Eine Datei ist größer als {max}.',
+      serverStorage:
+        'Der Server hat gerade zu wenig freien Speicher. Bitte versuche es in ein paar Minuten erneut.',
     },
     sizeWarning: {
       title: 'Playlist zu groß!',
@@ -120,7 +125,7 @@ const messages = {
   en: {
     app: {
       title: 'Playlist Converter',
-      subtitle: 'Convert up to 50 audio tracks into one file',
+      subtitle: 'Merge multiple audio tracks into one file – up to 5 GB',
     },
     format: {
       title: 'Output Format',
@@ -202,6 +207,11 @@ const messages = {
     },
     error: {
       reset: 'Reset',
+      playlistTooLarge:
+        'The server rejected the upload: the playlist is larger than {max}. Please remove some files.',
+      fileTooLarge: 'The server rejected the upload: a file is larger than {max}.',
+      serverStorage:
+        'The server is low on free storage right now. Please try again in a few minutes.',
     },
     sizeWarning: {
       title: 'Playlist too large!',

@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useToastStore } from './toast'
 import { MAX_PLAYLIST_SIZE, OUTPUT_FORMATS, AVAILABLE_BITRATES } from '../constants'
 import { uploadFiles, startConversion, fetchStatus, getDownloadUrl } from '../api/converter'
+import { formatBytes } from '../utils/format'
+import i18n from '../i18n'
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
@@ -267,7 +269,7 @@ export const useConverterStore = defineStore('converter', () => {
       console.error('Convert error:', err)
       console.error('Error details:', err.response?.data)
       status.value = 'error'
-      errorMessage.value = err.response?.data?.error || err.message || 'Upload fehlgeschlagen'
+      errorMessage.value = uploadErrorMessage(err)
       toastStore.error(errorMessage.value)
     }
   }
@@ -411,4 +413,26 @@ export function normalizeBitrate(value, format) {
   if (wanted <= maxBitrate) return wanted
   const allowed = AVAILABLE_BITRATES.filter((b) => b.value <= maxBitrate)
   return allowed[allowed.length - 1].value
+}
+
+/**
+ * Nutzerfreundliche Meldung für Fehler aus Upload/Konvertierung. Die
+ * Limit-Codes des Servers (server/server.js) werden übersetzt; sonst bleibt es
+ * bei der Server-Meldung bzw. der technischen Fehlermeldung.
+ */
+export function uploadErrorMessage(err) {
+  const data = err?.response?.data
+  const t = i18n.global.t
+  switch (data?.code) {
+    case 'PLAYLIST_TOO_LARGE':
+      return t('error.playlistTooLarge', {
+        max: formatBytes(data.max_bytes ?? MAX_PLAYLIST_SIZE, 0),
+      })
+    case 'FILE_TOO_LARGE':
+      return t('error.fileTooLarge', { max: formatBytes(data.max_bytes, 0) ?? '500 MB' })
+    case 'INSUFFICIENT_STORAGE':
+      return t('error.serverStorage')
+    default:
+      return data?.error || err?.message || 'Upload fehlgeschlagen'
+  }
 }
