@@ -352,8 +352,9 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 - Format-Auswahl: WebM (Opus), MP3, OGG (Vorbis)
 - Bitrate-Auswahl: 64, 128, 192, 256, 320 kbps
 - Format-spezifische Bitrate-Limits
-- Beschreibungen und Hinweise zur Audioqualität
-- Visuelle Selektions-Indikatoren
+- Zwei Dropdowns nebeneinander (`DropdownSelect.vue`, ARIA-Combobox mit Listbox, Tastatur: Pfeile/Pos1/Ende/Enter/Esc/Tab), mobil untereinander
+- Optionen zweizeilig: Label + Beschreibung; Auswahl in `accent-soft` mit Häkchen
+- Gespeicherte Werte werden beim Laden normalisiert (`normalizeFormat`, `normalizeBitrate`)
 
 ### SizeWarning.vue
 Gestaffelte Warnungen basierend auf Dateigröße:

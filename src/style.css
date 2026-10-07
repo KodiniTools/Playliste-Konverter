@@ -22,6 +22,12 @@
   box-shadow: var(--ds-focus-ring);
 }
 
+/* Solange der Sticky-Player sichtbar ist, scrollt der Browser fokussierte
+   Elemente (Tastatur) nicht unter die fixierte Player-Leiste */
+html:has(.sticky-player) {
+  scroll-padding-bottom: 7rem;
+}
+
 /* Datei-Inputs liegen visuell versteckt in ihrem Label; der Fokus landet am Label */
 #app label:focus-within {
   box-shadow: var(--ds-focus-ring);

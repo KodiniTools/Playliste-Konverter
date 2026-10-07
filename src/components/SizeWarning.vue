@@ -37,10 +37,8 @@
         icon: 'error',
         role: 'alert',
         edgeClass: 'border-l-danger',
-        textClass: 'text-danger',
         titleKey: 'sizeWarning.title',
         messageKey: 'sizeWarning.message',
-        estimateKey: null,
         showOverBy: true,
       }
     }
@@ -49,10 +47,8 @@
         icon: 'pending',
         role: 'status',
         edgeClass: 'border-l-warning',
-        textClass: 'text-warning',
         titleKey: 'sizeOrangeWarning.title',
         messageKey: 'sizeOrangeWarning.message',
-        estimateKey: 'sizeOrangeWarning.estimatedTime',
         showOverBy: false,
       }
     }
@@ -61,10 +57,8 @@
         icon: 'info',
         role: 'status',
         edgeClass: 'border-l-info',
-        textClass: 'text-info',
         titleKey: 'sizeYellowWarning.title',
         messageKey: 'sizeYellowWarning.message',
-        estimateKey: 'sizeYellowWarning.estimatedTime',
         showOverBy: false,
       }
     }
@@ -72,10 +66,8 @@
       icon: 'success',
       role: 'status',
       edgeClass: 'border-l-success',
-      textClass: 'text-success',
       titleKey: 'sizeOk.title',
       messageKey: 'sizeOk.message',
-      estimateKey: null,
       showOverBy: false,
     }
   })
@@ -100,12 +92,6 @@
         </h3>
         <p class="mb-3 text-md text-ink-2">
           {{ t(variant.messageKey, { maxSize: maxSizeFormatted }) }}
-        </p>
-        <p
-          v-if="variant.estimateKey"
-          :class="['-mt-1 mb-3 text-sm font-medium', variant.textClass]"
-        >
-          {{ t(variant.estimateKey) }}
         </p>
 
         <!-- Size Details: Werte in ink, weil Statusfarben auf surface-2 im Light-Theme unter 4.5:1 liegen -->
