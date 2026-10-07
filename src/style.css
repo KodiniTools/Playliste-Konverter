@@ -1,66 +1,20 @@
 /* ==========================================================================
-   Playlist-Konverter · Globale Basis-Styles
+   Playlist-Konverter · Globale Styles der App
    --------------------------------------------------------------------------
-   Tokens: src/design-system/tokens-v2.css (--ds-*, gemeinsam mit Collage
-   Maker, Alarmtool und Playlist Generator). Farben, Radien, Schatten und
-   Dauern laufen in Tailwind über diese Variablen (tailwind.config.js);
-   Komponenten nutzen keine festen Farbwerte. Hier steht nur, was keiner
-   Komponente gehört: Schrift, Body, Fokus, die Angleichung der SSI-Partials,
-   Range-Slider, Touch, Bewegung.
+   Grundlage (Tokens --ds-*, Supreme, Body, SSI-Partials, Bewegung) kommt aus
+   src/styles/foundation.css und wird mit der Landing-Seite geteilt. Farben,
+   Radien, Schatten und Dauern laufen in Tailwind über die Tokens
+   (tailwind.config.js); Komponenten nutzen keine festen Farbwerte. Hier steht
+   nur, was der App gehört: Fokus, Header-Bausteine, Range-Slider, Touch.
    ========================================================================== */
 
-@import './design-system/tokens-v2.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* === Schrift: Supreme in den drei genutzten Gewichten (font-medium = 500,
-   font-semibold/-bold = 700), gebündelt aus src/assets/fonts. === */
-@font-face {
-  font-family: 'Supreme';
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  src: url('./assets/fonts/Supreme-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Supreme';
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  src: url('./assets/fonts/Supreme-Medium.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Supreme';
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  src: url('./assets/fonts/Supreme-Bold.woff2') format('woff2');
-}
-
-/* === Farbschema für native Controls (Scrollbalken, Datei-Dialog-Buttons) === */
-:root[data-theme='dark'] {
-  color-scheme: dark;
-}
-
-:root[data-theme='light'] {
-  color-scheme: light;
-}
-
-/* === Body === */
-body {
-  font-family: var(--ds-font-sans);
-  font-size: var(--ds-text-lg);
-  line-height: var(--ds-leading);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--ds-surface-0);
-  color: var(--ds-text);
-  transition:
-    background-color var(--ds-duration-slow) var(--ds-ease),
-    color var(--ds-duration-slow) var(--ds-ease);
-}
+/* Reihenfolge wie vorher: Preflight, dann Grundlage (Body nach Preflight),
+   dann Komponenten und Utilities. Imports statt @tailwind, damit die
+   gemeinsame Grundlage zwischen base und components liegen kann. */
+@import 'tailwindcss/base';
+@import './styles/foundation.css';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
 /* === Fokus: immer der Token-Ring (2 px Abstand, 2 px Akzent), nie outline === */
 #app :is(a, button, input, select, textarea, [tabindex]):focus-visible {
@@ -71,122 +25,6 @@ body {
 /* Datei-Inputs liegen visuell versteckt in ihrem Label; der Fokus landet am Label */
 #app label:focus-within {
   box-shadow: var(--ds-focus-ring);
-}
-
-/* === SSI-Partials (nav/footer außerhalb von #app) ===
-   Eigene Hintergründe entfernen, damit die Seitenfläche durchscheint — außer
-   beim Cookie-Banner. Direkte Wrapper (nav, footer): normale Spezifität. */
-body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']) {
-  background-color: transparent !important;
-}
-/* Alle inneren Nachfahren: :where() hat Spezifität 0, damit die Restore-Regeln gewinnen */
-:where(
-    body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])
-  )
-  :where(*:not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])) {
-  background-color: transparent !important;
-}
-
-/* Dropdowns/Submenüs der SSI-Navigation bekommen wieder eine feste Fläche */
-body > :not(#app):not(script) [class*='drop'],
-body > :not(#app):not(script) [class*='sub-menu'],
-body > :not(#app):not(script) [class*='submenu'],
-body > :not(#app):not(script) [class*='popup'],
-body > :not(#app):not(script) [class*='popover'],
-body > :not(#app):not(script) [class*='megamenu'] {
-  background-color: var(--ds-surface-1) !important;
-}
-
-/* ── Hamburger / Toggle-Menü in der SSI-Navigation ── */
-/* 1. Leere Spans sind dekorative Elemente (Hamburger-Balken via background-color) */
-body > :not(#app):not(script) span:empty {
-  background-color: currentColor !important;
-  border-color: currentColor !important;
-}
-/* 2. Spans in aria-expanded-Toggles (Hamburger-Buttons nutzen dieses Attribut) */
-body > :not(#app):not(script) [aria-expanded] > span:empty,
-body > :not(#app):not(script) [aria-expanded] > span > span:empty,
-body > :not(#app):not(script) [aria-expanded] > div > span:empty {
-  background-color: currentColor !important;
-  border-color: currentColor !important;
-}
-/* 3. SVG-Hamburger-Icons in Buttons / Toggles — stroke & fill erzwingen */
-body > :not(#app):not(script) button svg line,
-body > :not(#app):not(script) button svg path,
-body > :not(#app):not(script) button svg rect,
-body > :not(#app):not(script) [aria-expanded] svg line,
-body > :not(#app):not(script) [aria-expanded] svg path,
-body > :not(#app):not(script) [aria-expanded] svg rect,
-body > :not(#app):not(script) [role='button'] svg line,
-body > :not(#app):not(script) [role='button'] svg path,
-body > :not(#app):not(script) [role='button'] svg rect {
-  stroke: currentColor !important;
-  fill: currentColor !important;
-}
-/* 4. Bootstrap toggler-icon (background-image SVG) — Kontrast per CSS-Filter */
-body > :not(#app):not(script) [class*='toggler-icon'] {
-  filter: brightness(0) saturate(100%) !important;
-}
-:root[data-theme='dark'] body > :not(#app):not(script) [class*='toggler-icon'] {
-  filter: brightness(0) saturate(100%) invert(1) !important;
-}
-
-/* SSI-Header und -Footer über dem Seiteninhalt stapeln */
-body > header,
-body > footer {
-  position: relative;
-  z-index: 100 !important;
-}
-
-/* Cookie Banner: immer im Vordergrund, über Nav, Player und Dropdowns */
-.cookie-banner,
-.cookie-consent,
-[class*='cookie-banner'],
-[class*='cookie-consent'],
-[id*='cookie-banner'],
-[id*='cookie-consent'] {
-  z-index: 10000 !important;
-  position: fixed !important;
-}
-
-/* Textfarben der SSI-Partials aus den Tokens; die Variablen wechseln mit dem
-   Theme, deshalb gibt es keine Dark-Varianten mehr. Cookie-Banner ausgenommen. */
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  ),
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
-  *:not([class*='cookie']):not([id*='cookie']) {
-  color: var(--ds-text) !important;
-}
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
-  a:not([class*='cookie']):not([id*='cookie']),
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
-  a:not([class*='cookie']):not([id*='cookie'])
-  * {
-  color: var(--ds-link) !important;
-}
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
-  a:hover:not([class*='cookie']):not([id*='cookie']),
-body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
-  a:hover:not([class*='cookie']):not([id*='cookie'])
-  * {
-  color: var(--ds-accent) !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -276,17 +114,5 @@ body
   #app input[type='range']::-moz-range-thumb {
     width: 20px;
     height: 20px;
-  }
-}
-
-/* === Reduzierte Bewegung === */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }
