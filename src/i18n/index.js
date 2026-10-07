@@ -61,6 +61,8 @@ const messages = {
       previous: 'Vorheriger Track',
       next: 'Nächster Track',
       seek: 'Position ändern',
+      playError: '„{name}“ kann in diesem Browser nicht abgespielt werden.',
+      playBlocked: 'Der Browser hat die Wiedergabe blockiert. Bitte erneut auf Play klicken.',
     },
     conversion: {
       uploading: 'Dateien werden hochgeladen...',
@@ -84,10 +86,6 @@ const messages = {
     },
     error: {
       reset: 'Zurücksetzen',
-    },
-    donate: {
-      title: 'Unterstütze dieses Projekt',
-      button: 'spenden',
     },
     sizeWarning: {
       title: 'Playlist zu groß!',
@@ -180,6 +178,8 @@ const messages = {
       previous: 'Previous track',
       next: 'Next track',
       seek: 'Seek',
+      playError: '“{name}” cannot be played in this browser.',
+      playBlocked: 'The browser blocked playback. Please press play again.',
     },
     conversion: {
       uploading: 'Uploading files...',
@@ -203,10 +203,6 @@ const messages = {
     },
     error: {
       reset: 'Reset',
-    },
-    donate: {
-      title: 'Support this project',
-      button: 'donate',
     },
     sizeWarning: {
       title: 'Playlist too large!',

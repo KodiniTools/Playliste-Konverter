@@ -115,33 +115,6 @@
             <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               {{ t('app.title') }}
             </h1>
-            <!-- PayPal Donation Button -->
-            <form
-              action="https://www.paypal.com/donate"
-              method="post"
-              target="_top"
-              class="inline-block"
-            >
-              <input type="hidden" name="hosted_button_id" value="8RGLGQ2BFMHU6" />
-              <button
-                type="submit"
-                class="donate-btn"
-                :title="t('donate.title')"
-                :aria-label="t('donate.button')"
-              >
-                <svg
-                  class="donate-btn-icon"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  />
-                </svg>
-                <span class="hidden sm:inline">{{ t('donate.button') }}</span>
-              </button>
-            </form>
           </div>
           <p class="text-md text-ink-2 sm:text-lg">{{ t('app.subtitle') }}</p>
         </div>

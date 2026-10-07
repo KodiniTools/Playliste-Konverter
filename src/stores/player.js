@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { useConverterStore } from './converter'
+import { useToastStore } from './toast'
+import i18n from '../i18n'
 
 /**
  * Zentraler Audio-Player-Store.
@@ -8,9 +10,17 @@ import { useConverterStore } from './converter'
  * Ersetzt die frühere, pro-Track eingebettete Wiedergabe-Steuerung durch
  * einen einzelnen, dauerhaft sichtbaren Sticky-Player am unteren Rand.
  * Alle Komponenten (Track-Liste + Sticky-Player) teilen sich diesen Zustand.
+ *
+ * Wiedergabe über EIN wiederverwendetes Audio-Element: Ein Trackwechsel setzt
+ * nur dessen src neu und startet sofort. Browser mit strenger Autoplay-Regel
+ * (Safari/iOS) geben ein Element nach dem ersten Klick frei; ein pro Track neu
+ * erzeugtes Element verliert diese Freigabe (u. a. beim automatischen Weiter).
+ * isPlaying folgt dem echten Zustand des Elements (play/pause-Events,
+ * abgelehntes play()-Promise) statt optimistisch auf true zu bleiben.
  */
 export const usePlayerStore = defineStore('player', () => {
   const converter = useConverterStore()
+  const toast = useToastStore()
 
   // Der aktuell geladene/ausgewählte Track (ID) und Wiedergabe-Status
   const currentId = ref(null)
@@ -21,17 +31,17 @@ export const usePlayerStore = defineStore('player', () => {
   // Lautstärke (0-1), persistiert
   const volume = ref(parseFloat(localStorage.getItem('playerVolume')) || 0.7)
 
-  // Nicht-reaktives Audio-Element + Object-URL-Cache
+  // Nicht-reaktives Audio-Element (einmal erzeugt) + Object-URL-Cache
   let audioElement = null
   const audioObjectUrls = new Map()
 
-  const currentTrack = computed(
-    () => converter.files.find((f) => f.id === currentId.value) || null,
-  )
+  // Zählt Ladevorgänge hoch; Fehler älterer Ladevorgänge werden ignoriert
+  let loadToken = 0
+  let reportedErrorToken = -1
 
-  const currentIndex = computed(() =>
-    converter.files.findIndex((f) => f.id === currentId.value),
-  )
+  const currentTrack = computed(() => converter.files.find((f) => f.id === currentId.value) || null)
+
+  const currentIndex = computed(() => converter.files.findIndex((f) => f.id === currentId.value))
 
   const hasTrack = computed(() => currentTrack.value !== null)
 
@@ -42,54 +52,112 @@ export const usePlayerStore = defineStore('player', () => {
     return audioObjectUrls.get(item.id)
   }
 
-  function detachAudio() {
-    if (audioElement) {
-      audioElement.pause()
-      audioElement.onended = null
-      audioElement.ontimeupdate = null
-      audioElement.onloadedmetadata = null
-      audioElement = null
+  function hasSource() {
+    return Boolean(audioElement && audioElement.getAttribute('src'))
+  }
+
+  /**
+   * isPlaying aus dem tatsächlichen Zustand des Elements ableiten. Ein Element
+   * mit Medienfehler spielt nie – Chrome lässt paused nach einem Quellfehler
+   * auf false stehen.
+   */
+  function syncPlaying() {
+    isPlaying.value = Boolean(
+      audioElement && !audioElement.paused && !audioElement.ended && !audioElement.error,
+    )
+  }
+
+  function reportError(token, key, params) {
+    if (reportedErrorToken === token) return
+    reportedErrorToken = token
+    toast.error(i18n.global.t(key, params))
+  }
+
+  function onEnded() {
+    // Automatisch zum nächsten Track wechseln, sonst stoppen
+    if (!next()) {
+      isPlaying.value = false
+      progress.value = 0
     }
   }
 
-  /** Lädt einen Track und startet die Wiedergabe. */
+  function onMediaError() {
+    if (!hasSource()) return
+    isPlaying.value = false
+    reportError(loadToken, 'player.playError', { name: currentTrack.value?.name ?? '' })
+  }
+
+  function getAudio() {
+    if (audioElement) return audioElement
+    const audio = new Audio()
+    audio.preload = 'auto'
+    audio.volume = volume.value
+    audio.addEventListener('timeupdate', () => {
+      progress.value = audio.currentTime
+    })
+    audio.addEventListener('loadedmetadata', () => {
+      duration.value = Number.isFinite(audio.duration) ? audio.duration : 0
+    })
+    audio.addEventListener('play', syncPlaying)
+    audio.addEventListener('pause', syncPlaying)
+    audio.addEventListener('ended', onEnded)
+    audio.addEventListener('error', onMediaError)
+    audioElement = audio
+    return audio
+  }
+
+  /** play() starten und ein abgelehntes Promise sauber behandeln. */
+  function startPlayback(token) {
+    const audio = audioElement
+    const trackName = currentTrack.value?.name ?? ''
+    isPlaying.value = true // sofortiges Feedback; Events/Promise korrigieren
+
+    const onRejected = (err) => {
+      // Ein neuerer Track hat übernommen oder src/pause hat play() abgelöst
+      if (token !== loadToken || err?.name === 'AbortError') return
+      // Wiedergabe ist gescheitert: Element anhalten, damit Zustand und Anzeige stimmen
+      if (!audio.paused) audio.pause()
+      isPlaying.value = false
+      if (err?.name === 'NotAllowedError') {
+        reportError(token, 'player.playBlocked')
+      } else {
+        reportError(token, 'player.playError', { name: trackName })
+      }
+    }
+
+    try {
+      const result = audio.play()
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          if (token === loadToken) syncPlaying()
+        }, onRejected)
+      }
+    } catch (err) {
+      onRejected(err)
+    }
+  }
+
+  /** Lädt einen Track in das (einzige) Audio-Element und startet sofort. */
   function load(item) {
-    detachAudio()
+    const audio = getAudio()
+    const token = ++loadToken
 
     currentId.value = item.id
     progress.value = 0
     duration.value = 0
 
-    const url = getAudioUrl(item)
-    audioElement = new Audio(url)
-    audioElement.volume = volume.value
-
-    audioElement.ontimeupdate = () => {
-      if (audioElement) progress.value = audioElement.currentTime
-    }
-    audioElement.onloadedmetadata = () => {
-      if (audioElement) duration.value = audioElement.duration
-    }
-    audioElement.onended = () => {
-      // Automatisch zum nächsten Track wechseln, sonst stoppen
-      if (!next()) {
-        isPlaying.value = false
-        progress.value = 0
-      }
-    }
-
-    audioElement.play()
-    isPlaying.value = true
+    audio.src = getAudioUrl(item)
+    startPlayback(token)
   }
 
   /**
    * Play/Pause-Umschaltung für einen bestimmten Track (Track-Liste-Button).
    * - Läuft der Track bereits: pausieren.
    * - Ist er pausiert/ausgewählt: fortsetzen.
-   * - Sonst: neuen Track laden.
+   * - Sonst (anderer Track, auch während einer Wiedergabe): sofort wechseln und abspielen.
    */
   function toggle(item) {
-    if (currentId.value === item.id && audioElement) {
+    if (currentId.value === item.id && hasSource()) {
       if (isPlaying.value) {
         pause()
       } else {
@@ -107,7 +175,7 @@ export const usePlayerStore = defineStore('player', () => {
       if (converter.files.length > 0) load(converter.files[0])
       return
     }
-    if (!audioElement) {
+    if (!hasSource()) {
       load(currentTrack.value)
       return
     }
@@ -124,16 +192,20 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function resume() {
-    if (audioElement) {
-      audioElement.play()
-      isPlaying.value = true
+    if (hasSource()) {
+      startPlayback(loadToken)
     } else if (currentTrack.value) {
       load(currentTrack.value)
     }
   }
 
   function stop() {
-    detachAudio()
+    loadToken++
+    if (audioElement) {
+      audioElement.pause()
+      audioElement.removeAttribute('src')
+      audioElement.load()
+    }
     currentId.value = null
     isPlaying.value = false
     progress.value = 0
@@ -175,17 +247,17 @@ export const usePlayerStore = defineStore('player', () => {
     (ids) => {
       const idSet = new Set(ids)
 
+      // Wiedergabe stoppen, wenn der aktuelle Track entfernt wurde
+      if (currentId.value !== null && !idSet.has(currentId.value)) {
+        stop()
+      }
+
       // Object-URLs für entfernte Tracks freigeben
       for (const [id, url] of audioObjectUrls) {
         if (!idSet.has(id)) {
           URL.revokeObjectURL(url)
           audioObjectUrls.delete(id)
         }
-      }
-
-      // Wiedergabe stoppen, wenn der aktuelle Track entfernt wurde
-      if (currentId.value !== null && !idSet.has(currentId.value)) {
-        stop()
       }
     },
   )

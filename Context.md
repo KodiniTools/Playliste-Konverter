@@ -63,9 +63,9 @@ Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
 - WAV (.wav)
 
 **Limits:**
-- Maximale Dateigröße pro Datei: 100 MB
+- Maximale Dateigröße pro Datei: 500 MB (Server, `server/server.js`)
 - Maximale Anzahl Dateien: 50
-- Maximale Gesamtgröße: 1 GB
+- Maximale Gesamtgröße: 5 GB (`MAX_PLAYLIST_SIZE` in `src/constants.js`)
 
 > **Hinweis:** Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"
 
@@ -92,12 +92,12 @@ Nach dem Upload siehst du deine Dateien in einer Liste:
 
 Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße:
 
-| Farbe | Größe | Bedeutung |
-|-------|-------|-----------|
-| 🟢 Grün | < 500 MB | Alles OK – schnelle Konvertierung |
-| 🟡 Gelb | 500-800 MB | Größere Playlist – ca. 3-5 Minuten Wartezeit |
-| 🟠 Orange | 800 MB - 1 GB | Sehr große Playlist – ca. 5-7 Minuten Wartezeit |
-| 🔴 Rot | > 1 GB | Zu groß – bitte Dateien entfernen |
+| Status (Token) | Größe | Bedeutung |
+|----------------|-------|-----------|
+| Bereit (`success`) | < 2,5 GB | Alles OK |
+| Größere Playlist (`info`) | ab 2,5 GB | Größere Playlist – längere Wartezeit |
+| Sehr große Playlist (`warning`) | ab 4 GB | Sehr große Playlist – lange Wartezeit |
+| Zu groß (`danger`) | > 5 GB | Zu groß – bitte Dateien entfernen |
 
 > **Wichtig:** Bei roter Warnung ist der Konvertieren-Button deaktiviert. Entferne Dateien, um unter das Limit zu kommen.
 
@@ -357,10 +357,10 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 
 ### SizeWarning.vue
 Gestaffelte Warnungen basierend auf Dateigröße:
-- **Grün** (< 500 MB): Alles OK
-- **Gelb** (500-800 MB): Größere Playlist, 3-5 Minuten Wartezeit
-- **Orange** (800 MB - 1 GB): Sehr große Playlist, 5-7 Minuten Wartezeit
-- **Rot** (> 1 GB): Zu groß, Konvertierung deaktiviert
+- **success** (< 2,5 GB): Alles OK
+- **info** (ab 2,5 GB = `SIZE_THRESHOLD_YELLOW`): Größere Playlist
+- **warning** (ab 4 GB = `SIZE_THRESHOLD_ORANGE`): Sehr große Playlist
+- **danger** (> 5 GB = `MAX_PLAYLIST_SIZE`): Zu groß, Konvertierung deaktiviert
 
 ### ConversionProgress.vue
 - Kombinierter Progress-Bar (Upload + Konvertierung)
@@ -463,9 +463,9 @@ Das Backend implementiert umfassende Sicherheitsmaßnahmen in `security.php`:
 
 ### Limits
 
-- Max. Dateigröße pro Upload: 100MB
+- Max. Dateigröße pro Upload: 500 MB (Server)
 - Max. Dateien pro Upload: 50
-- Max. Playlist-Größe: 1GB
+- Max. Playlist-Größe: 5 GB
 - Erlaubte Formate: MP3/WAV
 
 ---

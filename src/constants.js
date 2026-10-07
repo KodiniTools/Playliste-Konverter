@@ -7,12 +7,14 @@ export const CONVERT_START_TIMEOUT = 30_000
 // Status-Polling-Timeout pro Request: 10 Sekunden
 export const STATUS_POLL_TIMEOUT = 10_000
 
-// Maximale Playlist-Größe: 2 GB
-export const MAX_PLAYLIST_SIZE = 2 * 1024 * 1024 * 1024
+// Maximale Playlist-Größe: 5 GB, damit 50 WAV-Tracks à ~100 MB (≈10 Min.) passen.
+// Der Server prüft keine Gesamtgröße (nur 500 MB pro Datei); Temp-Speicher pro
+// Sitzung = Uploads + Ausgabe, bis zu 3 Konvertierungen parallel.
+export const MAX_PLAYLIST_SIZE = 5 * 1024 * 1024 * 1024
 
-// Schwellenwerte für gestaffelte Größenwarnungen
-export const SIZE_THRESHOLD_YELLOW = 1 * 1024 * 1024 * 1024 // 1 GB
-export const SIZE_THRESHOLD_ORANGE = 1.6 * 1024 * 1024 * 1024 // 1.6 GB
+// Schwellenwerte für gestaffelte Größenwarnungen (50 % und 80 % des Limits)
+export const SIZE_THRESHOLD_YELLOW = 2.5 * 1024 * 1024 * 1024 // 2.5 GB
+export const SIZE_THRESHOLD_ORANGE = 4 * 1024 * 1024 * 1024 // 4 GB
 
 // Unterstützte Ausgabeformate
 export const OUTPUT_FORMATS = {

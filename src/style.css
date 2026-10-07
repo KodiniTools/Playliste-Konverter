@@ -28,23 +28,13 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Wiederkehrende Bausteine der App (Header-Aktionen)
+   Wiederkehrende Bausteine der App (Header)
    ───────────────────────────────────────────────────────────────────────── */
 @layer components {
   /* Icon-Button zur Startseite: Sekundär-Fläche, Hover nur Farbe */
   .home-link {
     @apply flex h-10 w-10 items-center justify-center rounded-md border border-line-strong bg-surface-2 text-ink-2 transition-colors;
     @apply hover:bg-surface-3 hover:text-ink;
-  }
-
-  /* Spenden-Button: Sekundär-Button, damit Gold der Primäraktion vorbehalten bleibt */
-  .donate-btn {
-    @apply inline-flex h-control-md items-center gap-2 rounded-md border border-line-strong bg-surface-2 px-4 text-md font-medium text-ink transition-colors;
-    @apply hover:bg-surface-3;
-  }
-
-  .donate-btn-icon {
-    @apply h-4 w-4 text-danger;
   }
 }
 

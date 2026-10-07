@@ -45,7 +45,8 @@ const colors = {
 }
 
 export default {
-  content: ['./app.html', './src/**/*.{vue,js}'],
+  // Testdateien ausnehmen: ihre Klassen-Strings (Muster, Negativbeispiele) sollen keine Utilities erzeugen
+  content: ['./app.html', './src/**/*.{vue,js}', '!./src/**/*.spec.js', '!./src/**/__tests__/**'],
   theme: {
     colors,
     borderColor: {
