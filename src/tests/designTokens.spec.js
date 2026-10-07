@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
+import { MAX_PLAYLIST_SIZE, SIZE_THRESHOLD_ORANGE, SIZE_THRESHOLD_YELLOW } from '../constants'
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ROOT_DIR = join(SRC_DIR, '..')
@@ -224,10 +225,21 @@ describe('Unterseiten FAQ und Anleitung', () => {
     expect(faqHtml).toContain("setAttribute('aria-expanded', String(open))")
   })
 
-  it('Anleitung nennt dieselben Grenzen wie der Code (2 GB gesamt, Stufen ab 1 und 1,6 GB)', () => {
-    expect(guideHtml).toContain('max. 2 GB Gesamtgröße')
-    expect(guideHtml).toContain('max. 2 GB total size')
-    expect(guideHtml).not.toMatch(/1 GB Gesamtgröße|1 GB total size|500-800 MB|800 MB - 1 GB/)
+  it('Anleitung und FAQ nennen dieselben Grenzen wie constants.js', () => {
+    const gb = (bytes) => bytes / 1024 ** 3
+    const de = (bytes) => gb(bytes).toLocaleString('de-DE')
+    const en = (bytes) => gb(bytes).toLocaleString('en-US')
+
+    expect(guideHtml).toContain(`max. ${de(MAX_PLAYLIST_SIZE)} GB Gesamtgröße`)
+    expect(guideHtml).toContain(`max. ${en(MAX_PLAYLIST_SIZE)} GB total size`)
+    expect(guideHtml).toContain(`<td>&lt; ${de(SIZE_THRESHOLD_YELLOW)} GB</td>`)
+    expect(guideHtml).toContain(`<td>ab ${de(SIZE_THRESHOLD_YELLOW)} GB</td>`)
+    expect(guideHtml).toContain(`<td>ab ${de(SIZE_THRESHOLD_ORANGE)} GB</td>`)
+    expect(guideHtml).toContain(`<td>&gt; ${de(MAX_PLAYLIST_SIZE)} GB</td>`)
+    expect(guideHtml).toContain(`<td>from ${en(SIZE_THRESHOLD_YELLOW)} GB</td>`)
+    expect(guideHtml).toContain(`<td>from ${en(SIZE_THRESHOLD_ORANGE)} GB</td>`)
+    expect(faqHtml).toContain(`bis zu ${de(MAX_PLAYLIST_SIZE)} GB groß`)
+    expect(faqHtml).toContain(`up to ${en(MAX_PLAYLIST_SIZE)} GB in total`)
     for (const status of ['success', 'info', 'warning', 'danger']) {
       expect(guideHtml).toContain(`status-dot status-${status}`)
     }
