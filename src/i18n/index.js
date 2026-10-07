@@ -4,7 +4,7 @@ const messages = {
   de: {
     app: {
       title: 'Playlist Konverter',
-      subtitle: 'Bis zu 50 Audio-Tracks in eine Datei konvertieren',
+      subtitle: 'Mehrere Audio-Tracks zu einer Datei zusammenfügen – bis 5 GB',
     },
     format: {
       title: 'Ausgabeformat',
@@ -120,7 +120,7 @@ const messages = {
   en: {
     app: {
       title: 'Playlist Converter',
-      subtitle: 'Convert up to 50 audio tracks into one file',
+      subtitle: 'Merge multiple audio tracks into one file – up to 5 GB',
     },
     format: {
       title: 'Output Format',

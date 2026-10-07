@@ -64,7 +64,7 @@ Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
 
 **Limits:**
 - Maximale Dateigröße pro Datei: 500 MB (Server, `server/server.js`)
-- Maximale Anzahl Dateien: 50
+- Anzahl Dateien: nicht begrenzt (nur Gesamtgröße zählt)
 - Maximale Gesamtgröße: 5 GB (`MAX_PLAYLIST_SIZE` in `src/constants.js`)
 
 > **Hinweis:** Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"
@@ -465,7 +465,7 @@ Das Backend implementiert umfassende Sicherheitsmaßnahmen in `security.php`:
 ### Limits
 
 - Max. Dateigröße pro Upload: 500 MB (Server)
-- Max. Dateien pro Upload: 50
+- Dateien pro Upload: nicht begrenzt (Server-Schutzgrenze `MAX_FILES` = 200 pro Anfrage)
 - Max. Playlist-Größe: 5 GB
 - Erlaubte Formate: MP3/WAV
 
