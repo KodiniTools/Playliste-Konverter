@@ -14,6 +14,9 @@
  *   GET  /api/status/:id     – { status, progress, file_size?, error? }
  *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
  *   GET  /health             – Health-Check für pm2/nginx
+ *
+ * Zusammenfügen: Stream-Copy nur bei identisch kodierten Eingaben, sonst jede
+ * Datei einzeln dekodieren und in einen Encoder streamen (siehe audio.js).
  */
 
 const express = require('express')
@@ -31,6 +34,16 @@ const {
   availableBytes,
   formatGB,
 } = require('./limits')
+const {
+  pickSampleRate,
+  canStreamCopy,
+  buildDecoderArgs,
+  buildEncoderArgs,
+  buildCopyArgs,
+  parseFfmpegTime,
+  displayName,
+  probeAudio,
+} = require('./audio')
 
 // --- Konfiguration ---------------------------------------------------------
 const PORT = parseInt(process.env.PORT || '9016', 10)
@@ -97,32 +110,6 @@ function releaseSlot() {
   }
 }
 
-// --- ffprobe: Dauer / Codec ------------------------------------------------
-function ffprobeValue(filePath, args) {
-  return new Promise((resolve) => {
-    const proc = spawn(FFPROBE, [
-      '-v', 'error',
-      ...args,
-      '-of', 'default=noprint_wrappers=1:nokey=1',
-      filePath,
-    ])
-    let out = ''
-    proc.stdout.on('data', (d) => (out += d.toString()))
-    proc.on('error', () => resolve(''))
-    proc.on('close', () => resolve(out.trim()))
-  })
-}
-
-async function probeDuration(filePath) {
-  const v = await ffprobeValue(filePath, ['-show_entries', 'format=duration'])
-  const num = parseFloat(v)
-  return Number.isFinite(num) ? num : 0
-}
-
-async function probeAudioCodec(filePath) {
-  return ffprobeValue(filePath, ['-select_streams', 'a:0', '-show_entries', 'stream=codec_name'])
-}
-
 /** Alle Input-Dateien einer Session in korrekter Reihenfolge (0000_, 0001_, …). */
 async function listInputFiles(dir) {
   let entries = []
@@ -137,18 +124,7 @@ async function listInputFiles(dir) {
     .map((f) => path.join(dir, f))
 }
 
-/** Prüft, ob Stream-Copy möglich ist (alle Inputs = Output-Codec). */
-async function canStreamCopy(inputFiles, format) {
-  const expected = OUTPUT_FORMATS[format]?.streamCopyCodec
-  if (!expected) return false
-  for (const file of inputFiles) {
-    const codec = await probeAudioCodec(file)
-    if (codec !== expected) return false
-  }
-  return true
-}
-
-/** concat.txt für den ffmpeg concat-Demuxer schreiben. */
+/** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
   const concatPath = path.join(dir, 'concat.txt')
   const lines = inputFiles.map((f) => `file '${f.replace(/'/g, "'\\''")}'`)
@@ -157,94 +133,152 @@ async function writeConcatFile(dir, inputFiles) {
 }
 
 // --- Konvertierung ---------------------------------------------------------
-async function runConversion(session) {
-  const dir = sessionDirPath(session.id)
-  const inputFiles = await listInputFiles(dir)
 
-  if (inputFiles.length === 0) {
-    session.status = 'error'
-    session.error = 'Keine Dateien zum Konvertieren'
-    releaseSlot()
-    return
-  }
-
-  const fmt = OUTPUT_FORMATS[session.format] || OUTPUT_FORMATS[DEFAULT_FORMAT]
-  const outputFile = path.join(dir, 'playlist.' + fmt.extension)
-  const concatPath = await writeConcatFile(dir, inputFiles)
-
-  // Gesamtdauer für den Fortschritt bestimmen.
-  let totalDuration = 0
-  for (const file of inputFiles) {
-    totalDuration += await probeDuration(file)
-  }
-  session.totalDuration = totalDuration
-
-  const streamCopy = await canStreamCopy(inputFiles, session.format)
-
-  const args = ['-f', 'concat', '-safe', '0', '-i', concatPath]
-  if (streamCopy) {
-    args.push('-c:a', 'copy')
-  } else {
-    args.push('-c:a', fmt.codec, '-b:a', session.bitrate + 'k', '-threads', '0')
-  }
-  args.push('-y', outputFile)
-
-  session.status = 'converting'
-  session.progress = Math.max(session.progress || 0, 1)
-
-  const proc = spawn(FFMPEG, args)
-  session.proc = proc
-
-  let stderrTail = ''
+/** Fortschritt aus der ffmpeg-Zeit (time=…) relativ zur Gesamtdauer. */
+function trackProgress(proc, session, onStderr) {
   proc.stderr.on('data', (chunk) => {
     const text = chunk.toString()
-    stderrTail = (stderrTail + text).slice(-8000)
-
-    // FFmpeg-Zeit: time=00:01:23.45
-    const matches = text.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/g)
-    if (matches && matches.length > 0) {
-      const last = matches[matches.length - 1]
-      const m = last.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/)
-      if (m) {
-        const seconds = parseInt(m[1], 10) * 3600 + parseInt(m[2], 10) * 60 + parseFloat(m[3])
-        if (totalDuration > 0) {
-          session.progress = Math.min(99, Math.round((seconds / totalDuration) * 100))
-        } else {
-          session.progress = Math.min(95, (session.progress || 0) + 1)
-        }
-      }
+    onStderr(text)
+    const seconds = parseFfmpegTime(text)
+    if (seconds === null) return
+    if (session.totalDuration > 0) {
+      session.progress = Math.min(99, Math.max(1, Math.round((seconds / session.totalDuration) * 100)))
+    } else {
+      session.progress = Math.min(95, (session.progress || 0) + 1)
     }
   })
+}
 
-  proc.on('error', (err) => {
-    session.status = 'error'
-    session.error = 'FFmpeg konnte nicht gestartet werden: ' + err.message
-    session.proc = null
-    releaseSlot()
-    processQueue()
+/** Wartet auf das Ende eines Prozesses; Startfehler (ENOENT …) zählen als Fehler. */
+function waitForExit(proc) {
+  return new Promise((resolve) => {
+    let done = false
+    const finish = (code, error) => {
+      if (done) return
+      done = true
+      resolve({ code, error })
+    }
+    proc.on('error', (err) => finish(-1, err))
+    proc.on('close', (code) => finish(code))
   })
+}
 
-  proc.on('close', (code) => {
-    session.proc = null
-    if (code === 0 && fs.existsSync(outputFile)) {
-      let size = 0
-      try {
-        size = fs.statSync(outputFile).size
-      } catch {
-        size = 0
+/** Stream-Copy: alle Eingaben identisch kodiert → concat-Demuxer ohne Neukodierung. */
+async function runStreamCopy(session, dir, inputFiles, outputFile) {
+  const concatPath = await writeConcatFile(dir, inputFiles)
+  const proc = spawn(FFMPEG, buildCopyArgs({ concatPath, outputFile }))
+  session.proc = proc
+  let stderrTail = ''
+  trackProgress(proc, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
+  const { code, error } = await waitForExit(proc)
+  session.proc = null
+  if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
+  if (code !== 0) return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+  return { ok: true }
+}
+
+/** Eine Datei in einheitliches PCM dekodieren und in den Encoder schreiben. */
+async function decodeInto(session, inputFile, sampleRate, sink) {
+  const dec = spawn(FFMPEG, buildDecoderArgs(inputFile, sampleRate))
+  session.decoder = dec
+  let stderrTail = ''
+  dec.stderr.on('data', (d) => (stderrTail = (stderrTail + d.toString()).slice(-2000)))
+  dec.stdout.pipe(sink, { end: false })
+  const { code, error } = await waitForExit(dec)
+  session.decoder = null
+  return { ok: !error && code === 0, stderr: stderrTail }
+}
+
+/**
+ * Neukodierung: jede Datei einzeln dekodieren (beliebige Codecs, Samplerates,
+ * Kanalzahlen) und nacheinander in EINEN Encoder streamen. Kein Zwischenspeicher
+ * auf der Platte, keine Grenze bei der Anzahl der Dateien.
+ */
+async function runReencode(session, inputFiles, probes, fmt, outputFile) {
+  const sampleRate = pickSampleRate(session.format, probes.map((p) => p.sampleRate))
+  const encoder = spawn(
+    FFMPEG,
+    buildEncoderArgs({ codec: fmt.codec, bitrate: session.bitrate, sampleRate, outputFile }),
+  )
+  session.proc = encoder
+  let stderrTail = ''
+  trackProgress(encoder, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
+  // Stirbt der Encoder, schreibt der Decoder ins Leere (EPIPE): nicht abstürzen,
+  // das Ergebnis kommt über den Exit-Code des Encoders.
+  encoder.stdin.on('error', () => {})
+  const encoderExit = waitForExit(encoder)
+
+  let failure = null
+  for (const file of inputFiles) {
+    if (session.cancelled || encoder.exitCode !== null) break
+    const result = await decodeInto(session, file, sampleRate, encoder.stdin)
+    if (!result.ok && !session.cancelled) {
+      failure = {
+        ok: false,
+        error: `„${displayName(file)}“ konnte nicht gelesen werden.`,
+        stderr: result.stderr,
       }
+      break
+    }
+  }
+
+  if (failure) encoder.kill('SIGKILL')
+  else encoder.stdin.end()
+
+  const { code, error } = await encoderExit
+  session.proc = null
+  if (failure) return failure
+  if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
+  if (code !== 0) return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+  return { ok: true }
+}
+
+async function runConversion(session) {
+  try {
+    const dir = sessionDirPath(session.id)
+    const inputFiles = await listInputFiles(dir)
+    if (inputFiles.length === 0) {
+      session.status = 'error'
+      session.error = 'Keine Dateien zum Konvertieren'
+      return
+    }
+
+    const fmt = OUTPUT_FORMATS[session.format] || OUTPUT_FORMATS[DEFAULT_FORMAT]
+    const outputFile = path.join(dir, 'playlist.' + fmt.extension)
+
+    const probes = []
+    for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
+    session.totalDuration = probes.reduce((sum, p) => sum + p.duration, 0)
+
+    session.status = 'converting'
+    session.progress = Math.max(session.progress || 0, 1)
+
+    const streamCopy = canStreamCopy(probes, fmt.streamCopyCodec)
+    session.mode = streamCopy ? 'copy' : 'reencode'
+    const result = streamCopy
+      ? await runStreamCopy(session, dir, inputFiles, outputFile)
+      : await runReencode(session, inputFiles, probes, fmt, outputFile)
+
+    if (session.cancelled) return
+    if (result.ok && fs.existsSync(outputFile)) {
       session.status = 'done'
       session.progress = 100
-      session.fileSize = size
+      session.fileSize = fs.statSync(outputFile).size
       session.outputFile = outputFile
     } else {
       session.status = 'error'
-      session.error = 'FFmpeg-Fehler (Code ' + code + ')'
-      session.stderr = stderrTail
+      session.error = result.error || 'Ausgabedatei fehlt'
+      session.stderr = result.stderr
     }
+  } catch (err) {
+    session.status = 'error'
+    session.error = 'Interner Fehler: ' + err.message
+  } finally {
+    session.proc = null
+    session.decoder = null
     releaseSlot()
     processQueue()
-  })
+  }
 }
 
 // --- Job-Queue (innerhalb des Prozesses) -----------------------------------
@@ -265,14 +299,8 @@ function processQueue() {
     processQueue()
     return
   }
-  acquireSlot().then(() => {
-    runConversion(session).catch((err) => {
-      session.status = 'error'
-      session.error = 'Interner Fehler: ' + err.message
-      releaseSlot()
-      processQueue()
-    })
-  })
+  // runConversion fängt alle Fehler selbst und gibt den Slot im finally frei
+  acquireSlot().then(() => runConversion(session))
 }
 
 // --- Express-App -----------------------------------------------------------
@@ -544,9 +572,11 @@ async function cleanupTmpUploads(files) {
 
 async function removeSession(sessionId) {
   const session = sessions.get(sessionId)
-  if (session?.proc) {
+  if (session) session.cancelled = true
+  for (const proc of [session?.decoder, session?.proc]) {
+    if (!proc) continue
     try {
-      session.proc.kill('SIGKILL')
+      proc.kill('SIGKILL')
     } catch {
       /* ignore */
     }

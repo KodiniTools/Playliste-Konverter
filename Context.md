@@ -408,7 +408,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 1. Dateien werden mit Reihenfolge-Information hochgeladen
 2. Session-ID wird generiert (32-Zeichen Hex)
 3. Dateien werden in `backend/temp/{session_id}/` gespeichert
-4. FFmpeg concat-Datei wird erstellt
+4. Konvertierung: Stream-Copy nur bei identisch kodierten Dateien, sonst Neukodierung aller Dateien über eine Decoder→Encoder-Pipeline (siehe `server/README.md`)
 
 ### Konvertierungs-Ablauf
 
