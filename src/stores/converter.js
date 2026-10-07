@@ -13,8 +13,10 @@ export const useConverterStore = defineStore('converter', () => {
   const downloadUrl = ref(null)
   const errorMessage = ref(null)
   const outputFileSize = ref(null) // Größe der konvertierten Datei
-  const outputFormat = ref(localStorage.getItem('outputFormat') || 'mp3') // Standard: MP3
-  const bitrate = ref(parseInt(localStorage.getItem('bitrate')) || 192) // Standard: 192 kbps
+  const outputFormat = ref(normalizeFormat(localStorage.getItem('outputFormat'))) // Standard: MP3
+  const bitrate = ref(
+    normalizeBitrate(parseInt(localStorage.getItem('bitrate'), 10), outputFormat.value),
+  ) // Standard: 192 kbps
 
   // Für Abbrechen-Funktion
   let abortController = null
@@ -392,3 +394,21 @@ export const useConverterStore = defineStore('converter', () => {
     reset,
   }
 })
+
+/** Unbekanntes oder fehlendes Format aus dem Speicher → MP3. */
+export function normalizeFormat(format) {
+  return OUTPUT_FORMATS[format] ? format : 'mp3'
+}
+
+/**
+ * Gespeicherte Bitrate auf eine angebotene Stufe bringen: unbekannt → 192 kbps,
+ * über dem Format-Maximum → höchste erlaubte Stufe.
+ */
+export function normalizeBitrate(value, format) {
+  const maxBitrate = OUTPUT_FORMATS[format]?.maxBitrate || 320
+  const known = AVAILABLE_BITRATES.some((b) => b.value === value)
+  const wanted = known ? value : 192
+  if (wanted <= maxBitrate) return wanted
+  const allowed = AVAILABLE_BITRATES.filter((b) => b.value <= maxBitrate)
+  return allowed[allowed.length - 1].value
+}

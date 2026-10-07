@@ -102,14 +102,13 @@ const messages = {
     },
     sizeYellowWarning: {
       title: 'Größere Playlist',
-      message: 'Ihre Playlist ist relativ groß. Die Konvertierung kann 3-5 Minuten dauern.',
-      estimatedTime: 'Geschätzte Zeit: 3-5 Minuten',
+      message:
+        'Ihre Playlist ist relativ groß. Upload und Konvertierung dauern entsprechend länger.',
     },
     sizeOrangeWarning: {
       title: 'Sehr große Playlist',
       message:
-        'Ihre Playlist ist sehr groß. Die Konvertierung kann 5-7 Minuten dauern. Bitte haben Sie Geduld.',
-      estimatedTime: 'Geschätzte Zeit: 5-7 Minuten',
+        'Ihre Playlist ist sehr groß. Upload und Konvertierung können eine Weile dauern. Bitte haben Sie Geduld.',
     },
     sharedFiles: {
       loading: '{count} normalisierte Datei(en) werden geladen …',
@@ -219,13 +218,12 @@ const messages = {
     },
     sizeYellowWarning: {
       title: 'Larger Playlist',
-      message: 'Your playlist is relatively large. Conversion may take 3-5 minutes.',
-      estimatedTime: 'Estimated time: 3-5 minutes',
+      message: 'Your playlist is relatively large. Upload and conversion will take longer.',
     },
     sizeOrangeWarning: {
       title: 'Very Large Playlist',
-      message: 'Your playlist is very large. Conversion may take 5-7 minutes. Please be patient.',
-      estimatedTime: 'Estimated time: 5-7 minutes',
+      message:
+        'Your playlist is very large. Upload and conversion may take a while. Please be patient.',
     },
     sharedFiles: {
       loading: 'Loading {count} normalised file(s) …',
