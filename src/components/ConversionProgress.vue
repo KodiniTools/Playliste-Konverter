@@ -7,60 +7,69 @@
 </script>
 
 <template>
-  <div
-    class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6"
-  >
-    <h3 class="font-semibold text-sm sm:text-base text-dark dark:text-neutral-light mb-3 sm:mb-4">
+  <section class="rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
+    <h3 class="mb-3 text-lg font-semibold text-ink sm:mb-4">
       {{ store.status === 'uploading' ? t('conversion.uploading') : t('conversion.converting') }}
     </h3>
 
-    <div class="relative pt-1">
-      <div class="flex mb-2 items-center justify-between gap-2">
-        <div class="flex items-center gap-2 sm:gap-3">
-          <span class="text-xs font-semibold inline-block text-accent-dark dark:text-accent">
-            {{ store.status === 'uploading' ? store.uploadProgress : Math.round(store.totalProgress) }}%
-          </span>
-          <!-- Geschwindigkeit während Upload -->
-          <span
-            v-if="store.status === 'uploading' && store.formattedUploadSpeed"
-            class="text-xs text-muted dark:text-neutral"
-          >
-            {{ store.formattedUploadSpeed }}
-          </span>
-        </div>
-        <!-- Geschätzte Restzeit -->
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <span class="text-xs font-semibold tabular-nums text-ink">
+          {{
+            store.status === 'uploading' ? store.uploadProgress : Math.round(store.totalProgress)
+          }}%
+        </span>
+        <!-- Geschwindigkeit während Upload -->
         <span
-          v-if="store.status === 'uploading' && store.formattedTimeRemaining"
-          class="text-xs text-muted dark:text-neutral text-right"
+          v-if="store.status === 'uploading' && store.formattedUploadSpeed"
+          class="text-xs tabular-nums text-ink-2"
         >
-          {{ t('conversion.remaining') }}: {{ store.formattedTimeRemaining }}
+          {{ store.formattedUploadSpeed }}
         </span>
       </div>
-      <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-light dark:bg-muted">
-        <div
-          :style="{ width: (store.status === 'uploading' ? store.uploadProgress : store.totalProgress) + '%' }"
-          :class="[
-            'shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-accent dark:bg-accent transition-all duration-300',
-            store.isIndeterminate && 'animate-pulse',
-          ]"
-        ></div>
-      </div>
+      <!-- Geschätzte Restzeit -->
+      <span
+        v-if="store.status === 'uploading' && store.formattedTimeRemaining"
+        class="text-right text-xs tabular-nums text-ink-2"
+      >
+        {{ t('conversion.remaining') }}: {{ store.formattedTimeRemaining }}
+      </span>
+    </div>
+    <div
+      class="mb-4 h-2 overflow-hidden rounded-full bg-surface-3"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-valuenow="
+        store.status === 'uploading' ? store.uploadProgress : Math.round(store.totalProgress)
+      "
+    >
+      <div
+        :style="{
+          width: (store.status === 'uploading' ? store.uploadProgress : store.totalProgress) + '%',
+        }"
+        :class="[
+          'h-full rounded-full bg-accent transition-[width] duration-slow',
+          store.isIndeterminate && 'animate-pulse',
+        ]"
+      ></div>
     </div>
 
-    <div class="flex items-center justify-between">
-      <p class="text-sm text-muted dark:text-neutral">
+    <div class="flex items-center justify-between gap-3">
+      <p class="text-md text-ink-2">
         {{ t('conversion.progress') }}
       </p>
 
-      <!-- Abbrechen Button -->
+      <!-- Abbrechen: destruktiv, daher danger-Text auf flacher Sekundär-Fläche -->
       <button
-        @click="store.cancel"
+        type="button"
         :disabled="store.isCancelling"
-        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-secondary/10 hover:bg-secondary/20 text-secondary dark:text-secondary-light border border-secondary/30 hover:border-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="h-control-md flex-shrink-0 rounded-md border border-line-strong bg-surface-2 px-4 text-md font-medium text-danger transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45"
+        @click="store.cancel"
       >
         <span v-if="store.isCancelling">{{ t('conversion.cancelling') }}</span>
         <span v-else>{{ t('conversion.cancel') }}</span>
       </button>
     </div>
-  </div>
+  </section>
 </template>

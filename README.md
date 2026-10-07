@@ -15,9 +15,9 @@ Server-basiertes Tool zum Konvertieren von bis zu 100 MP3/WAV Tracks in eine Web
 ### Frontend
 - Vue 3 (Composition API)
 - Pinia (State Management)
-- Tailwind CSS
+- Tailwind CSS auf den KodiniTools-Tokens v2 (`--ds-*`, siehe `src/design-system/README.md`)
 - Axios
-- Vite
+- Vite, Vitest + Vue Test Utils
 
 ### Backend
 - PHP 8.3
@@ -118,6 +118,8 @@ crontab -e
 ```bash
 npm install
 npm run dev
+npm test        # Vitest: Tokens, Theme-Mechanik, Komponenten
+npm run lint
 ```
 
 Vite-Proxy leitet `/api` Requests zu `localhost:3008` weiter.

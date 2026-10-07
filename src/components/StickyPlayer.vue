@@ -35,71 +35,90 @@
 
 <template>
   <div
-    class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-t border-neutral dark:border-muted shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+    class="fixed bottom-0 left-0 right-0 z-player border-t border-line bg-surface-1 shadow-overlay"
   >
-    <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
+    <div class="mx-auto max-w-4xl px-3 py-2.5 sm:px-4 sm:py-3">
       <div class="flex items-center gap-3 sm:gap-4">
         <!-- Transport-Buttons -->
-        <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+        <div class="flex flex-shrink-0 items-center gap-1 sm:gap-1.5">
           <!-- Previous -->
           <button
+            type="button"
             :disabled="!hasPrev"
             :title="t('player.previous')"
-            class="w-8 h-8 flex items-center justify-center rounded-full text-dark dark:text-neutral-light hover:bg-neutral dark:hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            :aria-label="t('player.previous')"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
             @click="player.previous()"
           >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z" />
             </svg>
           </button>
 
-          <!-- Play/Pause -->
+          <!-- Play/Pause: einzige Goldfläche des Players -->
           <button
+            type="button"
             :disabled="converter.files.length === 0"
             :title="player.isPlaying ? t('preview.pause') : t('preview.play')"
-            class="w-10 h-10 flex items-center justify-center rounded-full bg-accent text-dark hover:bg-accent-dark transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            :aria-label="player.isPlaying ? t('preview.pause') : t('preview.play')"
+            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
             @click="player.togglePlayPause()"
           >
-            <svg v-if="player.isPlaying" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              v-if="player.isPlaying"
+              class="h-5 w-5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
             </svg>
-            <svg v-else class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              v-else
+              class="ml-0.5 h-5 w-5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path d="M8 5v14l11-7z" />
             </svg>
           </button>
 
           <!-- Next -->
           <button
+            type="button"
             :disabled="!hasNext"
             :title="t('player.next')"
-            class="w-8 h-8 flex items-center justify-center rounded-full text-dark dark:text-neutral-light hover:bg-neutral dark:hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            :aria-label="t('player.next')"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
             @click="player.next()"
           >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z" />
             </svg>
           </button>
         </div>
 
         <!-- Track-Info + Seek -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="min-w-0 flex-1">
+          <div class="mb-1 flex items-center justify-between gap-2">
             <p
-              class="text-sm font-medium text-dark dark:text-neutral-light truncate"
-              :class="{ 'text-muted dark:text-neutral italic': !player.currentTrack }"
+              :class="[
+                'truncate text-md font-medium',
+                player.currentTrack ? 'text-ink' : 'italic text-ink-2',
+              ]"
             >
-              <span v-if="trackPosition" class="text-muted dark:text-neutral font-mono mr-1.5"
-                >{{ trackPosition }}</span
+              <span v-if="trackPosition" class="mr-1.5 font-mono tabular-nums text-ink-3">{{
+                trackPosition
+              }}</span
               >{{ trackLabel }}
             </p>
-            <span
-              class="text-xs text-muted dark:text-neutral font-mono flex-shrink-0 tabular-nums"
-            >
+            <span class="flex-shrink-0 font-mono text-xs tabular-nums text-ink-2">
               {{ formatTime(player.progress) }} / {{ formatTime(player.duration) }}
             </span>
           </div>
 
-          <!-- Seek-Slider -->
+          <!-- Seek-Slider (Styling global in style.css) -->
           <input
             type="range"
             min="0"
@@ -108,18 +127,20 @@
             :value="player.progress"
             :disabled="!player.hasTrack || player.duration === 0"
             :title="t('player.seek')"
-            class="player-slider w-full h-1.5 rounded-full appearance-none cursor-pointer disabled:cursor-not-allowed"
+            :aria-label="t('player.seek')"
+            class="w-full"
             @input="onSeek"
           />
         </div>
 
         <!-- Lautstärke (Desktop) -->
-        <div class="hidden sm:flex items-center gap-1.5 flex-shrink-0 w-28">
+        <div class="hidden w-28 flex-shrink-0 items-center gap-1.5 sm:flex">
           <svg
-            class="w-4 h-4 text-muted dark:text-neutral flex-shrink-0"
+            class="h-4 w-4 flex-shrink-0 text-ink-2"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               v-if="player.volume > 0.5"
@@ -150,7 +171,8 @@
             step="0.05"
             :value="player.volume"
             :title="`${t('preview.volume')}: ${Math.round(player.volume * 100)}% — ${t('preview.volumeHint')}`"
-            class="player-slider flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
+            :aria-label="t('preview.volume')"
+            class="flex-1"
             @input="onVolume"
           />
         </div>
@@ -158,49 +180,3 @@
     </div>
   </div>
 </template>
-
-<style scoped>
-  /* Slider-Styling (Seek + Volume) */
-  .player-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    background: #c0c2c9;
-  }
-
-  .dark .player-slider {
-    background: #1e3a5f;
-  }
-
-  .player-slider:disabled {
-    opacity: 0.5;
-  }
-
-  .player-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #c9984d;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.15s ease;
-  }
-
-  .player-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-
-  .player-slider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: #c9984d;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.15s ease;
-  }
-
-  .player-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-  }
-</style>

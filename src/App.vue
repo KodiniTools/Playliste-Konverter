@@ -11,6 +11,7 @@
   import SizeWarning from './components/SizeWarning.vue'
   import ToastContainer from './components/ToastContainer.vue'
   import StickyPlayer from './components/StickyPlayer.vue'
+  import StatusIcon from './components/StatusIcon.vue'
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
 
   const store = useConverterStore()
@@ -31,6 +32,16 @@
 
   // --- source=audionormalizer receiver ---
   const sharedBanner = ref(null)
+
+  const BANNER_EDGE_CLASSES = {
+    success: 'border-l-success',
+    error: 'border-l-danger',
+    warning: 'border-l-warning',
+    info: 'border-l-info',
+  }
+  const bannerEdgeClass = computed(
+    () => BANNER_EDGE_CLASSES[sharedBanner.value?.type] ?? BANNER_EDGE_CLASSES.info,
+  )
   let sharedHandled = false
 
   async function loadSharedFiles() {
@@ -41,11 +52,16 @@
       const records = await getSharedFiles()
       if (!records?.length) {
         sharedBanner.value = { type: 'warning', message: t('sharedFiles.empty') }
-        setTimeout(() => { sharedBanner.value = null }, 5000)
+        setTimeout(() => {
+          sharedBanner.value = null
+        }, 5000)
         return
       }
 
-      sharedBanner.value = { type: 'info', message: t('sharedFiles.loading', { count: records.length }) }
+      sharedBanner.value = {
+        type: 'info',
+        message: t('sharedFiles.loading', { count: records.length }),
+      }
 
       const files = records.map(
         (r) => new File([r.blob], r.name, { type: r.mimeType || r.blob.type }),
@@ -53,13 +69,18 @@
       store.addFiles(files)
       await clearSharedFiles()
 
-      sharedBanner.value = { type: 'success', message: t('sharedFiles.loaded', { count: files.length }) }
+      sharedBanner.value = {
+        type: 'success',
+        message: t('sharedFiles.loaded', { count: files.length }),
+      }
     } catch (err) {
       console.error('[Playliste-Konverter] Error loading shared files:', err)
       sharedBanner.value = { type: 'error', message: t('sharedFiles.error') }
     }
 
-    setTimeout(() => { sharedBanner.value = null }, 6000)
+    setTimeout(() => {
+      sharedBanner.value = null
+    }, 6000)
   }
 
   onMounted(() => {
@@ -70,30 +91,28 @@
 
 <template>
   <ToastContainer />
-  <div
-    class="min-h-screen bg-neutral-light dark:bg-dark py-4 sm:py-8 transition-colors"
-    :class="{ 'pb-28 sm:pb-24': showPlayer }"
-  >
-    <div class="max-w-4xl mx-auto px-3 sm:px-4">
+  <div class="min-h-screen py-4 sm:py-8" :class="{ 'pb-28 sm:pb-24': showPlayer }">
+    <div class="mx-auto max-w-4xl px-3 sm:px-4">
       <header class="mb-6 sm:mb-8">
-        <div class="flex flex-col items-center text-center mb-4 gap-2">
+        <div class="mb-4 flex flex-col items-center gap-2 text-center">
           <div class="flex items-center gap-2 sm:gap-3">
-            <a href="./" class="home-link flex-shrink-0" title="Home">
+            <a href="./" class="home-link flex-shrink-0" title="Home" aria-label="Home">
               <svg
-                width="24"
-                height="24"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                aria-hidden="true"
               >
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
               </svg>
             </a>
-            <h1 class="text-xl sm:text-3xl font-bold text-dark dark:text-neutral-light">
+            <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               {{ t('app.title') }}
             </h1>
             <!-- PayPal Donation Button -->
@@ -104,35 +123,40 @@
               class="inline-block"
             >
               <input type="hidden" name="hosted_button_id" value="8RGLGQ2BFMHU6" />
-              <button type="submit" class="donate-btn" :title="t('donate.title')">
-                <svg class="donate-btn-icon" viewBox="0 0 24 24" fill="currentColor">
+              <button
+                type="submit"
+                class="donate-btn"
+                :title="t('donate.title')"
+                :aria-label="t('donate.button')"
+              >
+                <svg
+                  class="donate-btn-icon"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
                   <path
                     d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                   />
                 </svg>
-                <span class="hidden sm:inline text-sm">{{ t('donate.button') }}</span>
+                <span class="hidden sm:inline">{{ t('donate.button') }}</span>
               </button>
             </form>
           </div>
-          <p class="text-sm sm:text-base text-muted dark:text-neutral">{{ t('app.subtitle') }}</p>
+          <p class="text-md text-ink-2 sm:text-lg">{{ t('app.subtitle') }}</p>
         </div>
       </header>
 
       <!-- Shared files banner -->
       <div
         v-if="sharedBanner"
-        class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
-        :class="{
-          'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400': sharedBanner.type === 'success',
-          'bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400': sharedBanner.type === 'error',
-          'bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400': sharedBanner.type === 'warning',
-          'bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400': sharedBanner.type === 'info',
-        }"
+        :role="sharedBanner.type === 'error' ? 'alert' : 'status'"
+        :class="[
+          'mb-4 flex items-center gap-3 rounded-md border border-l-[3px] border-line bg-surface-1 px-4 py-3 text-md font-medium text-ink',
+          bannerEdgeClass,
+        ]"
       >
-        <span v-if="sharedBanner.type === 'success'">&#10003;</span>
-        <span v-else-if="sharedBanner.type === 'error'">&#10007;</span>
-        <span v-else-if="sharedBanner.type === 'warning'">&#9888;</span>
-        <span v-else>&#8505;</span>
+        <StatusIcon :type="sharedBanner.type" class="h-4 w-4" />
         <span>{{ sharedBanner.message }}</span>
       </div>
 
@@ -148,17 +172,19 @@
 
         <button
           v-if="store.files.length > 0"
+          type="button"
           :disabled="store.isOverSizeLimit"
-          :class="[
-            'w-full py-3.5 rounded-xl font-semibold text-base transition-all duration-200',
-            store.isOverSizeLimit
-              ? 'bg-neutral dark:bg-muted text-neutral-dark dark:text-muted-light cursor-not-allowed opacity-60'
-              : 'bg-accent text-dark hover:bg-accent-dark shadow-md hover:shadow-lg hover:-translate-y-0.5',
-          ]"
+          class="w-full rounded-md bg-accent py-3 text-lg font-semibold text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-accent"
           @click="store.convert"
         >
           <span class="inline-flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -177,15 +203,20 @@
 
       <div
         v-if="store.errorMessage"
-        class="mt-4 p-4 bg-secondary-light/20 dark:bg-secondary-dark/30 border border-secondary dark:border-secondary-dark rounded-lg"
+        role="alert"
+        class="mt-4 flex items-start gap-3 rounded-md border border-l-[3px] border-line border-l-danger bg-surface-1 p-4"
       >
-        <p class="text-secondary-dark dark:text-secondary-light">{{ store.errorMessage }}</p>
-        <button
-          class="mt-2 text-secondary dark:text-secondary-light underline"
-          @click="store.reset"
-        >
-          {{ t('error.reset') }}
-        </button>
+        <StatusIcon type="error" class="mt-0.5 h-5 w-5" />
+        <div class="flex-1">
+          <p class="text-md text-ink">{{ store.errorMessage }}</p>
+          <button
+            type="button"
+            class="mt-2 text-md font-medium text-link underline transition-colors hover:text-accent"
+            @click="store.reset"
+          >
+            {{ t('error.reset') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

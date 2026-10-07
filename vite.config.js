@@ -17,6 +17,11 @@ export default defineConfig({
       }
     }
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['src/**/*.spec.js'],
+  },
   server: {
     proxy: {
       '/api': {

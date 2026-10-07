@@ -3,30 +3,34 @@ import { ref, watch } from 'vue'
 
 export const useUIStore = defineStore('ui', () => {
   // Theme und Locale werden von der externen SSI-Navigation (nav.html) gesteuert.
-  // Dieser Store synchronisiert den Zustand und hält die Tailwind 'dark' Klasse aktuell.
+  // Theme-Mechanik wie im Collage Maker: html[data-theme] schaltet die
+  // Design-Tokens (--ds-*) und die SSI-Partials, body.light-theme hält Parität
+  // zum Playlist Generator, html.dark bleibt als Altbestand für externe Skripte.
 
-  const theme = ref(localStorage.getItem('theme') || 'light')
+  const theme = ref(normalizeTheme(readInitialTheme()))
   const locale = ref(localStorage.getItem('locale') || 'de')
 
-  // Sync data-theme Attribut (nav.html) mit Tailwind 'dark' Klasse
-  function syncDarkClass(newTheme) {
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+  // nav.html bzw. das Pre-Paint-Skript in app.html hat data-theme womöglich schon gesetzt
+  function readInitialTheme() {
+    return (
+      document.documentElement.getAttribute('data-theme') ||
+      localStorage.getItem('theme') ||
+      'light'
+    )
+  }
+
+  function applyTheme(newTheme) {
+    document.documentElement.setAttribute('data-theme', newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    document.body?.classList.toggle('light-theme', newTheme === 'light')
+    try {
+      localStorage.setItem('theme', newTheme)
+    } catch {
+      // Privater Modus / blockierter Speicher: Theme gilt dann nur für diese Sitzung
     }
   }
 
-  // Initiale Synchronisation: nav.html hat möglicherweise schon data-theme gesetzt
-  const initialTheme =
-    document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light'
-  theme.value = initialTheme
-  syncDarkClass(initialTheme)
-
-  // Theme watcher - hält dark-Klasse synchron
-  watch(theme, (newTheme) => {
-    syncDarkClass(newTheme)
-  })
+  watch(theme, applyTheme, { immediate: true })
 
   // Flag: unterdrückt Re-Dispatch wenn Sprachänderung von externem Event kam
   let _suppressDispatch = false
@@ -64,11 +68,12 @@ export const useUIStore = defineStore('ui', () => {
   )
 
   // nav.html setzt data-theme direkt, dispatcht aber KEIN Event.
-  // MutationObserver erkennt Änderungen am data-theme Attribut.
+  // MutationObserver erkennt Änderungen am data-theme Attribut. Eigene Änderungen
+  // fallen über den Vergleich mit theme.value heraus (Observer läuft asynchron).
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.attributeName === 'data-theme') {
-        const newTheme = document.documentElement.getAttribute('data-theme') || 'light'
+        const newTheme = normalizeTheme(document.documentElement.getAttribute('data-theme'))
         if (newTheme !== theme.value) {
           theme.value = newTheme
         }
@@ -95,9 +100,19 @@ export const useUIStore = defineStore('ui', () => {
     locale.value = newLocale
   }
 
+  function toggleTheme() {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
+  }
+
   return {
     theme,
     locale,
     setLocale,
+    toggleTheme,
   }
 })
+
+/** Nur 'dark' und 'light' sind gültig; alles andere fällt auf den Standard Light zurück. */
+export function normalizeTheme(value) {
+  return value === 'dark' ? 'dark' : 'light'
+}
