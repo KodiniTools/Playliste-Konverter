@@ -8,6 +8,23 @@ Ein dauerhafter Prozess hält den Job im Speicher und verfolgt den echten
 ffmpeg-Fortschritt (`time=` aus dem ffmpeg-Log gegen die Gesamtdauer) – dadurch
 läuft der Fortschritt bis 100 % und die Datei steht danach zum Download bereit.
 
+## Wie zusammengefügt wird
+
+- **Stream-Copy** (schnell, ohne Qualitätsverlust): nur wenn ALLE Dateien in Codec,
+  Samplerate und Kanalzahl übereinstimmen und schon im Zielformat vorliegen
+  (z. B. nur MP3s mit 44,1 kHz Stereo → MP3). Dann concat-Demuxer mit `-c:a copy`.
+- **Neukodierung** (alle anderen Fälle, z. B. MP3 + WAV gemischt): jede Datei wird
+  einzeln von einem eigenen ffmpeg in einheitliches PCM (Float, Stereo, feste
+  Samplerate) dekodiert und nacheinander in **einen** Encoder gestreamt.
+  Kein Zwischenspeicher auf der Platte, keine Grenze bei der Dateianzahl.
+- Nicht lesbare Dateien brechen die Konvertierung mit dem Dateinamen ab, statt
+  still zu fehlen.
+
+Hintergrund: Der concat-Demuxer übernimmt Codec und Parameter der **ersten** Datei.
+Bei gemischten Eingaben wurden spätere Dateien verworfen, ffmpeg endete trotzdem
+mit Code 0 – die Playlist war dann einfach kürzer (behoben, siehe `audio.js`,
+Test `test/convert.test.js`).
+
 ## API (identisch zum bisherigen Vertrag)
 
 | Methode | Pfad (hinter nginx)                     | Zweck |
@@ -55,7 +72,10 @@ nginx -t && systemctl reload nginx
 |------------------|-------------------|-----------|
 | `PORT`           | `9016`            | Listen-Port (nur `127.0.0.1`) |
 | `TEMP_DIR`       | `<server>/temp`   | Verzeichnis für Sessions/Uploads |
-| `MAX_CONCURRENT` | `3`               | Max. gleichzeitige ffmpeg-Prozesse |
+| `MAX_CONCURRENT` | `3`               | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder) |
+| `MAX_PLAYLIST_SIZE` | `5G`           | Gesamtgröße pro Sitzung (413 darüber) |
+| `MAX_FILE_SIZE`  | `500M`            | Größe pro Datei (413 darüber) |
+| `MIN_FREE_SPACE` | `20G`             | Platzreserve auf der Temp-Partition (507 darunter) |
 | `FFMPEG_PATH`    | `ffmpeg`          | Pfad zur ffmpeg-Binary |
 | `FFPROBE_PATH`   | `ffprobe`         | Pfad zur ffprobe-Binary |
 
