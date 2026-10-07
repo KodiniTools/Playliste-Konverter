@@ -115,3 +115,29 @@ curl -s http://127.0.0.1:9016/health  # Health-Check des Dienstes
   gelöscht – ein separater Cleanup-Cronjob ist nicht mehr nötig.
 - Die alten PHP-Dateien unter `backend/` werden nicht mehr angesprochen, sobald
   nginx auf Port 9016 zeigt.
+
+---
+
+## Speicher-Grenzen des Node-Dienstes
+
+`server/server.js` erzwingt die Limits auch serverseitig (nicht nur in der App):
+
+| Variable (`ecosystem.config.cjs`) | Standard | Wirkung |
+| --- | --- | --- |
+| `MAX_PLAYLIST_SIZE` | `5G` | Gesamtgröße pro Sitzung; darüber `413 PLAYLIST_TOO_LARGE`, die Sitzung wird sofort gelöscht. Muss zu `MAX_PLAYLIST_SIZE` in `src/constants.js` passen. |
+| `MAX_FILE_SIZE` | `500M` | Größe pro Datei; darüber `413 FILE_TOO_LARGE`. |
+| `MIN_FREE_SPACE` | `20G` | Freier Platz, der auf der Partition des Temp-Ordners bleiben muss; sonst `507 INSUFFICIENT_STORAGE`, bevor etwas geschrieben wird. |
+
+`deploy.sh` lädt den Dienst mit `pm2 startOrReload … --update-env`, neue Werte greifen damit beim
+nächsten Deploy. Prüfen:
+
+```bash
+pm2 env $(pm2 id playlistkonverter-server | tr -dc '0-9') | grep -E 'MAX_PLAYLIST_SIZE|MAX_FILE_SIZE|MIN_FREE_SPACE'
+pm2 logs playlistkonverter-server --lines 5 --nostream   # Startzeile nennt Limit und Reserve
+```
+
+Tests des Dienstes (startet echte Server-Prozesse mit kleinen Limits in einem Temp-Ordner):
+
+```bash
+cd server && npm test        # bzw. im Repo-Root: npm run test:server
+```

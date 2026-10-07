@@ -26,6 +26,10 @@ module.exports = {
         // Optional: eigenes Temp-Verzeichnis (Standard: <server>/temp)
         // TEMP_DIR: '/var/www/kodinitools.com/playlistkonverter/server-temp',
         MAX_CONCURRENT: 3,
+        // Gesamtgröße pro Sitzung (wie MAX_PLAYLIST_SIZE der App, src/constants.js)
+        MAX_PLAYLIST_SIZE: '5G',
+        // Freier Platz, der auf der Partition des Temp-Ordners immer bleiben muss
+        MIN_FREE_SPACE: '20G',
       },
     },
   ],
