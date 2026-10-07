@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="scroll-smooth">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,760 +7,30 @@
   <title>Anleitung - Playlist Konverter</title>
   <link rel="stylesheet" href="/fontawesome/css/fontawesome.min.css" />
   <link rel="stylesheet" href="/fontawesome/css/solid.min.css" />
-  <style>
-    @font-face {
-      font-family: 'Supreme';
-      src: url('/fonts/Supreme-Regular.woff2') format('woff2');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    :root {
-      /* Color Palette */
-      --accent: #c9984d;
-      --accent-dark: #b0832f;
-      --accent-light: #f8e1a9;
-      --secondary: #014f99;
-      --secondary-dark: #003971;
-      --secondary-light: #2a6db5;
-      --muted: #5a6171;
-      --muted-dark: #3d4555;
-      --muted-light: #7a8294;
-      --neutral: #c0c2c9;
-      --neutral-dark: #9a9da5;
-      --neutral-light: #f9f2d5;
-      --dark: #091428;
-      --dark-lighter: #0E1C32;
-      --dark-card: #142640;
-
-      /* Light mode defaults */
-      --bg-primary: #F5F4D6;
-      --bg-secondary: #ffffff;
-      --bg-card: #ffffff;
-      --text-primary: #003971;
-      --text-secondary: #4a5c72;
-      --text-muted: #7a8694;
-      --border-color: #c0c2c9;
-
-      /* Status colors */
-      --success: #22c55e;
-      --warning: #eab308;
-      --warning-orange: #f97316;
-      --danger: #ef4444;
-    }
-
-    html.dark,
-    [data-theme="dark"] {
-      --bg-primary: #091428;
-      --bg-secondary: #0E1C32;
-      --bg-card: #142640;
-      --text-primary: #f9f2d5;
-      --text-secondary: #f8e1a9;
-      --text-muted: #7A8DA0;
-      --border-color: #1e3a5f;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Supreme', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* SSI Footer/Header - transparent background so page bg shows through */
-    /* nav.html (.global-nav) handles its own background — do NOT override it */
-    body > header,
-    body > header *,
-    body > footer,
-    body > footer * {
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Dark mode: light text for footer/header SSI includes */
-    html.dark body > header,
-    html.dark body > header *,
-    html.dark body > footer,
-    html.dark body > footer *,
-    [data-theme="dark"] body > header,
-    [data-theme="dark"] body > header *,
-    [data-theme="dark"] body > footer,
-    [data-theme="dark"] body > footer * {
-      color: var(--neutral-light) !important;
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Links in footer/header for dark mode */
-    html.dark body > header a,
-    html.dark body > footer a,
-    [data-theme="dark"] body > header a,
-    [data-theme="dark"] body > footer a {
-      color: var(--accent) !important;
-    }
-
-    html.dark body > header a:hover,
-    html.dark body > footer a:hover,
-    [data-theme="dark"] body > header a:hover,
-    [data-theme="dark"] body > footer a:hover {
-      color: var(--accent-dark) !important;
-    }
-
-    /* SSI elements z-index for proper stacking */
-    body > header,
-    body > footer {
-      position: relative;
-      z-index: 100 !important;
-    }
-
-    /* Page Navigation */
-    .page-nav {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
-
-    html.dark .page-nav,
-    [data-theme="dark"] .page-nav {
-      background: rgba(14, 28, 50, 0.95);
-    }
-
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .home-link {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    .home-link:hover {
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-color: var(--accent);
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .nav-link {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.875rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .nav-link:hover {
-      color: var(--secondary);
-      background: var(--bg-card);
-    }
-
-    .nav-link.active {
-      color: var(--secondary);
-      background: var(--bg-card);
-    }
-
-    /* Guide Hero Section */
-    .guide-hero {
-      padding: 3rem 1.5rem 3rem;
-      text-align: center;
-      background: var(--bg-primary);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .guide-hero-bg {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, var(--accent) 0%, transparent 50%);
-      opacity: 0.08;
-      pointer-events: none;
-    }
-
-    html.dark .guide-hero-bg,
-    [data-theme="dark"] .guide-hero-bg {
-      opacity: 0.04;
-    }
-
-    .guide-hero-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    .guide-hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 50px;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      margin-bottom: 1.5rem;
-    }
-
-    .guide-hero-badge svg {
-      color: var(--secondary);
-    }
-
-    .guide-hero-title {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 800;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, var(--text-primary) 0%, var(--secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .guide-hero-description {
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* Quickstart Section */
-    .quickstart {
-      padding: 4rem 1.5rem;
-      background: var(--bg-secondary);
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .section-header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-
-    .section-tag {
-      display: inline-block;
-      background: var(--accent);
-      color: var(--secondary-dark);
-      padding: 0.25rem 0.75rem;
-      border-radius: 50px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 1rem;
-    }
-
-    .section-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .quickstart-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 1rem;
-    }
-
-    .quickstart-step {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem 1rem;
-      text-align: center;
-      transition: all 0.3s ease;
-    }
-
-    .quickstart-step:hover {
-      border-color: var(--secondary);
-      transform: translateY(-2px);
-    }
-
-    .quickstart-number {
-      width: 40px;
-      height: 40px;
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.125rem;
-      margin: 0 auto 1rem;
-    }
-
-    .quickstart-text {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    /* Guide Content Section */
-    .guide-content {
-      padding: 4rem 1.5rem 6rem;
-      background: var(--bg-primary);
-    }
-
-    .guide-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      transition: all 0.3s ease;
-    }
-
-    .guide-section:hover {
-      border-color: var(--secondary);
-    }
-
-    .guide-section-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      cursor: pointer;
-    }
-
-    .guide-section-number {
-      width: 48px;
-      height: 48px;
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.25rem;
-      flex-shrink: 0;
-    }
-
-    .guide-section-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .guide-section-content {
-      color: var(--text-secondary);
-      line-height: 1.8;
-    }
-
-    .guide-section-content p {
-      margin-bottom: 1rem;
-    }
-
-    .guide-section-content p:last-child {
-      margin-bottom: 0;
-    }
-
-    .guide-tip {
-      background: var(--bg-secondary);
-      border-left: 4px solid var(--secondary);
-      padding: 1rem 1.25rem;
-      margin: 1.5rem 0;
-      border-radius: 0 8px 8px 0;
-    }
-
-    .guide-tip-title {
-      font-weight: 600;
-      color: var(--secondary);
-      margin-bottom: 0.25rem;
-      font-size: 0.875rem;
-    }
-
-    .guide-tip-text {
-      font-size: 0.95rem;
-    }
-
-    .guide-options {
-      display: grid;
-      gap: 1rem;
-      margin: 1.5rem 0;
-    }
-
-    .guide-option {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-    }
-
-    .guide-option-title {
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
-    }
-
-    .guide-option-text {
-      font-size: 0.95rem;
-    }
-
-    /* Warning Table */
-    .warning-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5rem 0;
-      font-size: 0.95rem;
-    }
-
-    .warning-table th,
-    .warning-table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .warning-table th {
-      background: var(--bg-secondary);
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .warning-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .status-dot {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 0.5rem;
-    }
-
-    .status-green { background: var(--success); }
-    .status-yellow { background: var(--warning); }
-    .status-orange { background: var(--warning-orange); }
-    .status-red { background: var(--danger); }
-
-    /* Format/Bitrate Tables */
-    .format-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5rem 0;
-      font-size: 0.95rem;
-    }
-
-    .format-table th,
-    .format-table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .format-table th {
-      background: var(--bg-secondary);
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .format-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .format-table code {
-      background: var(--bg-secondary);
-      padding: 0.125rem 0.375rem;
-      border-radius: 4px;
-      font-size: 0.875rem;
-      color: var(--secondary);
-    }
-
-    /* Steps List */
-    .steps-list {
-      list-style: none;
-      counter-reset: step-counter;
-      margin: 1.5rem 0;
-    }
-
-    .steps-list li {
-      counter-increment: step-counter;
-      position: relative;
-      padding-left: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .steps-list li::before {
-      content: counter(step-counter);
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 28px;
-      height: 28px;
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
-
-    /* CTA Section */
-    .cta {
-      padding: 6rem 1.5rem;
-      text-align: center;
-      background: var(--bg-secondary);
-    }
-
-    .cta-box {
-      background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark) 100%);
-      border-radius: 24px;
-      padding: 4rem 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
-
-    html:not(.dark) .cta-box {
-      background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
-    }
-
-    .cta-glow {
-      position: absolute;
-      top: -50%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 400px;
-      height: 400px;
-      background: var(--accent);
-      border-radius: 50%;
-      filter: blur(100px);
-      opacity: 0.2;
-      pointer-events: none;
-    }
-
-    .cta-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    .cta-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 1rem;
-    }
-
-    .cta-description {
-      color: var(--neutral);
-      font-size: 1.125rem;
-      margin-bottom: 2rem;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-primary {
-      background: var(--secondary);
-      color: #F5F4D6;
-    }
-
-    .btn-primary:hover {
-      background: var(--secondary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px -10px rgba(1, 79, 153, 0.4);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
-      .quickstart-steps {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .guide-section {
-        padding: 1.5rem;
-      }
-
-      .guide-section-header {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .warning-table,
-      .format-table {
-        font-size: 0.85rem;
-      }
-
-      .warning-table th,
-      .warning-table td,
-      .format-table th,
-      .format-table td {
-        padding: 0.5rem;
-      }
-
-      .guide-hero {
-        padding: 2rem 1rem;
-      }
-
-      .quickstart {
-        padding: 2.5rem 1rem;
-      }
-
-      .guide-content {
-        padding: 2.5rem 1rem 4rem;
-      }
-
-      .cta {
-        padding: 3rem 1rem;
-      }
-
-      .cta-box {
-        padding: 2.5rem 1.5rem;
-        border-radius: 16px;
-      }
-
-      .logo {
-        font-size: 1.25rem;
-      }
-
-      .guide-section-title {
-        font-size: 1.25rem;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .guide-section {
-        padding: 1.25rem;
-      }
-
-      .guide-hero-description {
-        font-size: 1rem;
-      }
-
-      .guide-options {
-        gap: 0.75rem;
-      }
-
-      .guide-option {
-        padding: 0.875rem 1rem;
-      }
-
-      .cta-box {
-        padding: 2rem 1.25rem;
-      }
-
-      .cta-description {
-        font-size: 1rem;
-      }
-
-      /* Tabellen horizontal scrollbar machen */
-      .guide-section-content {
-        overflow-x: auto;
-      }
-
-      .warning-table,
-      .format-table {
-        font-size: 0.8rem;
-        min-width: 320px;
-      }
-
-      .warning-table th,
-      .warning-table td,
-      .format-table th,
-      .format-table td {
-        padding: 0.375rem 0.5rem;
-      }
-
-      .steps-list li {
-        padding-left: 2.5rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .quickstart-steps {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .logo {
-        font-size: 1rem;
-      }
-
-      .nav-container {
-        padding: 0.75rem 1rem;
-      }
-
-      .guide-hero-title {
-        font-size: 1.75rem;
-      }
-
-      .section-title {
-        font-size: 1.5rem;
-      }
-    }
-  </style>
+  <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a1324" media="(prefers-color-scheme: dark)" />
+  <!-- Theme vor dem ersten Paint setzen (Tokens: Dark auf :root, Light über data-theme),
+       damit Light-Nutzer keinen dunklen Flash sehen. Das Seitenskript übernimmt danach. -->
+  <script>
+    try {
+      var storedTheme = localStorage.getItem('theme')
+      document.documentElement.setAttribute('data-theme', storedTheme === 'dark' ? 'dark' : 'light')
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  </script>
+  <!-- KodiniTools-Tokens v2, Supreme und SSI-Partial-Regeln, geteilt mit App und Landing-Seite -->
+  <link rel="stylesheet" href="/src/landing/landing.css" />
 </head>
 <body>
   <!--#include virtual="/partials/nav.html" -->
 
+  <!-- Seiteninhalt in #app: die Partial-Regeln (body > :not(#app)) treffen so nur Nav, Footer, Cookie-Banner -->
+  <main id="app" class="landing">
   <!-- Page Navigation -->
-  <nav class="page-nav">
+  <nav class="page-nav" aria-label="Seitennavigation">
     <div class="nav-container">
-      <a href="https://kodinitools.com/playlistkonverter/" class="home-link" title="Home">
+      <a href="https://kodinitools.com/playlistkonverter/" class="home-link" title="Home" aria-label="Home">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -768,17 +38,16 @@
       </a>
       <div class="nav-links">
         <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
-        <a href="./funktion.html" class="nav-link active" data-i18n="nav.guide">Anleitung</a>
+        <a href="./funktion.html" class="nav-link" aria-current="page" data-i18n="nav.guide">Anleitung</a>
       </div>
     </div>
   </nav>
 
   <!-- Guide Hero Section -->
   <section class="guide-hero">
-    <div class="guide-hero-bg"></div>
     <div class="guide-hero-content">
       <div class="guide-hero-badge">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
           <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
         </svg>
@@ -793,7 +62,7 @@
 
   <!-- Quickstart Section -->
   <section class="quickstart">
-    <div class="container">
+    <div class="container container--narrow">
       <div class="section-header">
         <span class="section-tag" data-i18n="quickstart.tag">Schnellstart</span>
         <h2 class="section-title" data-i18n="quickstart.title">In 5 Schritten zum Ziel</h2>
@@ -806,7 +75,7 @@
 
   <!-- Guide Content Section -->
   <section class="guide-content">
-    <div class="container" id="guideContent">
+    <div class="container container--narrow" id="guideContent">
       <!-- Populated by JavaScript -->
     </div>
   </section>
@@ -815,7 +84,6 @@
   <section class="cta">
     <div class="container">
       <div class="cta-box">
-        <div class="cta-glow"></div>
         <div class="cta-content">
           <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
           <p class="cta-description" data-i18n="cta.description">
@@ -831,6 +99,7 @@
       </div>
     </div>
   </section>
+  </main>
 
   <!--#include virtual="/partials/footer.html" -->
   <!--#include virtual="/partials/cookie-banner.html" -->
@@ -912,7 +181,7 @@
               </div>
             </div>
             <p><strong>Unterstützte Formate:</strong> MP3 (.mp3), WAV (.wav)</p>
-            <p><strong>Limits:</strong> Max. 100 MB pro Datei, max. 50 Dateien, max. 1 GB Gesamtgröße</p>
+            <p><strong>Limits:</strong> Max. 500 MB pro Datei, max. 50 Dateien, max. 2 GB Gesamtgröße</p>
             <div class="guide-tip">
               <div class="guide-tip-title">Hinweis</div>
               <div class="guide-tip-text">Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"</div>
@@ -953,23 +222,23 @@
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="status-dot status-green"></span>Grün</td>
-                  <td>&lt; 500 MB</td>
+                  <td><span class="status-dot status-success" aria-hidden="true"></span>Bereit</td>
+                  <td>&lt; 1 GB</td>
                   <td>Alles OK - schnelle Konvertierung</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-yellow"></span>Gelb</td>
-                  <td>500-800 MB</td>
+                  <td><span class="status-dot status-info" aria-hidden="true"></span>Größere Playlist</td>
+                  <td>ab 1 GB</td>
                   <td>Größere Playlist - ca. 3-5 Minuten</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-orange"></span>Orange</td>
-                  <td>800 MB - 1 GB</td>
+                  <td><span class="status-dot status-warning" aria-hidden="true"></span>Sehr große Playlist</td>
+                  <td>ab 1,6 GB</td>
                   <td>Sehr große Playlist - ca. 5-7 Minuten</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-red"></span>Rot</td>
-                  <td>&gt; 1 GB</td>
+                  <td><span class="status-dot status-danger" aria-hidden="true"></span>Zu groß</td>
+                  <td>&gt; 2 GB</td>
                   <td>Zu groß - bitte Dateien entfernen</td>
                 </tr>
               </tbody>
@@ -1010,7 +279,7 @@
                 </tr>
               </tbody>
             </table>
-            <p style="margin-top: 1.5rem;"><strong>Bitrate (Qualität):</strong></p>
+            <p class="guide-subhead"><strong>Bitrate (Qualität):</strong></p>
             <table class="format-table">
               <thead>
                 <tr>
@@ -1150,7 +419,7 @@
               </div>
             </div>
             <p><strong>Supported Formats:</strong> MP3 (.mp3), WAV (.wav)</p>
-            <p><strong>Limits:</strong> Max. 100 MB per file, max. 50 files, max. 1 GB total size</p>
+            <p><strong>Limits:</strong> Max. 500 MB per file, max. 50 files, max. 2 GB total size</p>
             <div class="guide-tip">
               <div class="guide-tip-title">Note</div>
               <div class="guide-tip-text">After uploading, a confirmation will appear: "X files added"</div>
@@ -1191,23 +460,23 @@
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="status-dot status-green"></span>Green</td>
-                  <td>&lt; 500 MB</td>
+                  <td><span class="status-dot status-success" aria-hidden="true"></span>Ready</td>
+                  <td>&lt; 1 GB</td>
                   <td>All OK - fast conversion</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-yellow"></span>Yellow</td>
-                  <td>500-800 MB</td>
+                  <td><span class="status-dot status-info" aria-hidden="true"></span>Larger playlist</td>
+                  <td>from 1 GB</td>
                   <td>Larger playlist - approx. 3-5 minutes</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-orange"></span>Orange</td>
-                  <td>800 MB - 1 GB</td>
+                  <td><span class="status-dot status-warning" aria-hidden="true"></span>Very large playlist</td>
+                  <td>from 1.6 GB</td>
                   <td>Very large playlist - approx. 5-7 minutes</td>
                 </tr>
                 <tr>
-                  <td><span class="status-dot status-red"></span>Red</td>
-                  <td>&gt; 1 GB</td>
+                  <td><span class="status-dot status-danger" aria-hidden="true"></span>Too large</td>
+                  <td>&gt; 2 GB</td>
                   <td>Too large - please remove files</td>
                 </tr>
               </tbody>
@@ -1248,7 +517,7 @@
                 </tr>
               </tbody>
             </table>
-            <p style="margin-top: 1.5rem;"><strong>Bitrate (Quality):</strong></p>
+            <p class="guide-subhead"><strong>Bitrate (Quality):</strong></p>
             <table class="format-table">
               <thead>
                 <tr>
@@ -1367,14 +636,14 @@
     // Sprache und Theme werden von der externen SSI-Navigation (nav.html) gesteuert.
     let currentLang = localStorage.getItem('locale') || 'de';
 
-    // dark-Klasse mit data-theme synchronisieren (für CSS-Kompatibilität)
+    // Theme-Mechanik wie in der App (src/stores/ui.js): html[data-theme] schaltet die
+    // Tokens, body.light-theme hält Parität zum Playlist Generator, html.dark bleibt
+    // als Altbestand für externe Skripte.
     function syncDarkClass() {
-      const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      const stored = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme');
+      const theme = stored === 'dark' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.body.classList.toggle('light-theme', theme === 'light');
     }
 
     // Language Management

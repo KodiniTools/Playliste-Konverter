@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="scroll-smooth">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,461 +7,37 @@
   <title>FAQ - Playlist Konverter</title>
   <link rel="stylesheet" href="/fontawesome/css/fontawesome.min.css" />
   <link rel="stylesheet" href="/fontawesome/css/solid.min.css" />
-  <style>
-    @font-face {
-      font-family: 'Supreme';
-      src: url('/fonts/Supreme-Regular.woff2') format('woff2');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
+  <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a1324" media="(prefers-color-scheme: dark)" />
+  <!-- Theme vor dem ersten Paint setzen (Tokens: Dark auf :root, Light über data-theme),
+       damit Light-Nutzer keinen dunklen Flash sehen. Das Seitenskript übernimmt danach. -->
+  <script>
+    try {
+      var storedTheme = localStorage.getItem('theme')
+      document.documentElement.setAttribute('data-theme', storedTheme === 'dark' ? 'dark' : 'light')
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light')
     }
-
-    :root {
-      /* Color Palette */
-      --accent: #c9984d;
-      --accent-dark: #b0832f;
-      --accent-light: #f8e1a9;
-      --secondary: #014f99;
-      --secondary-dark: #003971;
-      --secondary-light: #2a6db5;
-      --muted: #5a6171;
-      --muted-dark: #3d4555;
-      --muted-light: #7a8294;
-      --neutral: #c0c2c9;
-      --neutral-dark: #9a9da5;
-      --neutral-light: #f9f2d5;
-      --dark: #091428;
-      --dark-lighter: #0E1C32;
-      --dark-card: #142640;
-
-      /* Light mode defaults */
-      --bg-primary: #F5F4D6;
-      --bg-secondary: #ffffff;
-      --bg-card: #ffffff;
-      --text-primary: #003971;
-      --text-secondary: #4a5c72;
-      --text-muted: #7a8694;
-      --border-color: #c0c2c9;
-    }
-
-    html.dark,
-    [data-theme="dark"] {
-      --bg-primary: #091428;
-      --bg-secondary: #0E1C32;
-      --bg-card: #142640;
-      --text-primary: #f9f2d5;
-      --text-secondary: #f8e1a9;
-      --text-muted: #7A8DA0;
-      --border-color: #1e3a5f;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Supreme', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* SSI Footer/Header - transparent background so page bg shows through */
-    /* nav.html (.global-nav) handles its own background — do NOT override it */
-    body > header,
-    body > header *,
-    body > footer,
-    body > footer * {
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Dark mode: light text for footer/header SSI includes */
-    html.dark body > header,
-    html.dark body > header *,
-    html.dark body > footer,
-    html.dark body > footer *,
-    [data-theme="dark"] body > header,
-    [data-theme="dark"] body > header *,
-    [data-theme="dark"] body > footer,
-    [data-theme="dark"] body > footer * {
-      color: var(--neutral-light) !important;
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Links in footer/header for dark mode */
-    html.dark body > header a,
-    html.dark body > footer a,
-    [data-theme="dark"] body > header a,
-    [data-theme="dark"] body > footer a {
-      color: var(--accent) !important;
-    }
-
-    html.dark body > header a:hover,
-    html.dark body > footer a:hover,
-    [data-theme="dark"] body > header a:hover,
-    [data-theme="dark"] body > footer a:hover {
-      color: var(--accent-dark) !important;
-    }
-
-    /* SSI elements z-index for proper stacking */
-    body > header,
-    body > footer {
-      position: relative;
-      z-index: 100 !important;
-    }
-
-    /* Page Navigation */
-    .page-nav {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
-
-    html.dark .page-nav,
-    [data-theme="dark"] .page-nav {
-      background: rgba(14, 28, 50, 0.95);
-    }
-
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .home-link {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    .home-link:hover {
-      background: var(--accent);
-      color: var(--secondary-dark);
-      border-color: var(--accent);
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .nav-link {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.875rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .nav-link:hover {
-      color: var(--secondary);
-      background: var(--bg-card);
-    }
-
-    .nav-link.active {
-      color: var(--secondary);
-      background: var(--bg-card);
-    }
-
-    /* FAQ Hero Section */
-    .faq-hero {
-      padding: 3rem 1.5rem 3rem;
-      text-align: center;
-      background: var(--bg-primary);
-    }
-
-    .faq-hero-title {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 800;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, var(--text-primary) 0%, var(--secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .faq-hero-description {
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* FAQ Content Section */
-    .faq-content {
-      padding: 4rem 1.5rem 6rem;
-      background: var(--bg-secondary);
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .faq-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .faq-item {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .faq-item:hover {
-      border-color: var(--secondary);
-    }
-
-    .faq-item.active {
-      border-color: var(--secondary);
-      box-shadow: 0 4px 20px -5px rgba(1, 79, 153, 0.2);
-    }
-
-    .faq-question {
-      width: 100%;
-      padding: 1.5rem;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      text-align: left;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      transition: color 0.2s ease;
-    }
-
-    .faq-question:hover {
-      color: var(--secondary);
-    }
-
-    .faq-icon {
-      flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      color: var(--secondary);
-      transition: transform 0.3s ease;
-    }
-
-    .faq-item.active .faq-icon {
-      transform: rotate(180deg);
-    }
-
-    .faq-answer {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease, padding 0.3s ease;
-    }
-
-    .faq-item.active .faq-answer {
-      max-height: 500px;
-    }
-
-    .faq-answer-content {
-      padding: 0 1.5rem 1.5rem;
-      color: var(--text-secondary);
-      line-height: 1.8;
-    }
-
-    /* CTA Section */
-    .cta {
-      padding: 6rem 1.5rem;
-      text-align: center;
-      background: var(--bg-primary);
-    }
-
-    .cta-box {
-      background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark) 100%);
-      border-radius: 24px;
-      padding: 4rem 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
-
-    html:not(.dark) .cta-box {
-      background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
-    }
-
-    .cta-glow {
-      position: absolute;
-      top: -50%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 400px;
-      height: 400px;
-      background: var(--accent);
-      border-radius: 50%;
-      filter: blur(100px);
-      opacity: 0.2;
-      pointer-events: none;
-    }
-
-    .cta-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    .cta-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 1rem;
-    }
-
-    .cta-description {
-      color: var(--neutral);
-      font-size: 1.125rem;
-      margin-bottom: 2rem;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-primary {
-      background: var(--secondary);
-      color: #F5F4D6;
-    }
-
-    .btn-primary:hover {
-      background: var(--secondary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px -10px rgba(1, 79, 153, 0.4);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
-      .faq-hero {
-        padding: 2rem 1rem;
-      }
-
-      .faq-content {
-        padding: 2.5rem 1rem 4rem;
-      }
-
-      .cta {
-        padding: 3rem 1rem;
-      }
-
-      .cta-box {
-        padding: 2.5rem 1.5rem;
-        border-radius: 16px;
-      }
-
-      .logo {
-        font-size: 1.25rem;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .faq-question {
-        font-size: 1rem;
-        padding: 1.25rem;
-      }
-
-      .faq-answer-content {
-        padding: 0 1.25rem 1.25rem;
-      }
-
-      .faq-hero-description {
-        font-size: 1rem;
-      }
-
-      .cta-box {
-        padding: 2rem 1.25rem;
-      }
-
-      .cta-description {
-        font-size: 1rem;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .logo {
-        font-size: 1rem;
-      }
-
-      .nav-container {
-        padding: 0.75rem 1rem;
-      }
-
-      .faq-hero-title {
-        font-size: 1.75rem;
-      }
-    }
-  </style>
+  </script>
+  <!-- KodiniTools-Tokens v2, Supreme und SSI-Partial-Regeln, geteilt mit App und Landing-Seite -->
+  <link rel="stylesheet" href="/src/landing/landing.css" />
 </head>
 <body>
   <!--#include virtual="/partials/nav.html" -->
 
+  <!-- Seiteninhalt in #app: die Partial-Regeln (body > :not(#app)) treffen so nur Nav, Footer, Cookie-Banner -->
+  <main id="app" class="landing">
   <!-- Page Navigation -->
-  <nav class="page-nav">
+  <nav class="page-nav" aria-label="Seitennavigation">
     <div class="nav-container">
-      <a href="./" class="home-link" title="Home">
+      <a href="./" class="home-link" title="Home" aria-label="Home">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
       </a>
       <div class="nav-links">
-        <a href="./faq.html" class="nav-link active" data-i18n="nav.faq">FAQ</a>
+        <a href="./faq.html" class="nav-link" aria-current="page" data-i18n="nav.faq">FAQ</a>
         <a href="./funktion.html" class="nav-link" data-i18n="nav.guide">Anleitung</a>
       </div>
     </div>
@@ -477,7 +53,7 @@
 
   <!-- FAQ Content Section -->
   <section class="faq-content">
-    <div class="container">
+    <div class="container container--narrow">
       <div class="faq-list" id="faqList">
         <!-- FAQ items will be populated by JavaScript -->
       </div>
@@ -488,7 +64,6 @@
   <section class="cta">
     <div class="container">
       <div class="cta-box">
-        <div class="cta-glow"></div>
         <div class="cta-content">
           <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
           <p class="cta-description" data-i18n="cta.description">
@@ -504,6 +79,7 @@
       </div>
     </div>
   </section>
+  </main>
 
   <!--#include virtual="/partials/footer.html" -->
   <!--#include virtual="/partials/cookie-banner.html" -->
@@ -640,14 +216,14 @@
     // Sprache und Theme werden von der externen SSI-Navigation (nav.html) gesteuert.
     let currentLang = localStorage.getItem('locale') || 'de';
 
-    // dark-Klasse mit data-theme synchronisieren (für CSS-Kompatibilität)
+    // Theme-Mechanik wie in der App (src/stores/ui.js): html[data-theme] schaltet die
+    // Tokens, body.light-theme hält Parität zum Playlist Generator, html.dark bleibt
+    // als Altbestand für externe Skripte.
     function syncDarkClass() {
-      const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      const stored = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme');
+      const theme = stored === 'dark' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.body.classList.toggle('light-theme', theme === 'light');
     }
 
     // Language Management
@@ -684,14 +260,16 @@
 
       faqList.innerHTML = faqs.map((faq, index) => `
         <div class="faq-item" data-index="${index}">
-          <button class="faq-question" onclick="toggleFAQ(${index})">
+          <button type="button" class="faq-question" id="faq-q-${index}" aria-expanded="false" aria-controls="faq-a-${index}" onclick="toggleFAQ(${index})">
             <span>${faq.q}</span>
-            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
-          <div class="faq-answer">
-            <div class="faq-answer-content">${faq.a}</div>
+          <div class="faq-answer" id="faq-a-${index}" role="region" aria-labelledby="faq-q-${index}">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">${faq.a}</div>
+            </div>
           </div>
         </div>
       `).join('');
@@ -700,11 +278,9 @@
     function toggleFAQ(index) {
       const items = document.querySelectorAll('.faq-item');
       items.forEach((item, i) => {
-        if (i === index) {
-          item.classList.toggle('active');
-        } else {
-          item.classList.remove('active');
-        }
+        const open = i === index ? !item.classList.contains('active') : false;
+        item.classList.toggle('active', open);
+        item.querySelector('.faq-question').setAttribute('aria-expanded', String(open));
       });
     }
 

@@ -170,50 +170,89 @@ describe('Theme-Mechanik in app.html', () => {
   })
 })
 
-describe('Landing-Seite (index.html)', () => {
-  const indexHtml = readFileSync(join(ROOT_DIR, 'index.html'), 'utf8')
-  const landingCss = readFileSync(join(SRC_DIR, 'landing', 'landing.css'), 'utf8')
-  const withoutComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '')
+const INFO_PAGES = ['index.html', 'faq.html', 'funktion.html']
+
+describe.each(INFO_PAGES)('Infoseite %s', (page) => {
+  const html = readFileSync(join(ROOT_DIR, page), 'utf8')
 
   it('hat kein eigenes Inline-CSS mehr und lädt das Token-Stylesheet', () => {
-    expect(indexHtml).not.toMatch(/<style[\s>]/)
-    expect(indexHtml).not.toMatch(/\sstyle="/)
-    expect(indexHtml).toContain('<link rel="stylesheet" href="/src/landing/landing.css" />')
+    expect(html).not.toMatch(/<style[\s>]/)
+    expect(html).not.toMatch(/\sstyle="/)
+    expect(html).toContain('<link rel="stylesheet" href="/src/landing/landing.css" />')
+  })
+
+  it('nutzt keine Effekt-Elemente der alten Seiten (Glow, Hintergrund-Verlauf)', () => {
+    expect(html).not.toMatch(/class="(?:cta-glow|hero-bg|guide-hero-bg)"/)
   })
 
   it('setzt data-theme vor dem ersten Paint, vor dem Stylesheet', () => {
-    const prePaint = indexHtml.indexOf("setAttribute('data-theme'")
-    const stylesheet = indexHtml.indexOf('/src/landing/landing.css')
+    const prePaint = html.indexOf("setAttribute('data-theme'")
+    const stylesheet = html.indexOf('/src/landing/landing.css')
     expect(prePaint).toBeGreaterThan(-1)
     expect(stylesheet).toBeGreaterThan(prePaint)
   })
 
   it('hält body.light-theme und html.dark wie die App synchron', () => {
-    expect(indexHtml).toContain("document.body.classList.toggle('light-theme', theme === 'light')")
-    expect(indexHtml).toContain(
-      "document.documentElement.classList.toggle('dark', theme === 'dark')",
-    )
+    expect(html).toContain("document.body.classList.toggle('light-theme', theme === 'light')")
+    expect(html).toContain("document.documentElement.classList.toggle('dark', theme === 'dark')")
   })
 
   it('legt den Seiteninhalt in #app, damit die Partial-Regeln nur Nav/Footer treffen', () => {
-    expect(indexHtml).toMatch(
+    expect(html).toMatch(
       /<!--#include virtual="\/partials\/nav\.html" -->[\s\S]*?<main id="app" class="landing">/,
     )
-    const mainEnd = indexHtml.indexOf('</main>')
+    const mainEnd = html.indexOf('</main>')
     expect(mainEnd).toBeGreaterThan(-1)
-    expect(indexHtml.indexOf('<!--#include virtual="/partials/footer.html" -->')).toBeGreaterThan(
+    expect(html.indexOf('<!--#include virtual="/partials/footer.html" -->')).toBeGreaterThan(
       mainEnd,
     )
   })
+})
+
+describe('Unterseiten FAQ und Anleitung', () => {
+  const faqHtml = readFileSync(join(ROOT_DIR, 'faq.html'), 'utf8')
+  const guideHtml = readFileSync(join(ROOT_DIR, 'funktion.html'), 'utf8')
+
+  it('markieren die aktuelle Seite mit aria-current statt einer Farbklasse', () => {
+    expect(faqHtml).toContain('<a href="./faq.html" class="nav-link" aria-current="page"')
+    expect(guideHtml).toContain('<a href="./funktion.html" class="nav-link" aria-current="page"')
+    expect(faqHtml + guideHtml).not.toContain('nav-link active')
+  })
+
+  it('FAQ-Akkordeon meldet den Zustand per aria-expanded', () => {
+    expect(faqHtml).toContain('aria-expanded="false" aria-controls="faq-a-${index}"')
+    expect(faqHtml).toContain("setAttribute('aria-expanded', String(open))")
+  })
+
+  it('Anleitung nennt dieselben Grenzen wie der Code (2 GB gesamt, Stufen ab 1 und 1,6 GB)', () => {
+    expect(guideHtml).toContain('max. 2 GB Gesamtgröße')
+    expect(guideHtml).toContain('max. 2 GB total size')
+    expect(guideHtml).not.toMatch(/1 GB Gesamtgröße|1 GB total size|500-800 MB|800 MB - 1 GB/)
+    for (const status of ['success', 'info', 'warning', 'danger']) {
+      expect(guideHtml).toContain(`status-dot status-${status}`)
+    }
+  })
+})
+
+describe('Stylesheet der Infoseiten (landing.css)', () => {
+  const landingCss = readFileSync(join(SRC_DIR, 'landing', 'landing.css'), 'utf8')
+  const withoutComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '')
 
   it('nutzt keine alten Variablen, Gradients, Blur, Glow, Lifts oder Karten-Schatten', () => {
     const css = withoutComments(landingCss)
     expect(css).not.toMatch(
-      /var\(--(?:accent|secondary|muted|neutral|dark|bg-|text-primary|text-secondary|text-muted|border-color)/,
+      /var\(--(?:accent|secondary|muted|neutral|dark|bg-|text-primary|text-secondary|text-muted|border-color|success|warning|danger)/,
     )
     expect(css).not.toMatch(/gradient\(|blur\(|backdrop-filter|box-shadow:\s*0 \d/)
     expect(css).not.toMatch(/:hover\s*\{[^}]*transform/)
     expect(css).not.toMatch(/\bfont-weight:\s*\d/)
+    expect(css).not.toMatch(/max-height:\s*\d/)
+  })
+
+  it('setzt Fließtext-Listen nicht als Flex (Flex schluckt Leerzeichen um <strong>)', () => {
+    const rule = withoutComments(landingCss).match(/\.steps-list li \{[^}]*\}/)?.[0] ?? ''
+    expect(rule).not.toBe('')
+    expect(rule).not.toMatch(/display:\s*flex/)
   })
 
   it('nutzt nur Variablen, die in den Tokens definiert sind', () => {
