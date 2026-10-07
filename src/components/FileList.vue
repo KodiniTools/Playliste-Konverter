@@ -41,86 +41,103 @@
 </script>
 
 <template>
-  <div
-    class="bg-white dark:bg-dark-card rounded-2xl border border-neutral dark:border-muted p-3 sm:p-4 shadow-sm"
-  >
-    <div class="flex justify-between items-center mb-3 gap-2">
+  <section class="rounded-lg border border-line bg-surface-1 p-3 sm:p-4">
+    <div class="mb-3 flex items-center justify-between gap-2">
       <div class="min-w-0">
-        <h3 class="font-semibold text-dark dark:text-neutral-light text-sm sm:text-base">
+        <h3 class="text-md font-semibold text-ink sm:text-lg">
           {{ t('fileList.title') }} ({{ store.files.length }} {{ t('fileList.tracks') }})
         </h3>
-        <p class="text-xs sm:text-sm text-muted dark:text-neutral mt-1">
+        <p class="mt-1 text-sm tabular-nums text-ink-2">
           {{ t('fileList.totalSize') }}: {{ formatBytes(store.totalSize) }}
         </p>
       </div>
       <button
-        class="text-xs sm:text-sm text-secondary dark:text-secondary-light hover:underline flex-shrink-0"
+        type="button"
+        class="flex-shrink-0 rounded-sm px-2 text-sm font-medium text-danger transition-colors hover:underline"
         @click="handleRemoveAll"
       >
         {{ t('fileList.removeAll') }}
       </button>
     </div>
 
-    <div class="space-y-2 max-h-[420px] overflow-y-auto">
+    <div class="max-h-[420px] space-y-2 overflow-y-auto">
       <div
         v-for="(item, index) in store.files"
         :key="item.id"
         draggable="true"
         :class="[
-          'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded border cursor-move transition-colors',
+          'flex min-h-row cursor-move items-center gap-2 rounded-sm border p-2 transition-colors sm:gap-3 sm:p-3',
           isActive(item)
-            ? 'bg-accent/10 dark:bg-accent/20 border-accent dark:border-accent'
-            : 'bg-neutral-light dark:bg-dark-lighter border-neutral dark:border-muted hover:bg-neutral/30 dark:hover:bg-muted/30',
+            ? 'border-accent bg-accent-soft'
+            : 'border-line bg-surface-2 hover:bg-surface-3',
         ]"
         @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"
         @dragend="onDragEnd"
       >
         <!-- Track Nummer -->
-        <span class="text-muted dark:text-neutral font-mono text-sm w-6 sm:w-8 hidden sm:inline"
+        <span class="hidden w-6 font-mono text-sm tabular-nums text-ink-3 sm:inline sm:w-8"
           >{{ index + 1 }}.</span
         >
 
         <!-- Play/Pause Button (Auswahl für den Sticky-Player) -->
         <button
+          type="button"
           :title="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
+          :aria-label="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
           :class="[
-            'w-8 h-8 flex items-center justify-center rounded-full transition-colors flex-shrink-0',
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors',
             isActive(item)
-              ? 'bg-accent text-dark hover:bg-accent-dark'
-              : 'bg-neutral dark:bg-muted text-dark dark:text-neutral-light hover:bg-accent hover:text-dark',
+              ? 'bg-accent text-on-accent hover:bg-accent-hover'
+              : 'border border-line-strong bg-surface-1 text-ink hover:bg-surface-3',
           ]"
           @click.stop="player.toggle(item)"
         >
           <!-- Pause Icon (nur wenn dieser Track aktiv spielt) -->
           <svg
             v-if="isActive(item) && player.isPlaying"
-            class="w-4 h-4"
+            class="h-4 w-4"
             fill="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
           </svg>
           <!-- Play Icon -->
-          <svg v-else class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+          <svg
+            v-else
+            class="ml-0.5 h-4 w-4"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="M8 5v14l11-7z" />
           </svg>
         </button>
 
         <!-- Track Info -->
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-dark dark:text-neutral-light truncate">
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-md font-medium text-ink">
             {{ item.name }}
           </p>
-          <p class="text-xs text-muted dark:text-neutral">{{ formatBytes(item.size) }}</p>
+          <p class="text-xs tabular-nums text-ink-2">{{ formatBytes(item.size) }}</p>
         </div>
 
         <!-- Remove Button -->
         <button
-          class="text-secondary dark:text-secondary-light hover:text-secondary-dark dark:hover:text-secondary flex-shrink-0"
+          type="button"
+          :title="t('fileList.remove')"
+          :aria-label="`${t('fileList.remove')}: ${item.name}`"
+          class="flex h-control-sm w-7 flex-shrink-0 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-danger"
           @click.stop="handleRemoveFile(item.id)"
         >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -131,5 +148,5 @@
         </button>
       </div>
     </div>
-  </div>
+  </section>
 </template>

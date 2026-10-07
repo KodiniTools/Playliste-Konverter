@@ -4,6 +4,7 @@
   import { useI18n } from 'vue-i18n'
   import { formatBytes } from '../utils/format'
   import { OUTPUT_FORMATS } from '../constants'
+  import StatusIcon from './StatusIcon.vue'
 
   const store = useConverterStore()
   const { t } = useI18n()
@@ -55,45 +56,33 @@
 </script>
 
 <template>
-  <div
-    class="bg-white dark:bg-dark-card rounded-lg border border-neutral dark:border-muted p-4 sm:p-6 text-center"
-  >
-    <svg
-      class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-accent dark:text-accent-light mb-3 sm:mb-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <h3 class="text-lg sm:text-xl font-semibold text-dark dark:text-neutral-light mb-2">
+  <section class="rounded-lg border border-line bg-surface-1 p-4 text-center sm:p-6">
+    <StatusIcon type="success" class="mx-auto mb-3 h-12 w-12 sm:mb-4 sm:h-16 sm:w-16" />
+    <h3 class="mb-2 text-xl font-semibold text-ink">
       {{ t('download.title') }}
     </h3>
-    <p class="text-sm sm:text-base text-muted dark:text-neutral mb-2">
+    <p class="mb-2 text-md text-ink-2 sm:text-lg">
       {{ t('download.subtitle') }}
     </p>
-    <p v-if="store.outputFileSize" class="text-sm text-muted-light dark:text-neutral mb-6">
+    <p v-if="store.outputFileSize" class="mb-6 text-sm tabular-nums text-ink-3">
       {{ t('download.fileSize') }}: {{ formatBytes(store.outputFileSize) }}
     </p>
-    <p v-else class="text-sm text-muted-light dark:text-neutral mb-6">&nbsp;</p>
+    <p v-else class="mb-6 text-sm text-ink-3">&nbsp;</p>
 
     <button
+      type="button"
+      class="inline-flex h-control-lg items-center rounded-md bg-accent px-6 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
       @click="handleDownload"
-      class="inline-block bg-accent dark:bg-accent text-dark px-6 py-3 rounded-lg hover:bg-accent-dark dark:hover:bg-accent-dark font-semibold transition-colors cursor-pointer shadow-sm hover:shadow-md"
     >
       {{ t('download.button', { format: currentFormat }) }}
     </button>
 
     <button
+      type="button"
+      class="mx-auto mt-4 block rounded-sm px-2 text-md text-ink-2 transition-colors hover:text-ink hover:underline"
       @click="store.reset"
-      class="block mx-auto mt-4 text-sm text-muted dark:text-neutral hover:underline"
     >
       {{ t('download.newConversion') }}
     </button>
-  </div>
+  </section>
 </template>

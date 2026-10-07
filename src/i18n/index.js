@@ -45,6 +45,10 @@ const messages = {
       tracks: 'Tracks',
       totalSize: 'Gesamtgröße',
       removeAll: 'Alle entfernen',
+      remove: 'Entfernen',
+    },
+    toast: {
+      close: 'Schließen',
     },
     preview: {
       play: 'Track abspielen',
@@ -160,6 +164,10 @@ const messages = {
       tracks: 'Tracks',
       totalSize: 'Total size',
       removeAll: 'Remove all',
+      remove: 'Remove',
+    },
+    toast: {
+      close: 'Close',
     },
     preview: {
       play: 'Play track',

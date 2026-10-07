@@ -7,29 +7,28 @@
 </script>
 
 <template>
-  <div
-    class="bg-white dark:bg-dark-card rounded-2xl p-4 sm:p-5 border border-neutral dark:border-muted space-y-4 sm:space-y-5 shadow-sm"
-  >
+  <section class="space-y-4 rounded-lg border border-line bg-surface-1 p-4 sm:space-y-5 sm:p-5">
     <!-- Format-Auswahl -->
     <div>
-      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-2 sm:mb-3">
+      <h3 class="mb-2 text-md font-semibold text-ink sm:mb-3">
         {{ t('format.title') }}
       </h3>
-      <div class="flex flex-wrap gap-1.5 sm:gap-2">
+      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('format.title')">
         <button
           v-for="format in store.availableFormats"
           :key="format.id"
-          @click="store.setOutputFormat(format.id)"
+          type="button"
+          :aria-pressed="store.outputFormat === format.id"
           :class="[
-            'px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-medium transition-all duration-150',
-            'border-2',
+            'h-control-md rounded-md border px-3 text-md font-medium transition-colors sm:px-4',
             store.outputFormat === format.id
-              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent shadow-sm'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/40',
+              ? 'border-accent bg-accent-soft text-ink'
+              : 'border-line-strong bg-surface-2 text-ink-2 hover:bg-surface-3 hover:text-ink',
           ]"
+          @click="store.setOutputFormat(format.id)"
         >
           <span class="font-semibold">{{ format.label }}</span>
-          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{
+          <span class="ml-1 hidden text-xs text-ink-2 sm:inline">{{
             t(`format.${format.id}.description`)
           }}</span>
         </button>
@@ -38,31 +37,32 @@
 
     <!-- Bitrate-Auswahl -->
     <div>
-      <h3 class="text-sm font-semibold text-dark dark:text-neutral-light mb-2 sm:mb-3">
+      <h3 class="mb-2 text-md font-semibold text-ink sm:mb-3">
         {{ t('bitrate.title') }}
       </h3>
-      <div class="flex flex-wrap gap-1.5 sm:gap-2">
+      <div class="flex flex-wrap gap-2" role="group" :aria-label="t('bitrate.title')">
         <button
           v-for="br in store.availableBitratesForFormat"
           :key="br.value"
-          @click="store.setBitrate(br.value)"
+          type="button"
+          :aria-pressed="store.bitrate === br.value"
           :class="[
-            'px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-150',
-            'border-2',
+            'h-control-md rounded-md border px-3 text-md font-medium transition-colors',
             store.bitrate === br.value
-              ? 'border-accent bg-accent/10 text-accent dark:border-accent dark:bg-accent/20 dark:text-accent shadow-sm'
-              : 'border-neutral dark:border-muted bg-transparent text-muted dark:text-neutral hover:border-accent/50 dark:hover:border-accent/40',
+              ? 'border-accent bg-accent-soft text-ink'
+              : 'border-line-strong bg-surface-2 text-ink-2 hover:bg-surface-3 hover:text-ink',
           ]"
+          @click="store.setBitrate(br.value)"
         >
           <span class="font-semibold">{{ br.label }}</span>
-          <span class="hidden sm:inline text-xs ml-1 opacity-70">{{
+          <span class="ml-1 hidden text-xs text-ink-2 sm:inline">{{
             t(`bitrate.${br.value}`)
           }}</span>
         </button>
       </div>
-      <p class="text-xs text-muted dark:text-neutral mt-2">
+      <p class="mt-2 text-sm text-ink-3">
         {{ t('bitrate.hint') }}
       </p>
     </div>
-  </div>
+  </section>
 </template>

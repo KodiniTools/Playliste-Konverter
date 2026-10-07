@@ -162,29 +162,22 @@
 
 <template>
   <div
+    :class="[
+      'rounded-lg border border-dashed p-8 text-center transition-colors sm:p-14',
+      isDragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface-1',
+    ]"
     @drop.prevent="onDrop"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
-    :class="[
-      'border-2 border-dashed rounded-2xl p-8 sm:p-14 text-center transition-all duration-200',
-      isDragging
-        ? 'border-accent bg-accent/10 dark:bg-accent/5 scale-[1.01]'
-        : 'border-neutral dark:border-muted bg-white dark:bg-dark-card hover:border-accent/40 dark:hover:border-accent/30',
-    ]"
   >
     <!-- Upload-Icon -->
     <div
       :class="[
-        'mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200',
-        isDragging ? 'bg-accent/20' : 'bg-neutral-light dark:bg-dark-lighter',
+        'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg transition-colors',
+        isDragging ? 'bg-accent-soft text-ink' : 'bg-surface-2 text-ink-2',
       ]"
     >
-      <svg
-        :class="['w-8 h-8 transition-colors duration-200', isDragging ? 'text-accent' : 'text-muted dark:text-neutral']"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
+      <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -194,17 +187,23 @@
       </svg>
     </div>
 
-    <p class="text-base sm:text-lg font-semibold text-dark dark:text-neutral-light">
+    <p class="text-lg font-semibold text-ink">
       {{ t('uploader.dropText') }}
     </p>
-    <p class="text-sm text-muted dark:text-neutral mt-1.5">{{ t('uploader.orText') }}</p>
+    <p class="mt-1.5 text-md text-ink-2">{{ t('uploader.orText') }}</p>
 
     <div class="mt-4 flex flex-wrap justify-center gap-3">
-      <!-- Einzelne Dateien auswählen -->
+      <!-- Einzelne Dateien auswählen (Primäraktion) -->
       <label
-        class="inline-flex items-center gap-2 cursor-pointer bg-accent px-5 py-2.5 rounded-xl hover:bg-accent-dark transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+        class="inline-flex h-control-md cursor-pointer items-center gap-2 rounded-md bg-accent px-4 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
       >
-        <svg class="w-4 h-4 text-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -212,25 +211,26 @@
             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
           />
         </svg>
-        <span class="text-sm font-semibold text-dark">{{ t('uploader.selectButton') }}</span>
+        <span>{{ t('uploader.selectButton') }}</span>
         <input
           type="file"
           multiple
           accept=".mp3,.wav,audio/mpeg,audio/wav"
+          class="sr-only"
           @change="onFileSelect"
-          class="hidden"
         />
       </label>
 
-      <!-- Ordner auswählen -->
+      <!-- Ordner auswählen (Sekundär) -->
       <label
-        class="inline-flex items-center gap-2 cursor-pointer bg-white dark:bg-dark-lighter border-2 border-neutral dark:border-muted px-5 py-2.5 rounded-xl hover:border-accent dark:hover:border-accent transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+        class="inline-flex h-control-md cursor-pointer items-center gap-2 rounded-md border border-line-strong bg-surface-2 px-4 text-md font-medium text-ink transition-colors hover:bg-surface-3"
       >
         <svg
-          class="w-4 h-4 text-muted dark:text-neutral"
+          class="h-4 w-4 text-ink-2"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -239,27 +239,23 @@
             d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
           />
         </svg>
-        <span class="text-sm font-semibold text-muted dark:text-neutral">{{
-          t('uploader.selectFolderButton')
-        }}</span>
-        <input type="file" webkitdirectory multiple @change="onFolderSelect" class="hidden" />
+        <span>{{ t('uploader.selectFolderButton') }}</span>
+        <input type="file" webkitdirectory multiple class="sr-only" @change="onFolderSelect" />
       </label>
     </div>
 
     <!-- Paste-Hinweis -->
-    <div class="mt-5 flex items-center justify-center gap-1.5 text-xs text-muted dark:text-neutral">
+    <div class="mt-5 flex items-center justify-center gap-1.5 text-xs text-ink-3">
       <kbd
-        class="inline-flex items-center px-1.5 py-0.5 rounded border border-neutral dark:border-muted font-mono bg-neutral-light dark:bg-dark-lighter text-muted dark:text-neutral leading-tight"
+        class="inline-flex items-center rounded-sm border border-line-strong bg-surface-2 px-1.5 py-0.5 font-mono leading-tight text-ink-2"
         >Strg</kbd
       >
-      <span class="text-muted-light dark:text-neutral-dark">+</span>
+      <span>+</span>
       <kbd
-        class="inline-flex items-center px-1.5 py-0.5 rounded border border-neutral dark:border-muted font-mono bg-neutral-light dark:bg-dark-lighter text-muted dark:text-neutral leading-tight"
+        class="inline-flex items-center rounded-sm border border-line-strong bg-surface-2 px-1.5 py-0.5 font-mono leading-tight text-ink-2"
         >V</kbd
       >
-      <span class="ml-0.5 text-muted-light dark:text-neutral-dark">{{
-        t('uploader.pasteHint')
-      }}</span>
+      <span class="ml-0.5">{{ t('uploader.pasteHint') }}</span>
     </div>
   </div>
 </template>
