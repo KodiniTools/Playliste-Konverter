@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { usePlayerStore } from '../stores/player'
+import { usePlayerStore, normalizeVolume, DEFAULT_VOLUME } from '../stores/player'
 import { useConverterStore } from '../stores/converter'
 import { useToastStore } from '../stores/toast'
 import i18n from '../i18n'
@@ -26,12 +26,29 @@ class FakeAudio extends EventTarget {
     this.error = null
     this.currentTime = 0
     this.duration = NaN
-    this.volume = 1
+    this._volume = 1
     this.preload = ''
     this.attrs = {}
     this.playCalls = 0
     this.pending = null
     FakeAudio.instances.push(this)
+  }
+
+  // Wie im Browser: Werte außerhalb 0-1 werfen IndexSizeError
+  set volume(value) {
+    if (!(value >= 0 && value <= 1)) {
+      throw Object.assign(
+        new Error(`The volume provided (${value}) is outside the range [0, 1].`),
+        {
+          name: 'IndexSizeError',
+        },
+      )
+    }
+    this._volume = value
+  }
+
+  get volume() {
+    return this._volume
   }
 
   set src(value) {
@@ -268,5 +285,58 @@ describe('Player-Store', () => {
     await flush()
     expect(player.currentId).toBe(1)
     expect(player.isPlaying).toBe(true)
+  })
+
+  it.each(['80', '1.05', '-1', 'laut', '{}'])(
+    'fremder playerVolume-Wert %s (anderes Tool, gleiche Domain) blockiert die Wiedergabe nicht',
+    async (stored) => {
+      localStorage.setItem('playerVolume', stored)
+      const { converter, player } = setup()
+      expect(player.volume).toBe(DEFAULT_VOLUME)
+      expect(() => player.toggle(converter.files[0])).not.toThrow()
+      await flush()
+      expect(player.currentId).toBe(1)
+      expect(player.isPlaying).toBe(true)
+      expect(FakeAudio.instances[0].volume).toBe(DEFAULT_VOLUME)
+    },
+  )
+
+  it('Sticky-Player-Play funktioniert auch mit fremdem Lautstärkewert', async () => {
+    localStorage.setItem('playerVolume', '80')
+    const { player } = setup()
+    player.togglePlayPause()
+    await flush()
+    expect(player.currentId).toBe(1)
+    expect(player.isPlaying).toBe(true)
+  })
+
+  it('speichert die Lautstärke unter eigenem Schlüssel und begrenzt sie auf 0-1', async () => {
+    const { converter, player } = setup()
+    player.toggle(converter.files[0])
+    await flush()
+    player.setVolume(0.4)
+    expect(localStorage.getItem('playlistkonverter.playerVolume')).toBe('0.4')
+    expect(FakeAudio.instances[0].volume).toBe(0.4)
+    player.setVolume(5)
+    expect(player.volume).toBe(0.4)
+    expect(FakeAudio.instances[0].volume).toBe(0.4)
+  })
+
+  it('eigener Schlüssel hat Vorrang; stumm (0) bleibt erhalten', () => {
+    localStorage.setItem('playerVolume', '80')
+    localStorage.setItem('playlistkonverter.playerVolume', '0')
+    const { player } = setup()
+    expect(player.volume).toBe(0)
+  })
+})
+
+describe('normalizeVolume', () => {
+  it('lässt 0-1 durch und ersetzt alles andere', () => {
+    expect(normalizeVolume('0')).toBe(0)
+    expect(normalizeVolume('1')).toBe(1)
+    expect(normalizeVolume(0.25)).toBe(0.25)
+    expect(normalizeVolume('80')).toBe(DEFAULT_VOLUME)
+    expect(normalizeVolume(null)).toBe(DEFAULT_VOLUME)
+    expect(normalizeVolume(NaN, 0.3)).toBe(0.3)
   })
 })

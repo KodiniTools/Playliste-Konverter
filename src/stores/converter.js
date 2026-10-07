@@ -5,6 +5,7 @@ import { MAX_PLAYLIST_SIZE, OUTPUT_FORMATS, AVAILABLE_BITRATES } from '../consta
 import { uploadFiles, startConversion, fetchStatus, getDownloadUrl } from '../api/converter'
 import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
+import { readPref, writePref } from '../utils/storage'
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
@@ -15,10 +16,8 @@ export const useConverterStore = defineStore('converter', () => {
   const downloadUrl = ref(null)
   const errorMessage = ref(null)
   const outputFileSize = ref(null) // Größe der konvertierten Datei
-  const outputFormat = ref(normalizeFormat(localStorage.getItem('outputFormat'))) // Standard: MP3
-  const bitrate = ref(
-    normalizeBitrate(parseInt(localStorage.getItem('bitrate'), 10), outputFormat.value),
-  ) // Standard: 192 kbps
+  const outputFormat = ref(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
+  const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate'), 10), outputFormat.value)) // Standard: 192 kbps
 
   // Für Abbrechen-Funktion
   let abortController = null
@@ -132,7 +131,7 @@ export const useConverterStore = defineStore('converter', () => {
   function setOutputFormat(format) {
     if (OUTPUT_FORMATS[format]) {
       outputFormat.value = format
-      localStorage.setItem('outputFormat', format)
+      writePref('outputFormat', format)
       // Bitrate anpassen falls über Maximum des neuen Formats
       const maxBitrate = OUTPUT_FORMATS[format].maxBitrate || 320
       if (bitrate.value > maxBitrate) {
@@ -148,7 +147,7 @@ export const useConverterStore = defineStore('converter', () => {
       const maxBitrate = currentFormatConfig.value.maxBitrate || 320
       const finalBitrate = Math.min(value, maxBitrate)
       bitrate.value = finalBitrate
-      localStorage.setItem('bitrate', finalBitrate.toString())
+      writePref('bitrate', finalBitrate)
     }
   }
 
