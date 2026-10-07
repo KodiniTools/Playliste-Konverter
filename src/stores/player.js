@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useConverterStore } from './converter'
 import { useToastStore } from './toast'
 import i18n from '../i18n'
+import { readPref, writePref } from '../utils/storage'
 
 /**
  * Zentraler Audio-Player-Store.
@@ -28,8 +29,9 @@ export const usePlayerStore = defineStore('player', () => {
   const progress = ref(0) // aktuelle Position in Sekunden
   const duration = ref(0) // Gesamtlänge in Sekunden
 
-  // Lautstärke (0-1), persistiert
-  const volume = ref(parseFloat(localStorage.getItem('playerVolume')) || 0.7)
+  // Lautstärke (0-1), unter eigenem Schlüssel persistiert und immer geprüft:
+  // ein Wert außerhalb 0-1 lässt das Setzen am Audio-Element werfen (IndexSizeError)
+  const volume = ref(normalizeVolume(readPref('playerVolume')))
 
   // Nicht-reaktives Audio-Element (einmal erzeugt) + Object-URL-Cache
   let audioElement = null
@@ -220,9 +222,10 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function setVolume(value) {
-    volume.value = value
-    localStorage.setItem('playerVolume', String(value))
-    if (audioElement) audioElement.volume = value
+    const safe = normalizeVolume(value, volume.value)
+    volume.value = safe
+    writePref('playerVolume', safe)
+    if (audioElement) audioElement.volume = safe
   }
 
   /** Wechselt zum nächsten Track. Gibt false zurück, wenn keiner folgt. */
@@ -282,3 +285,14 @@ export const usePlayerStore = defineStore('player', () => {
     previous,
   }
 })
+
+export const DEFAULT_VOLUME = 0.7
+
+/**
+ * Lautstärke auf den gültigen Bereich 0-1 bringen. Ungültige oder fremde Werte
+ * (z. B. 80 aus einem anderen Tool) → Fallback; 0 (stumm) bleibt erhalten.
+ */
+export function normalizeVolume(value, fallback = DEFAULT_VOLUME) {
+  const n = typeof value === 'number' ? value : parseFloat(value)
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : fallback
+}
