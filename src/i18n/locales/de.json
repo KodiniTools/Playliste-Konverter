@@ -24,6 +24,16 @@
     "title": "Audioqualität",
     "hint": "Höhere Bitrate = bessere Qualität, größere Datei"
   },
+  "preset": {
+    "title": "Voreinstellung",
+    "speech": "Sprache",
+    "speechHint": "MP3 · 64 kbps · Mono",
+    "music": "Musik",
+    "musicHint": "MP3 · 192 kbps · Stereo",
+    "archive": "Archiv",
+    "archiveHint": "MP3 · 320 kbps · Stereo",
+    "mono": "Mono (ein Kanal, z. B. für Sprache)"
+  },
   "uploader": {
     "dropText": "Audio-Dateien hier ablegen (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "oder",
@@ -141,8 +151,8 @@
     "message": "Ihre Playlist ist sehr groß. Upload und Konvertierung können eine Weile dauern. Bitte haben Sie Geduld."
   },
   "sharedFiles": {
-    "loading": "{count} normalisierte Datei(en) werden geladen …",
-    "loaded": "{count} normalisierte Datei(en) erfolgreich geladen.",
+    "loading": "{n} geteilte Datei wird geladen … | {n} geteilte Dateien werden geladen …",
+    "loaded": "{n} geteilte Datei übernommen. | {n} geteilte Dateien übernommen.",
     "empty": "Keine gemeinsam genutzten Dateien gefunden.",
     "error": "Fehler beim Laden der gemeinsam genutzten Dateien."
   }

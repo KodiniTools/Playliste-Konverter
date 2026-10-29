@@ -74,8 +74,11 @@ function buildDecoderArgs(inputFile, sampleRate) {
   ]
 }
 
-/** ffmpeg-Argumente: PCM von stdin → Ausgabedatei im Zielformat. */
-function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile }) {
+/**
+ * ffmpeg-Argumente: PCM von stdin → Ausgabedatei im Zielformat.
+ * outputChannels 1 mischt das Stereo-PCM zu Mono herunter (N11).
+ */
+function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile, outputChannels = CHANNELS }) {
   return [
     '-hide_banner',
     '-f',
@@ -86,6 +89,8 @@ function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile }) {
     String(CHANNELS),
     '-i',
     'pipe:0',
+    '-ac',
+    String(outputChannels),
     '-c:a',
     codec,
     '-b:a',

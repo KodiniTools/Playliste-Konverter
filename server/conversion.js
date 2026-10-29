@@ -111,7 +111,13 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   )
   const encoder = spawn(
     FFMPEG,
-    buildEncoderArgs({ codec: fmt.codec, bitrate: session.bitrate, sampleRate, outputFile }),
+    buildEncoderArgs({
+      codec: fmt.codec,
+      bitrate: session.bitrate,
+      sampleRate,
+      outputFile,
+      outputChannels: session.channels === 1 ? 1 : 2,
+    }),
   )
   session.proc = encoder
   let stderrTail = ''
@@ -196,7 +202,10 @@ async function runConversion(session) {
     session.status = 'converting'
     session.progress = Math.max(session.progress || 0, 1)
 
-    const streamCopy = canStreamCopy(probes, fmt.streamCopyCodec)
+    // Mono gewünscht: Kopieren nur, wenn die Eingaben schon Mono sind
+    const streamCopy =
+      canStreamCopy(probes, fmt.streamCopyCodec) &&
+      (session.channels !== 1 || probes.every((p) => p.channels === 1))
     session.mode = streamCopy ? 'copy' : 'reencode'
     const result = streamCopy
       ? await runStreamCopy(session, dir, inputFiles, outputFile)

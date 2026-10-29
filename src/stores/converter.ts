@@ -7,7 +7,10 @@ import {
   AVAILABLE_BITRATES,
   isOutputFormat,
   isAcceptedAudioFile,
+  QUALITY_PRESETS,
+  type ChannelCount,
   type OutputFormatId,
+  type QualityPreset,
 } from '../constants'
 import {
   uploadFiles,
@@ -53,6 +56,7 @@ export const useConverterStore = defineStore('converter', () => {
   const outputFileSize = ref<number | null>(null) // Größe der konvertierten Datei
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
+  const channels = ref<ChannelCount>(normalizeChannels(readPref('channels'))) // Standard: Stereo
 
   // Fortlaufende Track-IDs: eindeutig auch bei mehreren Hinzufügungen in derselben Millisekunde
   let nextTrackId = 1
@@ -241,6 +245,31 @@ export const useConverterStore = defineStore('converter', () => {
     }
   }
 
+  function setChannels(value: ChannelCount) {
+    channels.value = normalizeChannels(value)
+    writePref('channels', channels.value)
+  }
+
+  /** Preset anwenden: Format, Bitrate und Kanäle auf einmal (N11). */
+  function applyPreset(id: QualityPreset['id']) {
+    const preset = QUALITY_PRESETS.find((p) => p.id === id)
+    if (!preset) return
+    setOutputFormat(preset.format)
+    setBitrate(preset.bitrate)
+    setChannels(preset.channels)
+  }
+
+  /** Preset, das zu den aktuellen Einstellungen passt, sonst null („Eigene“). */
+  const activePreset = computed(
+    () =>
+      QUALITY_PRESETS.find(
+        (p) =>
+          p.format === outputFormat.value &&
+          p.bitrate === bitrate.value &&
+          p.channels === channels.value,
+      )?.id ?? null,
+  )
+
   const currentFormatConfig = computed(() => {
     return OUTPUT_FORMATS[outputFormat.value] || OUTPUT_FORMATS.mp3
   })
@@ -350,9 +379,11 @@ export const useConverterStore = defineStore('converter', () => {
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
-      await startConversion(id, outputFormat.value, bitrate.value, {
-        signal: abortController.signal,
-      })
+      await startConversion(
+        id,
+        { format: outputFormat.value, bitrate: bitrate.value, channels: channels.value },
+        { signal: abortController.signal },
+      )
 
       // Poll status
       pollStatus(id)
@@ -547,12 +578,21 @@ export const useConverterStore = defineStore('converter', () => {
     duplicateIds,
     setOutputFormat,
     setBitrate,
+    channels,
+    setChannels,
+    applyPreset,
+    activePreset,
     convert,
     cancel,
     resetJob,
     reset,
   }
 })
+
+/** Gespeicherte Kanalzahl: nur 1 (Mono) gilt, alles andere → Stereo. */
+export function normalizeChannels(value: unknown): ChannelCount {
+  return value === 1 || value === '1' ? 1 : 2
+}
 
 /** Unbekanntes oder fehlendes Format aus dem Speicher → MP3. */
 export function normalizeFormat(format: unknown): OutputFormatId {

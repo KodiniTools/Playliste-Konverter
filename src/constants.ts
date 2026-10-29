@@ -19,6 +19,16 @@ export const SIZE_THRESHOLD_ORANGE = 4 * 1024 * 1024 * 1024 // 4 GB
 // Unterstützte Ausgabeformate
 // Ultimativer Musikplayer (gleiche Domain) – liest die Playlist aus der
 // gemeinsamen IndexedDB, wenn er mit ?source=playlistkonverter geöffnet wird.
+/**
+ * KodiniTools-Apps, deren Dateien die App über die gemeinsame IndexedDB
+ * übernimmt, wenn sie mit ?source=<id> geöffnet wird (N8).
+ */
+export const SHARED_SOURCES = ['audionormalizer', 'audiokonverter'] as const
+
+export function isSharedSource(value: unknown): value is (typeof SHARED_SOURCES)[number] {
+  return typeof value === 'string' && (SHARED_SOURCES as readonly string[]).includes(value)
+}
+
 export const MUSIC_PLAYER_SHARE_URL = '/ultimativer-musikplayer/app/?source=playlistkonverter'
 
 export interface OutputFormatConfig {
@@ -73,6 +83,23 @@ export const AVAILABLE_BITRATES: readonly BitrateOption[] = [
   { value: 192, label: '192 kbps', description: 'Hoch' },
   { value: 256, label: '256 kbps', description: 'Sehr hoch' },
   { value: 320, label: '320 kbps', description: 'Maximum' },
+]
+
+/** Kanäle der Ausgabe: 2 = Stereo (Standard), 1 = Mono. */
+export type ChannelCount = 1 | 2
+
+/** Voreinstellungen für Laien (N11): setzen Format, Bitrate und Kanäle auf einmal. */
+export interface QualityPreset {
+  id: 'speech' | 'music' | 'archive'
+  format: OutputFormatId
+  bitrate: number
+  channels: ChannelCount
+}
+
+export const QUALITY_PRESETS: readonly QualityPreset[] = [
+  { id: 'speech', format: 'mp3', bitrate: 64, channels: 1 },
+  { id: 'music', format: 'mp3', bitrate: 192, channels: 2 },
+  { id: 'archive', format: 'mp3', bitrate: 320, channels: 2 },
 ]
 
 // Akzeptierte Eingaben. Entscheidend ist wie beim Server (server/app.js) die
