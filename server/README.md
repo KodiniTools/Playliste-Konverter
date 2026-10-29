@@ -29,15 +29,15 @@ Test `test/convert.test.js`).
 
 ## API (identisch zum bisherigen Vertrag)
 
-| Methode | Pfad (hinter nginx)                     | Zweck |
-|---------|------------------------------------------|-------|
-| POST    | `/playlistkonverter/api/upload`          | Eine Datei pro Request (`files[]`), Session-basiert |
-| POST    | `/playlistkonverter/api/convert`         | Startet die Konvertierung (`session_id`, `format`, `bitrate`) |
-| GET     | `/playlistkonverter/api/status/<id>`     | `{ status, progress, file_size?, error? }` |
-| GET     | `/playlistkonverter/api/download/<id>`   | Liefert die fertige Datei, räumt danach auf |
-| GET     | `/playlistkonverter/api/events/<id>`     | Server-Sent Events mit denselben Daten wie `status` (bei Änderung), Ende nach done/error, `gone` nach Abbruch |
-| POST    | `/playlistkonverter/api/cancel/<id>`     | Bricht ab: beendet ffmpeg, gibt Slot und Dateien frei (204; späterer Upload zur Session → 410) |
-| GET     | `/playlistkonverter/health`              | Health-Check |
+| Methode | Pfad (hinter nginx)                    | Zweck                                                                                                         |
+| ------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| POST    | `/playlistkonverter/api/upload`        | Eine Datei pro Request (`files[]`), Session-basiert                                                           |
+| POST    | `/playlistkonverter/api/convert`       | Startet die Konvertierung (`session_id`, `format`, `bitrate`)                                                 |
+| GET     | `/playlistkonverter/api/status/<id>`   | `{ status, progress, file_size?, error? }`                                                                    |
+| GET     | `/playlistkonverter/api/download/<id>` | Liefert die fertige Datei, räumt danach auf                                                                   |
+| GET     | `/playlistkonverter/api/events/<id>`   | Server-Sent Events mit denselben Daten wie `status` (bei Änderung), Ende nach done/error, `gone` nach Abbruch |
+| POST    | `/playlistkonverter/api/cancel/<id>`   | Bricht ab: beendet ffmpeg, gibt Slot und Dateien frei (204; späterer Upload zur Session → 410)                |
+| GET     | `/playlistkonverter/health`            | Health-Check                                                                                                  |
 
 Da die Pfade unverändert sind, **muss das Frontend nicht angepasst werden** –
 nur nginx leitet `/playlistkonverter/api/` jetzt an den Node-Dienst statt an
@@ -45,17 +45,17 @@ PHP-FPM weiter.
 
 ## Aufbau
 
-| Datei | Aufgabe |
-|-------|---------|
-| `server.js` | Einstieg: Temp-Ordner, periodischer Cleanup, `listen` |
-| `app.js` | Express-Routen und Fehlerbehandlung |
-| `config.js` | Umgebungsvariablen, Formate, Bitraten |
-| `sessions.js` | In-Memory-Sessions, Sitzungsordner, Datei-Helfer |
-| `conversion.js` | ffmpeg-Pipeline (Stream-Copy oder Neukodierung), Fehler-Logging |
-| `queue.js` | Warteschlange, max. `MAX_CONCURRENT` parallele Konvertierungen |
-| `lifecycle.js` | Abbruch, Aufräumen nach Download und nach 1 Stunde |
-| `health.js` | `/health`: `status` ok/degraded, `checks.ffmpeg`, `checks.storage` |
-| `audio.js`, `limits.js` | Reine Helfer (ffmpeg-Argumente, Größen) |
+| Datei                   | Aufgabe                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `server.js`             | Einstieg: Temp-Ordner, periodischer Cleanup, `listen`              |
+| `app.js`                | Express-Routen und Fehlerbehandlung                                |
+| `config.js`             | Umgebungsvariablen, Formate, Bitraten                              |
+| `sessions.js`           | In-Memory-Sessions, Sitzungsordner, Datei-Helfer                   |
+| `conversion.js`         | ffmpeg-Pipeline (Stream-Copy oder Neukodierung), Fehler-Logging    |
+| `queue.js`              | Warteschlange, max. `MAX_CONCURRENT` parallele Konvertierungen     |
+| `lifecycle.js`          | Abbruch, Aufräumen nach Download und nach 1 Stunde                 |
+| `health.js`             | `/health`: `status` ok/degraded, `checks.ffmpeg`, `checks.storage` |
+| `audio.js`, `limits.js` | Reine Helfer (ffmpeg-Argumente, Größen)                            |
 
 Fehlgeschlagene Konvertierungen stehen mit Session-ID und dem Ende der
 ffmpeg-Ausgabe im Log (`pm2 logs playlistkonverter-server`), die ffmpeg-Version
@@ -90,16 +90,16 @@ nginx -t && systemctl reload nginx
 
 ## Konfiguration (Umgebungsvariablen)
 
-| Variable         | Standard          | Bedeutung |
-|------------------|-------------------|-----------|
-| `PORT`           | `9016`            | Listen-Port (nur `127.0.0.1`) |
-| `TEMP_DIR`       | `<server>/temp`   | Verzeichnis für Sessions/Uploads |
-| `MAX_CONCURRENT` | `3`               | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder) |
-| `MAX_PLAYLIST_SIZE` | `5G`           | Gesamtgröße pro Sitzung (413 darüber) |
-| `MAX_FILE_SIZE`  | `500M`            | Größe pro Datei (413 darüber) |
-| `MIN_FREE_SPACE` | `20G`             | Platzreserve auf der Temp-Partition (507 darunter) |
-| `FFMPEG_PATH`    | `ffmpeg`          | Pfad zur ffmpeg-Binary |
-| `FFPROBE_PATH`   | `ffprobe`         | Pfad zur ffprobe-Binary |
+| Variable            | Standard        | Bedeutung                                                           |
+| ------------------- | --------------- | ------------------------------------------------------------------- |
+| `PORT`              | `9016`          | Listen-Port (nur `127.0.0.1`)                                       |
+| `TEMP_DIR`          | `<server>/temp` | Verzeichnis für Sessions/Uploads                                    |
+| `MAX_CONCURRENT`    | `3`             | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder) |
+| `MAX_PLAYLIST_SIZE` | `5G`            | Gesamtgröße pro Sitzung (413 darüber)                               |
+| `MAX_FILE_SIZE`     | `500M`          | Größe pro Datei (413 darüber)                                       |
+| `MIN_FREE_SPACE`    | `20G`           | Platzreserve auf der Temp-Partition (507 darunter)                  |
+| `FFMPEG_PATH`       | `ffmpeg`        | Pfad zur ffmpeg-Binary                                              |
+| `FFPROBE_PATH`      | `ffprobe`       | Pfad zur ffprobe-Binary                                             |
 
 ## Hinweise
 

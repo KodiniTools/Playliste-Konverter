@@ -7,6 +7,7 @@
   import { OUTPUT_FORMATS, SHARE_TARGETS } from '../constants'
   import type { ShareTarget } from '../constants'
   import { replaceSharedFiles } from '../utils/sharedFileRepository'
+  import { buildCueSheet, buildTracklistText } from '../utils/tracklist'
   import { errorName } from '../utils/errors'
   import StatusIcon from './StatusIcon.vue'
   import { logger } from '../utils/logger'
@@ -141,6 +142,28 @@
     }
   }
 
+  /** Tracklist (N2) als Datei speichern: Text mit Startzeiten oder CUE-Sheet. */
+  function downloadTracklist(kind: 'txt' | 'cue') {
+    const fileName = store.outputFileName
+    const baseName = fileName.replace(/\.[^.]+$/, '')
+    const content =
+      kind === 'txt'
+        ? buildTracklistText(store.chapters)
+        : buildCueSheet(store.chapters, {
+            fileName,
+            title: store.tags.title.trim() || baseName,
+            performer: store.tags.artist.trim() || undefined,
+          })
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${baseName}.${kind}`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   /** Ziel, an das gerade übergeben wird (sperrt beide Buttons). */
   const sharingId = ref<ShareTarget['id'] | null>(null)
 
@@ -214,6 +237,26 @@
         {{ sharingId === target.id ? t('download.sharing') : t(target.labelKey) }}
       </button>
     </div>
+
+    <p v-if="store.chapters.length > 1" class="mt-4 text-sm text-ink-2" data-testid="tracklist">
+      {{ t('download.tracklist', { n: store.chapters.length }) }}
+      <button
+        type="button"
+        class="rounded-sm px-1 font-medium text-link hover:underline"
+        data-tracklist="txt"
+        @click="downloadTracklist('txt')"
+      >
+        {{ t('download.tracklistText') }}</button
+      ><span aria-hidden="true">·</span
+      ><button
+        type="button"
+        class="rounded-sm px-1 font-medium text-link hover:underline"
+        data-tracklist="cue"
+        @click="downloadTracklist('cue')"
+      >
+        {{ t('download.tracklistCue') }}
+      </button>
+    </p>
 
     <button
       type="button"

@@ -27,6 +27,7 @@ import {
   subscribeStatus,
   uploadCover,
   type TrackTrim,
+  type Chapter,
   type ConversionStatus,
   type OutputTags,
 } from '../api/converter'
@@ -66,6 +67,7 @@ export const useConverterStore = defineStore('converter', () => {
   const downloadUrl = ref<string | null>(null)
   const errorMessage = ref<string | null>(null)
   const outputFileSize = ref<number | null>(null) // Größe der konvertierten Datei
+  const chapters = ref<Chapter[]>([]) // Kapitel der fertigen Playlist (N2)
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
   const channels = ref<ChannelCount>(normalizeChannels(readPref('channels'))) // Standard: Stereo
@@ -478,6 +480,7 @@ export const useConverterStore = defineStore('converter', () => {
           loudnorm: loudnorm.value,
           tracks: files.value.map(trimOf),
           trim_silence: trimSilence.value,
+          titles: files.value.map((f) => f.name),
         },
         { signal: abortController.signal },
       )
@@ -515,6 +518,7 @@ export const useConverterStore = defineStore('converter', () => {
       status.value = 'done'
       downloadUrl.value = getDownloadUrl(id)
       outputFileSize.value = data.file_size || null
+      chapters.value = Array.isArray(data.chapters) ? data.chapters : []
       toastStore.success(t('toast.done'))
       return true
     }
@@ -624,6 +628,7 @@ export const useConverterStore = defineStore('converter', () => {
     downloadUrl.value = null
     errorMessage.value = null
     outputFileSize.value = null
+    chapters.value = []
     isCancelling.value = false
     uploadStartTime.value = null
     uploadSpeed.value = 0
@@ -657,6 +662,7 @@ export const useConverterStore = defineStore('converter', () => {
     downloadUrl,
     errorMessage,
     outputFileSize,
+    chapters,
     outputFormat,
     bitrate,
     currentFormatConfig,

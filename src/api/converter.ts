@@ -16,6 +16,15 @@ export interface ConversionStatus {
   /** Name der Datei bei FILE_UNREADABLE */
   error_file?: string
   queue_position?: number
+  /** Kapitel je Track, nur bei status done (N2) */
+  chapters?: Chapter[]
+}
+
+/** Kapitel der fertigen Playlist in Sekunden (N2). */
+export interface Chapter {
+  title: string
+  start: number
+  end: number
 }
 
 export interface UploadProgress {
@@ -124,6 +133,8 @@ export interface ConversionOptions {
   tracks?: (TrackTrim | null)[]
   /** Stille am Anfang und Ende jedes Tracks entfernen (N9) */
   trim_silence?: boolean
+  /** Originalnamen der Tracks in Upload-Reihenfolge, für die Kapitel (N2) */
+  titles?: string[]
 }
 
 /** Zugeschnittener Bereich eines Tracks in Sekunden; end null = bis zum Ende. */

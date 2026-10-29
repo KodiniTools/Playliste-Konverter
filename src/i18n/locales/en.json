@@ -152,7 +152,10 @@
     "sharing": "Sending …",
     "shareError": "Could not send the playlist to the {tool}. Please download the file or convert again.",
     "toolPlayer": "music player",
-    "toolNormalizer": "Audio Normalizer"
+    "toolNormalizer": "Audio Normalizer",
+    "tracklist": "{n} chapters embedded. Track list:",
+    "tracklistText": "Text (.txt)",
+    "tracklistCue": "CUE sheet (.cue)"
   },
   "button": {
     "convert": "Convert track(s)"

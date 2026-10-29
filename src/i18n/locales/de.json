@@ -152,7 +152,10 @@
     "sharing": "Wird übergeben …",
     "shareError": "Weitergabe an den {tool} fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren.",
     "toolPlayer": "Musikplayer",
-    "toolNormalizer": "Audio-Normalisierer"
+    "toolNormalizer": "Audio-Normalisierer",
+    "tracklist": "{n} Kapitel eingebettet. Tracklist:",
+    "tracklistText": "Text (.txt)",
+    "tracklistCue": "CUE-Sheet (.cue)"
   },
   "button": {
     "convert": "Track(s) konvertieren"

@@ -56,6 +56,7 @@ const {
 } = require('./metadata')
 const { sanitizeTransition } = require('./transitions')
 const { sanitizeTracks } = require('./trim')
+const { sanitizeTitles } = require('./chapters')
 
 const app = express()
 app.use(express.json())
@@ -265,6 +266,8 @@ app.post('/api/convert', async (req, res) => {
     // Trimmen pro Track und Stille am Rand (N9)
     session.tracks = sanitizeTracks(body.tracks)
     session.trimSilence = body.trim_silence === true
+    // Originalnamen der Tracks für die Kapitel (N2)
+    session.titles = sanitizeTitles(body.titles)
     session.error = null
     session.errorCode = null
     session.errorFile = null
@@ -297,6 +300,8 @@ function statusPayload(session) {
   if (session.errorCode) payload.error_code = session.errorCode
   if (session.errorFile) payload.error_file = session.errorFile
   if (session.fileSize != null) payload.file_size = session.fileSize
+  // Kapitel erst mit dem fertigen Ergebnis (Tracklist in der App, N2)
+  if (session.status === 'done' && session.chapters) payload.chapters = session.chapters
   const queuePos = queuePosition(session.id)
   if (queuePos > 0) payload.queue_position = queuePos
   return payload

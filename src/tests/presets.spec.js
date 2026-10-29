@@ -69,6 +69,7 @@ describe('Presets im Store', () => {
         loudnorm: false,
         tracks: [null],
         trim_silence: false,
+        titles: ['a.mp3'],
       },
       expect.anything(),
     )

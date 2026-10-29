@@ -23,6 +23,7 @@ const {
 } = require('./audio')
 const { PcmJoiner, outputDuration } = require('./transitions')
 const { detectSilenceEdges, segmentFor, segmentLength, trackIndex } = require('./trim')
+const { chapterTitle, computeChapters, writeChaptersFile } = require('./chapters')
 
 /** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
@@ -69,7 +70,13 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
   const concatPath = await writeConcatFile(dir, inputFiles)
   const proc = spawn(
     FFMPEG,
-    buildCopyArgs({ concatPath, outputFile, tags: session.tags, coverPath: session.coverPath }),
+    buildCopyArgs({
+      concatPath,
+      outputFile,
+      tags: session.tags,
+      coverPath: session.coverPath,
+      chaptersPath: session.chaptersPath,
+    }),
   )
   session.proc = proc
   let stderrTail = ''
@@ -130,6 +137,7 @@ async function runReencode(session, inputFiles, probes, segments, fmt, outputFil
       tags: session.tags,
       // Cover trägt nur MP3 (ID3); bei WebM/OGG bleibt es weg
       coverPath: fmt.codec === 'libmp3lame' ? session.coverPath : null,
+      chaptersPath: session.chaptersPath,
     }),
   )
   session.proc = encoder
@@ -235,10 +243,19 @@ async function runConversion(session) {
     const probes = []
     for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
     const segments = await trackSegments(session, inputFiles, probes)
-    session.totalDuration = outputDuration(
-      probes.map((p, i) => segmentLength(p.duration, segments[i])),
+    const lengths = probes.map((p, i) => segmentLength(p.duration, segments[i]))
+    session.totalDuration = outputDuration(lengths, session.transition)
+    // Kapitel je Track (N2): in der Datei und für die Tracklist der App
+    session.chapters = computeChapters(
+      lengths,
+      inputFiles.map(
+        (file) => session.titles?.[trackIndex(file)] ?? chapterTitle(displayName(file)),
+      ),
       session.transition,
     )
+    session.chaptersPath = await writeChaptersFile(dir, session.chapters, {
+      vorbis: fmt.codec === 'libvorbis',
+    })
     // Während der Analyse abgebrochen: nichts mehr starten
     if (session.cancelled) return
 

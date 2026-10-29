@@ -621,3 +621,54 @@ test(
     assert.ok(Math.abs(duration(untouchedOut) - 8) < 0.2, `Dauer ${duration(untouchedOut)}`)
   },
 )
+
+function probeChapters(file) {
+  const r = spawnSync('ffprobe', ['-v', 'error', '-show_chapters', '-of', 'json', file])
+  return JSON.parse(r.stdout.toString()).chapters.map((c) => ({
+    title: c.tags?.title,
+    start: Math.round(parseFloat(c.start_time) * 10) / 10,
+  }))
+}
+
+test(
+  'N2: Kapitel je Track in MP3, OGG und WebM, Kapitel im Status',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-chap-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = ['Intro', 'Song; Teil 2'].map((name, i) =>
+      makeTrack(work, `${name}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+    const expected = [
+      { title: 'Intro', start: 0 },
+      { title: 'Song; Teil 2', start: 2 },
+    ]
+
+    // Der Upload speichert bereinigte Namen; die Titel kommen wie aus der App
+    const titles = ['Intro.mp3', 'Song; Teil 2.mp3']
+    // identische MP3s → Stream-Copy-Pfad
+    const copy = await convertViaServer(srv.base, files, 'mp3', 192, { titles })
+    assert.equal(copy.status.status, 'done', JSON.stringify(copy.status))
+    assert.deepEqual(
+      copy.status.chapters.map((c) => c.title),
+      ['Intro', 'Song; Teil 2'],
+    )
+    const copyOut = await download(srv.base, copy.sessionId, path.join(work, 'copy.mp3'))
+    assert.deepEqual(probeChapters(copyOut), expected)
+
+    for (const format of ['mp3', 'ogg', 'webm']) {
+      const res = await convertViaServer(srv.base, files, format, 128, {
+        transition: 'gap',
+        transition_seconds: 1,
+        titles,
+      })
+      assert.equal(res.status.status, 'done', JSON.stringify(res.status))
+      const out = await download(srv.base, res.sessionId, path.join(work, `c.${format}`))
+      assert.deepEqual(probeChapters(out), [expected[0], { ...expected[1], start: 3 }], format)
+    }
+  },
+)
