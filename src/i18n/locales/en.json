@@ -42,7 +42,10 @@
     "tracks": "Tracks",
     "totalSize": "Total size",
     "removeAll": "Remove all",
-    "remove": "Remove"
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "moved": "“{name}” is now at position {position} of {total}."
   },
   "toast": {
     "close": "Close",
