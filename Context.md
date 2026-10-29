@@ -395,6 +395,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 | `/api/convert` | POST | Konvertierung starten |
 | `/api/status/{session_id}` | GET | Fortschritt abfragen |
 | `/api/download/{session_id}` | GET | Konvertierte Datei herunterladen |
+| `/api/cancel/{session_id}` | POST | Abbrechen: ffmpeg beenden, Dateien und Slot freigeben (auch beim Schließen des Tabs per `sendBeacon`) |
 
 ### Upload-Ablauf
 

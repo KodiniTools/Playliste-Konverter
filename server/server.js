@@ -13,6 +13,7 @@
  *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate)
  *   GET  /api/status/:id     – { status, progress, file_size?, error? }
  *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
+ *   POST /api/cancel/:id     – bricht ab: ffmpeg beenden, Slot und Dateien freigeben
  *   GET  /health             – Health-Check für pm2/nginx
  *
  * Zusammenfügen: Stream-Copy nur bei identisch kodierten Eingaben, sonst jede
@@ -83,6 +84,12 @@ function sessionDirPath(sessionId) {
 
 /** In-Memory-Zustand aller bekannten Sessions. */
 const sessions = new Map()
+
+/**
+ * Abgebrochene Session-IDs (→ Zeitpunkt). Ein Upload, der beim Abbrechen noch
+ * unterwegs war, darf die Session nicht neu anlegen.
+ */
+const cancelledIds = new Map()
 
 function getSession(sessionId) {
   return sessions.get(sessionId)
@@ -249,6 +256,8 @@ async function runConversion(session) {
     const probes = []
     for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
     session.totalDuration = probes.reduce((sum, p) => sum + p.duration, 0)
+    // Während der Analyse abgebrochen: nichts mehr starten
+    if (session.cancelled) return
 
     session.status = 'converting'
     session.progress = Math.max(session.progress || 0, 1)
@@ -362,6 +371,10 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     if (sessionId !== undefined && !isValidSessionId(sessionId)) {
       await cleanupTmpUploads(files)
       return res.status(400).json({ error: 'Ungültige Session-ID' })
+    }
+    if (sessionId && cancelledIds.has(sessionId)) {
+      await cleanupTmpUploads(files)
+      return res.status(410).json({ error: 'Vorgang wurde abgebrochen', code: 'SESSION_CANCELLED' })
     }
     if (!sessionId) {
       sessionId = crypto.randomBytes(16).toString('hex')
@@ -557,6 +570,23 @@ app.get('/api/download/:id', (req, res) => {
   })
 })
 
+// --- Cancel ---------------------------------------------------------------
+/**
+ * Bricht eine Session ab: laufendes ffmpeg beenden (der Slot wird im finally von
+ * runConversion frei), Queue-Eintrag und Dateien entfernen. Idempotent und ohne
+ * Body, damit der Browser es auch per navigator.sendBeacon beim Schließen schickt.
+ */
+app.post('/api/cancel/:id', async (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID' })
+  }
+  // Nur bekannte Sessions merken, damit beliebige IDs die Liste nicht füllen
+  if (sessions.has(sessionId)) cancelledIds.set(sessionId, Date.now())
+  await removeSession(sessionId)
+  return res.status(204).end()
+})
+
 // --- Cleanup ---------------------------------------------------------------
 async function safeUnlink(p) {
   try {
@@ -590,6 +620,9 @@ async function removeSession(sessionId) {
 /** Periodischer Cleanup: alte Sessions (> 1 h) entfernen. */
 async function periodicCleanup() {
   const now = Date.now()
+  for (const [id, cancelledAt] of cancelledIds) {
+    if (now - cancelledAt > SESSION_MAX_AGE) cancelledIds.delete(id)
+  }
   for (const [id, session] of sessions) {
     if (now - session.createdAt > SESSION_MAX_AGE) {
       await removeSession(id)
