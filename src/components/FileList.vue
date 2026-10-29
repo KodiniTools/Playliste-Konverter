@@ -3,7 +3,8 @@
   import { usePlayerStore } from '../stores/player'
   import { nextTick, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { formatBytes } from '../utils/format'
+  import { formatBytes, formatDuration, formatTime } from '../utils/format'
+  import { SORT_MODES, type SortMode } from '../utils/playlistOrder'
 
   const store = useConverterStore()
   const player = usePlayerStore()
@@ -76,6 +77,25 @@
   function handleRemoveAll() {
     store.removeAllFiles()
   }
+
+  const SORT_LABEL_KEYS: Record<SortMode, string> = {
+    name: 'fileList.sortName',
+    trackNumber: 'fileList.sortTrackNumber',
+    reverse: 'fileList.sortReverse',
+    shuffle: 'fileList.sortShuffle',
+  }
+
+  function handleSort(mode: SortMode) {
+    store.sortFiles(mode)
+    moveAnnouncement.value = t('fileList.sorted', { mode: t(SORT_LABEL_KEYS[mode]) })
+  }
+
+  /** Gesamtdauer: „…“ solange Dauern fehlen, „≥“ wenn eine Datei unlesbar war. */
+  function totalDurationText(): string {
+    if (store.durationsPending) return t('fileList.durationPending')
+    const prefix = store.durationsIncomplete ? '≥ ' : ''
+    return prefix + formatDuration(store.totalDuration)
+  }
 </script>
 
 <template>
@@ -87,6 +107,8 @@
         </h3>
         <p class="mt-1 text-sm tabular-nums text-ink-2">
           {{ t('fileList.totalSize') }}: {{ formatBytes(store.totalSize) }}
+          <span aria-hidden="true">·</span>
+          {{ t('fileList.totalDuration') }}: {{ totalDurationText() }}
         </p>
       </div>
       <button
@@ -95,6 +117,25 @@
         @click="handleRemoveAll"
       >
         {{ t('fileList.removeAll') }}
+      </button>
+    </div>
+
+    <div
+      v-if="store.files.length > 1"
+      role="group"
+      :aria-label="t('fileList.sort')"
+      class="mb-3 flex flex-wrap items-center gap-1 text-sm"
+    >
+      <span class="mr-1 text-ink-3">{{ t('fileList.sort') }}:</span>
+      <button
+        v-for="mode in SORT_MODES"
+        :key="mode"
+        type="button"
+        :data-sort="mode"
+        class="rounded-sm border border-line bg-surface-2 px-2 py-0.5 font-medium text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink"
+        @click="handleSort(mode)"
+      >
+        {{ t(SORT_LABEL_KEYS[mode]) }}
       </button>
     </div>
 
@@ -159,7 +200,18 @@
           <p class="truncate text-md font-medium text-ink">
             {{ item.name }}
           </p>
-          <p class="text-xs tabular-nums text-ink-2">{{ formatBytes(item.size) }}</p>
+          <p class="text-xs tabular-nums text-ink-2">
+            {{ formatBytes(item.size) }}
+            <template v-if="typeof item.duration === 'number'">
+              <span aria-hidden="true">·</span> {{ formatTime(item.duration) }}
+            </template>
+            <span
+              v-if="store.duplicateIds.has(item.id)"
+              class="ml-1 font-medium text-warning"
+              :title="t('fileList.duplicateHint')"
+              >· {{ t('fileList.duplicate') }}</span
+            >
+          </p>
         </div>
 
         <!-- Reihenfolge ändern (Touch/Tastatur; Alt+↑/↓ auf dem Track) -->

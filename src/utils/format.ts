@@ -20,3 +20,16 @@ export function formatTime(seconds: number | null | undefined): string {
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
+
+/**
+ * Formatiert längere Dauern: ab einer Stunde h:mm:ss, sonst m:ss.
+ */
+export function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds || isNaN(seconds)) return '0:00'
+  const total = Math.round(seconds)
+  const hours = Math.floor(total / 3600)
+  if (hours === 0) return formatTime(total)
+  const mins = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}

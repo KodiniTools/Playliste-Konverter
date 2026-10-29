@@ -45,7 +45,17 @@
     "remove": "Entfernen",
     "moveUp": "Nach oben",
     "moveDown": "Nach unten",
-    "moved": "„{name}“ ist jetzt an Position {position} von {total}."
+    "moved": "„{name}“ ist jetzt an Position {position} von {total}.",
+    "totalDuration": "Gesamtdauer",
+    "durationPending": "wird ermittelt …",
+    "sort": "Sortieren",
+    "sortName": "A–Z",
+    "sortTrackNumber": "Tracknummer",
+    "sortReverse": "Umkehren",
+    "sortShuffle": "Zufall",
+    "sorted": "Playlist sortiert: {mode}.",
+    "duplicate": "Duplikat",
+    "duplicateHint": "Diese Datei ist bereits in der Playlist (gleicher Name und gleiche Größe)."
   },
   "toast": {
     "close": "Schließen",
@@ -56,7 +66,8 @@
     "cancelling": "Vorgang wird abgebrochen …",
     "cancelled": "Vorgang abgebrochen",
     "done": "Konvertierung abgeschlossen!",
-    "connectionLost": "Verbindung zum Server verloren"
+    "connectionLost": "Verbindung zum Server verloren",
+    "duplicates": "{n} Datei ist bereits in der Playlist | {n} Dateien sind bereits in der Playlist"
   },
   "preview": {
     "play": "Track abspielen",
