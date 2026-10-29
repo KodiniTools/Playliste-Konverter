@@ -139,7 +139,8 @@
     "progress": "Fortschritt",
     "remaining": "Verbleibend",
     "cancel": "Abbrechen",
-    "cancelling": "Wird abgebrochen..."
+    "cancelling": "Wird abgebrochen...",
+    "retrying": "Verbindung unterbrochen, neuer Versuch {attempt} von {max} …"
   },
   "download": {
     "title": "Konvertierung abgeschlossen!",
@@ -175,7 +176,10 @@
     "sessionExpired": "Die Sitzung ist abgelaufen. Bitte die Konvertierung neu starten.",
     "alreadyConverting": "Diese Playlist wird bereits konvertiert.",
     "internal": "Interner Serverfehler. Bitte später erneut versuchen.",
-    "invalidCover": "Das Cover muss ein JPEG- oder PNG-Bild bis 5 MB sein."
+    "invalidCover": "Das Cover muss ein JPEG- oder PNG-Bild bis 5 MB sein.",
+    "uploadInterrupted": "Der Upload wurde unterbrochen. Bereits übertragene Dateien bleiben eine Stunde auf dem Server, du kannst den Upload fortsetzen.",
+    "resume": "Upload fortsetzen",
+    "resumeExpired": "Der unterbrochene Upload ist auf dem Server nicht mehr vorhanden. Bitte die Konvertierung neu starten."
   },
   "sizeWarning": {
     "title": "Playlist zu groß!",

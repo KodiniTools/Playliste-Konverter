@@ -165,3 +165,50 @@ test('N1: FLAC, M4A, AAC, OGG und OPUS werden angenommen (auch in Großbuchstabe
   const stored = listFiles(srv.tempDir).map((f) => path.basename(f))
   assert.equal(stored.filter((f) => /^\d{4}_/.test(f)).length, names.length)
 })
+
+test('N10: wiederholter Upload derselben Position ersetzt die Datei statt sie zu verdoppeln', async (t) => {
+  const srv = await startServer({ MAX_PLAYLIST_SIZE: '3M', MIN_FREE_SPACE: '0' })
+  t.after(() => srv.stop())
+
+  const first = await upload(srv.base, { bytes: 2 * MiB, index: 0, name: 'a.wav' })
+  const { session_id: sessionId } = await first.json()
+  // Antwort „verloren“: dieselbe Datei noch einmal – zählt nicht doppelt gegen das Limit
+  const again = await upload(srv.base, { bytes: 2 * MiB, sessionId, index: 0, name: 'a.wav' })
+  assert.equal(again.status, 200)
+  assert.equal((await again.json()).file_count, 1)
+  const next = await upload(srv.base, { bytes: MiB, sessionId, index: 1, name: 'b.wav' })
+  assert.equal(next.status, 200)
+  assert.equal((await next.json()).file_count, 2)
+
+  // anderer Name an derselben Position: alte Datei wird entfernt
+  await upload(srv.base, { bytes: 10, sessionId, index: 1, name: 'c.wav' })
+  const names = listFiles(srv.tempDir)
+    .map((f) => path.basename(f))
+    .sort()
+  assert.deepEqual(names, ['0000_a.wav', '0001_c.wav'])
+})
+
+test('N10: GET /api/upload/:id meldet die angekommenen Positionen', async (t) => {
+  const srv = await startServer({ MIN_FREE_SPACE: '0' })
+  t.after(() => srv.stop())
+
+  const first = await upload(srv.base, { bytes: 10, index: 0 })
+  const { session_id: sessionId } = await first.json()
+  await upload(srv.base, { bytes: 10, sessionId, index: 2 })
+
+  const res = await fetch(`${srv.base}/api/upload/${sessionId}`)
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), {
+    session_id: sessionId,
+    status: 'uploading',
+    received: [0, 2],
+  })
+
+  assert.equal((await fetch(`${srv.base}/api/upload/${'0'.repeat(32)}`)).status, 404)
+  assert.equal((await fetch(`${srv.base}/api/upload/nicht-gueltig`)).status, 400)
+
+  await fetch(`${srv.base}/api/cancel/${sessionId}`, { method: 'POST' })
+  const gone = await fetch(`${srv.base}/api/upload/${sessionId}`)
+  assert.equal(gone.status, 410)
+  assert.equal((await gone.json()).code, 'SESSION_CANCELLED')
+})

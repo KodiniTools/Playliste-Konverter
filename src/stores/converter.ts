@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToastStore } from './toast'
 import {
   MAX_PLAYLIST_SIZE,
@@ -28,6 +28,8 @@ import {
   uploadCover,
   type TrackTrim,
   type Chapter,
+  type UploadRetryInfo,
+  fetchReceived,
   type ConversionStatus,
   type OutputTags,
 } from '../api/converter'
@@ -37,7 +39,7 @@ import { duplicateKey, sortItems, type SortMode } from '../utils/playlistOrder'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
 import { logger } from '../utils/logger'
-import { isAbortError, isNetworkError } from '../utils/errors'
+import { httpStatusOf, isAbortError, isNetworkError, isRetryableUploadError } from '../utils/errors'
 
 /** Ein Track der Playlist. */
 export interface PlaylistItem {
@@ -104,6 +106,10 @@ export const useConverterStore = defineStore('converter', () => {
   const uploadStartTime = ref<number | null>(null)
   const uploadSpeed = ref(0) // Bytes pro Sekunde
   const estimatedTimeRemaining = ref<number | null>(null) // in Sekunden
+  // Abgebrochener Upload, der sich fortsetzen lässt, und laufender Wiederholversuch (N10)
+  const resumeSessionId = ref<string | null>(null)
+  const uploadRetry = ref<UploadRetryInfo | null>(null)
+  const canResume = computed(() => status.value === 'error' && resumeSessionId.value !== null)
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
@@ -406,13 +412,42 @@ export const useConverterStore = defineStore('converter', () => {
     }, 100)
   }
 
-  async function convert() {
+  function convert() {
+    return runJob(null)
+  }
+
+  /**
+   * Abgebrochenen Upload fortsetzen (N10): fragt den Server, welche Dateien
+   * schon da sind, und lädt nur den Rest hoch.
+   */
+  async function resumeUpload() {
+    const id = resumeSessionId.value
+    if (!id) return
+    let received: Set<number>
+    try {
+      received = await fetchReceived(id)
+    } catch (err) {
+      const gone = [404, 410].includes(httpStatusOf(err) ?? 0)
+      // Nicht mehr da: nur noch ein Neustart hilft
+      if (gone) resumeSessionId.value = null
+      errorMessage.value = gone ? t('error.resumeExpired') : uploadErrorMessage(err)
+      useToastStore().error(errorMessage.value)
+      return
+    }
+    await runJob({ sessionId: id, skip: received })
+  }
+
+  /** Upload, Start und Statusverfolgung; resume setzt eine bestehende Session fort. */
+  async function runJob(resume: { sessionId: string; skip: Set<number> } | null) {
     if (files.value.length === 0) {
       errorMessage.value = t('error.noFiles')
       return
     }
 
     const toastStore = useToastStore()
+    let uploaded = false
+    resumeSessionId.value = null
+    uploadRetry.value = null
 
     try {
       status.value = 'uploading'
@@ -435,8 +470,19 @@ export const useConverterStore = defineStore('converter', () => {
         formData.append('order[]', String(idx))
       })
 
+      if (resume) sessionId.value = resume.sessionId
+      const skippedBytes = files.value.reduce(
+        (sum, item, idx) => sum + (resume?.skip.has(idx) ? item.size : 0),
+        0,
+      )
       const uploadRes = await uploadFiles(formData, {
         signal: abortController.signal,
+        sessionId: resume?.sessionId ?? null,
+        skip: resume?.skip,
+        // Verbindung weg: dieselbe Datei mit Backoff erneut senden
+        onRetry: (info) => {
+          uploadRetry.value = info
+        },
         // Früh merken, damit Abbrechen während des Uploads die Server-Session freigibt
         onSessionId: (id) => {
           sessionId.value = id
@@ -446,7 +492,8 @@ export const useConverterStore = defineStore('converter', () => {
 
           const elapsedTime = (Date.now() - (uploadStartTime.value ?? Date.now())) / 1000
           if (elapsedTime > 0.5) {
-            uploadSpeed.value = e.loaded / elapsedTime
+            // Beim Fortsetzen zählen nur die jetzt gesendeten Bytes für die Geschwindigkeit
+            uploadSpeed.value = Math.max(0, e.loaded - skippedBytes) / elapsedTime
             const remainingBytes = e.total - e.loaded
             estimatedTimeRemaining.value = remainingBytes / uploadSpeed.value
           }
@@ -456,6 +503,8 @@ export const useConverterStore = defineStore('converter', () => {
       const id = uploadRes.data.session_id
       if (!id) throw new Error('Keine Session-ID vom Server erhalten')
       sessionId.value = id
+      uploaded = true
+      uploadRetry.value = null
 
       // Start conversion
       status.value = 'converting'
@@ -496,8 +545,12 @@ export const useConverterStore = defineStore('converter', () => {
       }
 
       logger.error('Konvertierung fehlgeschlagen:', err, responseOf(err)?.data)
+      uploadRetry.value = null
+      // Upload trotz Wiederholungen abgebrochen: angekommene Dateien bleiben auf dem Server
+      const resumable = !uploaded && sessionId.value !== null && isRetryableUploadError(err)
+      resumeSessionId.value = resumable ? sessionId.value : null
       status.value = 'error'
-      errorMessage.value = uploadErrorMessage(err)
+      errorMessage.value = resumable ? t('error.uploadInterrupted') : uploadErrorMessage(err)
       toastStore.error(errorMessage.value)
     }
   }
@@ -616,8 +669,22 @@ export const useConverterStore = defineStore('converter', () => {
     if (!event.persisted) releaseServerSession()
   })
 
+  /** Fortsetzbaren Upload verwerfen und seine Dateien auf dem Server freigeben. */
+  function discardResume() {
+    if (resumeSessionId.value) cancelSession(resumeSessionId.value)
+    resumeSessionId.value = null
+  }
+
+  // Andere Playlist (Dateien oder Reihenfolge geändert): Fortsetzen passt nicht mehr
+  watch(
+    () => files.value.map((f) => f.id).join(','),
+    () => discardResume(),
+  )
+
   /** Vorgang (Upload, Konvertierung, Fehler, Ergebnis) zurücksetzen; die Playlist bleibt. */
   function resetJob() {
+    discardResume()
+    uploadRetry.value = null
     uploadProgress.value = 0
     displayProgress.value = 0
     lastBackendProgress.value = 0
@@ -663,6 +730,9 @@ export const useConverterStore = defineStore('converter', () => {
     errorMessage,
     outputFileSize,
     chapters,
+    canResume,
+    uploadRetry,
+    resumeUpload,
     outputFormat,
     bitrate,
     currentFormatConfig,

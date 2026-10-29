@@ -27,17 +27,19 @@ Bei gemischten Eingaben wurden spätere Dateien verworfen, ffmpeg endete trotzde
 mit Code 0 – die Playlist war dann einfach kürzer (behoben, siehe `audio.js`,
 Test `test/convert.test.js`).
 
-## API (identisch zum bisherigen Vertrag)
+## API
 
-| Methode | Pfad (hinter nginx)                    | Zweck                                                                                                         |
-| ------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| POST    | `/playlistkonverter/api/upload`        | Eine Datei pro Request (`files[]`), Session-basiert                                                           |
-| POST    | `/playlistkonverter/api/convert`       | Startet die Konvertierung (`session_id`, `format`, `bitrate`)                                                 |
-| GET     | `/playlistkonverter/api/status/<id>`   | `{ status, progress, file_size?, error? }`                                                                    |
-| GET     | `/playlistkonverter/api/download/<id>` | Liefert die fertige Datei, räumt danach auf                                                                   |
-| GET     | `/playlistkonverter/api/events/<id>`   | Server-Sent Events mit denselben Daten wie `status` (bei Änderung), Ende nach done/error, `gone` nach Abbruch |
-| POST    | `/playlistkonverter/api/cancel/<id>`   | Bricht ab: beendet ffmpeg, gibt Slot und Dateien frei (204; späterer Upload zur Session → 410)                |
-| GET     | `/playlistkonverter/health`            | Health-Check                                                                                                  |
+| Methode | Pfad (hinter nginx)                    | Zweck                                                                                                                                                                             |
+| ------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/playlistkonverter/api/upload`        | Eine Datei pro Request (`files[]`, `order[]`), Session-basiert; dieselbe Position erneut ersetzt die Datei                                                                        |
+| GET     | `/playlistkonverter/api/upload/<id>`   | `{ received: [Positionen] }` zum Fortsetzen eines abgebrochenen Uploads                                                                                                           |
+| POST    | `/playlistkonverter/api/cover/<id>`    | Cover-Bild (`cover`, JPEG/PNG bis 5 MB), nur für MP3                                                                                                                              |
+| POST    | `/playlistkonverter/api/convert`       | Startet die Konvertierung (`session_id`, `format`, `bitrate`, `channels`, `filename`, `tags`, `transition`, `transition_seconds`, `loudnorm`, `tracks`, `trim_silence`, `titles`) |
+| GET     | `/playlistkonverter/api/status/<id>`   | `{ status, progress, file_size?, error?, chapters? }`                                                                                                                             |
+| GET     | `/playlistkonverter/api/download/<id>` | Liefert die fertige Datei, räumt danach auf                                                                                                                                       |
+| GET     | `/playlistkonverter/api/events/<id>`   | Server-Sent Events mit denselben Daten wie `status` (bei Änderung), Ende nach done/error, `gone` nach Abbruch                                                                     |
+| POST    | `/playlistkonverter/api/cancel/<id>`   | Bricht ab: beendet ffmpeg, gibt Slot und Dateien frei (204; späterer Upload zur Session → 410)                                                                                    |
+| GET     | `/playlistkonverter/health`            | Health-Check                                                                                                                                                                      |
 
 Da die Pfade unverändert sind, **muss das Frontend nicht angepasst werden** –
 nur nginx leitet `/playlistkonverter/api/` jetzt an den Node-Dienst statt an

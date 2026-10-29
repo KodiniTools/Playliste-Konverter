@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config'
 import { UPLOAD_TIMEOUT, CONVERT_START_TIMEOUT, STATUS_POLL_TIMEOUT } from '../constants'
 import type { TransitionType } from '../constants'
 import { requestJson } from '../utils/http'
+import { isRetryableUploadError } from '../utils/errors'
 
 /** Serverseitiger Konvertierungsstatus (GET /api/status/:id, SSE-Ereignis „status“). */
 export interface ConversionStatus {
@@ -37,6 +38,51 @@ export interface UploadOptions {
   onUploadProgress: (progress: UploadProgress) => void
   /** Wird mit der Session-ID aufgerufen, sobald die erste Datei angekommen ist. */
   onSessionId?: (sessionId: string) => void
+  /** Bestehende Session fortsetzen (N10) */
+  sessionId?: string | null
+  /** Positionen, die der Server schon hat; werden übersprungen (N10) */
+  skip?: ReadonlySet<number>
+  /** Vor jedem neuen Versuch einer Datei (N10) */
+  onRetry?: (info: UploadRetryInfo) => void
+  /** Wartezeiten vor den Wiederholungen in ms; ihre Anzahl ist die Zahl der Versuche */
+  retryDelays?: readonly number[]
+}
+
+export interface UploadRetryInfo {
+  attempt: number
+  max: number
+  fileName: string
+}
+
+/** Wartezeiten (Backoff) vor erneuten Upload-Versuchen einer Datei. */
+export const UPLOAD_RETRY_DELAYS = [1000, 2000, 4000, 8000] as const
+
+/** Warten, bis die Zeit um ist oder abgebrochen wird. */
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(new DOMException('Abgebrochen', 'AbortError'))
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(new DOMException('Abgebrochen', 'AbortError'))
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+/** Positionen, die der Server von einer Session schon hat (GET /api/upload/:id, N10). */
+export async function fetchReceived(
+  sessionId: string,
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<Set<number>> {
+  const res = await requestJson<{ received?: number[] }>(`${API_BASE_URL}/upload/${sessionId}`, {
+    timeout: STATUS_POLL_TIMEOUT,
+    signal,
+  })
+  return new Set(Array.isArray(res.data.received) ? res.data.received : [])
 }
 
 export interface StatusHandlers {
@@ -55,7 +101,15 @@ export interface StatusHandlers {
  */
 export async function uploadFiles(
   formData: FormData,
-  { signal, onUploadProgress, onSessionId }: UploadOptions,
+  {
+    signal,
+    onUploadProgress,
+    onSessionId,
+    sessionId: resumeId = null,
+    skip = new Set<number>(),
+    onRetry,
+    retryDelays = UPLOAD_RETRY_DELAYS,
+  }: UploadOptions,
 ): Promise<{ data: { session_id: string | null } }> {
   const fileEntries = formData.getAll('files[]') as File[]
   const orderEntries = formData.getAll('order[]')
@@ -64,45 +118,82 @@ export async function uploadFiles(
   const totalBytes = fileEntries.reduce((sum, f) => sum + (f.size || 0), 0)
   let loadedBytes = 0
 
-  let sessionId: string | null = null
+  let sessionId: string | null = resumeId
 
   for (const [i, file] of fileEntries.entries()) {
-    const chunk = new FormData()
-    chunk.append('files[]', file)
-    chunk.append('order[]', orderEntries[i] ?? String(i))
-    chunk.append('chunk_index', String(i))
-    if (sessionId) chunk.append('session_id', sessionId)
-
+    const order = String(orderEntries[i] ?? i)
     const fileSize = file.size || 0
-    let prevLoaded = 0
 
-    const res = await axios.post<{ session_id: string }>(`${API_BASE_URL}/upload`, chunk, {
-      timeout: UPLOAD_TIMEOUT,
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      signal,
-      onUploadProgress: (e) => {
-        const delta = (e.loaded || 0) - prevLoaded
-        prevLoaded = e.loaded || 0
-        loadedBytes += delta
-        onUploadProgress({ loaded: loadedBytes, total: totalBytes })
-      },
-    })
-
-    // Erste Antwort liefert session_id; Folge-Uploads nutzen dieselbe
-    if (!sessionId) {
-      sessionId = res.data.session_id
-      onSessionId?.(sessionId)
-    }
-    // Restliche Bytes dieser Datei gutschreiben (für den Fall dass Ereignis fehlt)
-    const remaining = fileSize - prevLoaded
-    if (remaining > 0) {
-      loadedBytes += remaining
+    // Beim Fortsetzen: schon angekommene Dateien nicht erneut senden
+    if (skip.has(Number(order))) {
+      loadedBytes += fileSize
       onUploadProgress({ loaded: loadedBytes, total: totalBytes })
+      continue
     }
+
+    for (let attempt = 0; ; attempt++) {
+      let prevLoaded = 0
+      try {
+        const res = await postFile(file, order, i, sessionId, signal, (loaded) => {
+          loadedBytes += loaded - prevLoaded
+          prevLoaded = loaded
+          onUploadProgress({ loaded: loadedBytes, total: totalBytes })
+        })
+        // Erste Antwort liefert session_id; Folge-Uploads nutzen dieselbe
+        if (!sessionId) {
+          sessionId = res.data.session_id
+          onSessionId?.(sessionId)
+        }
+        break
+      } catch (err) {
+        // Fortschritt dieses Versuchs zurücknehmen
+        loadedBytes -= prevLoaded
+        prevLoaded = 0
+        onUploadProgress({ loaded: loadedBytes, total: totalBytes })
+        if (attempt >= retryDelays.length || !isRetryableUploadError(err)) throw err
+        onRetry?.({ attempt: attempt + 1, max: retryDelays.length, fileName: file.name })
+        await wait(retryDelays[attempt] ?? 0, signal)
+        // Kam die Datei trotz Fehler an (Antwort verloren)? Dann weiter mit der nächsten.
+        if (sessionId) {
+          const received = await fetchReceived(sessionId, { signal }).catch(() => null)
+          if (received?.has(Number(order))) {
+            loadedBytes += fileSize
+            break
+          }
+        }
+      }
+    }
+    onUploadProgress({ loaded: Math.min(loadedBytes, totalBytes), total: totalBytes })
   }
 
   return { data: { session_id: sessionId } }
+}
+
+/** Eine Datei hochladen; onLoaded bekommt die bisher gesendeten Bytes dieser Datei. */
+async function postFile(
+  file: File,
+  order: string,
+  index: number,
+  sessionId: string | null,
+  signal: AbortSignal,
+  onLoaded: (loaded: number) => void,
+) {
+  const chunk = new FormData()
+  chunk.append('files[]', file)
+  chunk.append('order[]', order)
+  chunk.append('chunk_index', String(index))
+  if (sessionId) chunk.append('session_id', sessionId)
+
+  const res = await axios.post<{ session_id: string }>(`${API_BASE_URL}/upload`, chunk, {
+    timeout: UPLOAD_TIMEOUT,
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
+    signal,
+    onUploadProgress: (e) => onLoaded(e.loaded || 0),
+  })
+  // Fehlende Fortschrittsereignisse: die ganze Datei gutschreiben
+  onLoaded(file.size || 0)
+  return res
 }
 
 /**

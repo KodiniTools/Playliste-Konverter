@@ -23,14 +23,15 @@ async function removeSession(sessionId) {
   await fsp.rm(sessionDirPath(sessionId), { recursive: true, force: true }).catch(() => {})
 }
 
-/** Periodischer Cleanup: alte Sessions (> 1 h) entfernen. */
+/** Periodischer Cleanup: Sessions ohne Aktivität seit > 1 h entfernen. */
 async function periodicCleanup() {
   const now = Date.now()
   for (const [id, cancelledAt] of cancelledIds) {
     if (now - cancelledAt > SESSION_MAX_AGE) cancelledIds.delete(id)
   }
   for (const [id, session] of sessions) {
-    if (now - session.createdAt > SESSION_MAX_AGE) {
+    // Letzter Upload zählt: lange Uploads und Fortsetzen (N10) bleiben erhalten
+    if (now - (session.updatedAt || session.createdAt) > SESSION_MAX_AGE) {
       await removeSession(id)
     }
   }

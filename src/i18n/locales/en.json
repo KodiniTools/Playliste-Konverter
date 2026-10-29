@@ -139,7 +139,8 @@
     "progress": "Progress",
     "remaining": "Remaining",
     "cancel": "Cancel",
-    "cancelling": "Cancelling..."
+    "cancelling": "Cancelling...",
+    "retrying": "Connection lost, retrying ({attempt} of {max}) …"
   },
   "download": {
     "title": "Conversion completed!",
@@ -175,7 +176,10 @@
     "sessionExpired": "The session has expired. Please start the conversion again.",
     "alreadyConverting": "This playlist is already being converted.",
     "internal": "Internal server error. Please try again later.",
-    "invalidCover": "The cover must be a JPEG or PNG image up to 5 MB."
+    "invalidCover": "The cover must be a JPEG or PNG image up to 5 MB.",
+    "uploadInterrupted": "The upload was interrupted. Files already sent stay on the server for one hour, so you can resume the upload.",
+    "resume": "Resume upload",
+    "resumeExpired": "The interrupted upload is no longer on the server. Please start the conversion again."
   },
   "sizeWarning": {
     "title": "Playlist too large!",
