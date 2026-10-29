@@ -6,6 +6,7 @@ import {
   OUTPUT_FORMATS,
   AVAILABLE_BITRATES,
   isOutputFormat,
+  isAcceptedAudioFile,
   type OutputFormatId,
 } from '../constants'
 import {
@@ -45,6 +46,9 @@ export const useConverterStore = defineStore('converter', () => {
   const outputFileSize = ref<number | null>(null) // Größe der konvertierten Datei
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
+
+  // Fortlaufende Track-IDs: eindeutig auch bei mehreren Hinzufügungen in derselben Millisekunde
+  let nextTrackId = 1
 
   // Für Abbrechen-Funktion
   let abortController: AbortController | null = null
@@ -103,22 +107,15 @@ export const useConverterStore = defineStore('converter', () => {
 
   function addFiles(newFiles: FileList | File[]) {
     const toastStore = useToastStore()
-    const validFiles = Array.from(newFiles).filter(
-      (f) =>
-        f.type === 'audio/mpeg' ||
-        f.type === 'audio/wav' ||
-        f.type === 'audio/mp3' ||
-        f.name.endsWith('.mp3') ||
-        f.name.endsWith('.wav'),
-    )
+    const validFiles = Array.from(newFiles).filter(isAcceptedAudioFile)
 
     const invalidCount = newFiles.length - validFiles.length
 
     if (validFiles.length > 0) {
       files.value.push(
-        ...validFiles.map((f, idx) => ({
+        ...validFiles.map((f) => ({
           file: f,
-          id: Date.now() + idx,
+          id: nextTrackId++,
           name: f.name,
           size: f.size,
         })),

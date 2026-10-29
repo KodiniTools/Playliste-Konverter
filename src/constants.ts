@@ -75,6 +75,24 @@ export const AVAILABLE_BITRATES: readonly BitrateOption[] = [
   { value: 320, label: '320 kbps', description: 'Maximum' },
 ]
 
-// Akzeptierte Audio-MIME-Types und Dateiendungen
-export const ACCEPTED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/mp3']
+// Akzeptierte Eingaben. Entscheidend ist wie beim Server (server/app.js) die
+// Dateiendung, unabhängig von Groß-/Kleinschreibung; Browser melden den
+// MIME-Typ uneinheitlich (audio/x-wav, audio/wave) oder gar nicht.
+export const ACCEPTED_AUDIO_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/vnd.wave',
+]
 export const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav']
+
+/** Wert für das accept-Attribut der Dateiauswahl. */
+export const ACCEPT_ATTRIBUTE = [...ACCEPTED_AUDIO_EXTENSIONS, ...ACCEPTED_AUDIO_TYPES].join(',')
+
+/** true, wenn der Server die Datei annimmt (Endung .mp3/.wav, beliebige Schreibweise). */
+export function isAcceptedAudioFile(file: { name: string }): boolean {
+  const name = file.name.toLowerCase()
+  return ACCEPTED_AUDIO_EXTENSIONS.some((extension) => name.endsWith(extension))
+}
