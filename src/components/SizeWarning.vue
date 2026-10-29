@@ -78,10 +78,7 @@
   <section
     v-if="variant"
     :role="variant.role"
-    :class="[
-      'mb-4 rounded-md border border-l-[3px] border-line bg-surface-1 p-4',
-      variant.edgeClass,
-    ]"
+    :class="['rounded-md border border-l-[3px] border-line bg-surface-1 p-4', variant.edgeClass]"
   >
     <div class="flex items-start gap-3">
       <StatusIcon :type="variant.icon" class="mt-0.5 h-5 w-5" />

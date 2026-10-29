@@ -18,7 +18,7 @@ oder OGG/Vorbis), live unter <https://kodinitools.com/playlistkonverter/>.
 ### Frontend
 
 - Vue 3 (Composition API, `<script setup>`), Pinia, vue-i18n
-- Tailwind CSS auf den KodiniTools-Tokens v2 (`--ds-*`, siehe `src/design-system/README.md`)
+- Tailwind CSS 4 auf den KodiniTools-Tokens v2 (`--ds-*`, siehe `src/design-system/README.md`)
 - Axios, Vite, Vitest + Vue Test Utils, ESLint + Prettier
 
 ### Server (`server/`)

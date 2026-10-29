@@ -15,7 +15,8 @@ const v2Css = readRelative(base, '../tokens-v2.css')
 const styleCss = readRelative(base, '../../style.css')
 const foundationCss = readRelative(base, '../../styles/foundation.css')
 const landingCss = readRelative(base, '../../landing/landing.css')
-const tailwindConfig = readRelative(base, '../../../tailwind.config.js')
+// Tailwind-4-Theme: der @theme-Block in style.css
+const tailwindTheme = styleCss.match(/@theme \{[\s\S]*?\n\}/)?.[0] ?? ''
 
 const rootBlock = parseBlock(v2Css, ':root', 'tokens-v2.css')
 const lightBlock = parseBlock(v2Css, '.light-theme', 'tokens-v2.css')
@@ -81,26 +82,23 @@ describe('Namespace und Einbindung', () => {
     expect(firstRule).toBe("@import '../design-system/tokens-v2.css';")
   })
 
-  it('App: Grundlage liegt zwischen Tailwind-Preflight und Komponenten', () => {
-    const baseIndex = styleCss.indexOf("@import 'tailwindcss/base';")
+  it('App: Grundlage liegt ohne Layer zwischen Tailwind-Preflight und Utilities', () => {
+    const baseIndex = styleCss.indexOf("@import 'tailwindcss/preflight.css' layer(base);")
     const foundationIndex = styleCss.indexOf("@import './styles/foundation.css';")
-    const componentsIndex = styleCss.indexOf("@import 'tailwindcss/components';")
+    const utilitiesIndex = styleCss.indexOf("@import 'tailwindcss/utilities.css' layer(utilities)")
     expect(baseIndex).toBeGreaterThanOrEqual(0)
     expect(foundationIndex).toBeGreaterThan(baseIndex)
-    expect(componentsIndex).toBeGreaterThan(foundationIndex)
+    expect(utilitiesIndex).toBeGreaterThan(foundationIndex)
   })
 
   it('Landing-Seite: lädt dieselbe Grundlage', () => {
     expect(landingCss).toContain("@import '../styles/foundation.css';")
   })
 
-  it('wird von der Tailwind-Konfiguration nur über var(--ds-*) referenziert', () => {
-    const withoutComments = tailwindConfig.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-    const hexValues = withoutComments.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []
-    // Nur Weiß und Schwarz dürfen als feste Werte stehen.
-    expect(hexValues.filter((hex) => !['#ffffff', '#000000'].includes(hex.toLowerCase()))).toEqual(
-      [],
-    )
+  it('wird vom Tailwind-Theme (@theme) nur über var(--ds-*) referenziert', () => {
+    const withoutComments = tailwindTheme.replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(tailwindTheme).not.toBe('')
+    expect(withoutComments.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g) ?? []).toEqual([])
     const referenced = new Set(withoutComments.match(/var\((--ds-[a-z0-9-]+)\)/g) ?? [])
     expect(referenced.size).toBeGreaterThan(20)
     const undefinedVars = [...referenced]

@@ -3,18 +3,165 @@
    --------------------------------------------------------------------------
    Grundlage (Tokens --ds-*, Supreme, Body, SSI-Partials, Bewegung) kommt aus
    src/styles/foundation.css und wird mit der Landing-Seite geteilt. Farben,
-   Radien, Schatten und Dauern laufen in Tailwind über die Tokens
-   (tailwind.config.js); Komponenten nutzen keine festen Farbwerte. Hier steht
-   nur, was der App gehört: Fokus, Header-Bausteine, Range-Slider, Touch.
+   Radien, Schatten und Dauern laufen in Tailwind über die Tokens (@theme
+   unten); Komponenten nutzen keine festen Farbwerte. Hier steht nur, was der
+   App gehört: Theme-Brücke, Fokus, Header-Bausteine, Range-Slider, Touch.
    ========================================================================== */
 
-/* Reihenfolge wie vorher: Preflight, dann Grundlage (Body nach Preflight),
-   dann Komponenten und Utilities. Imports statt @tailwind, damit die
-   gemeinsame Grundlage zwischen base und components liegen kann. */
-@import 'tailwindcss/base';
+/* Tailwind 4 ohne Standard-Theme-Werte für Farben, Radien, Schatten und
+   Typografie (siehe @theme). Die Grundlage bleibt bewusst ohne Cascade-Layer:
+   wie unter Tailwind 3 liegt sie nach Preflight, und ihre Regeln für die
+   SSI-Partials schlagen deren eigenes CSS. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
 @import './styles/foundation.css';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+
+/* Klassen nur aus App-Code erzeugen; Testdateien ausnehmen, ihre
+   Klassen-Strings (Muster, Negativbeispiele) sollen keine Utilities erzeugen */
+@source '../app.html';
+@source './**/*.{vue,js}';
+@source not './**/*.spec.js';
+@source not './**/__tests__';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tailwind-Brücke: Theme nur aus den Design-Tokens (src/design-system/
+   tokens-v2.css). Die Variablen wechseln mit dem Theme (html[data-theme]),
+   deshalb braucht es keine Dark-Varianten. Rollen: src/design-system/README.md
+   ───────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-*: initial;
+  /* Flächen: Seite, Panel, Eingabe/Chip, Hover */
+  --color-surface-0: var(--ds-surface-0);
+  --color-surface-1: var(--ds-surface-1);
+  --color-surface-2: var(--ds-surface-2);
+  --color-surface-3: var(--ds-surface-3);
+  /* Rahmen und Trennlinien; strong für Felder und Sekundär-Buttons */
+  --color-line: var(--ds-border);
+  --color-line-strong: var(--ds-border-strong);
+  /* Text in drei Stufen */
+  --color-ink: var(--ds-text);
+  --color-ink-2: var(--ds-text-2);
+  --color-ink-3: var(--ds-text-3);
+  /* Die einzige Aktionsfarbe: Primäraktion, Fokus, aktive Zustände */
+  --color-accent: var(--ds-accent);
+  --color-accent-hover: var(--ds-accent-hover);
+  --color-accent-soft: var(--ds-accent-soft);
+  --color-on-accent: var(--ds-on-accent);
+  --color-link: var(--ds-link);
+  --color-success: var(--ds-success);
+  --color-warning: var(--ds-warning);
+  --color-danger: var(--ds-danger);
+  --color-info: var(--ds-info);
+
+  /* Drei Radien: 6 / 10 / 16 (plus voll gerundet) */
+  --radius-*: initial;
+  --radius-sm: var(--ds-radius-sm);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+
+  /* Schatten nur für Overlays; der Fokus-Ring ist ein box-shadow */
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --shadow-overlay: var(--ds-shadow-overlay);
+  --shadow-focus: var(--ds-focus-ring);
+
+  --blur-*: initial;
+  --ease-*: initial;
+  --animate-*: initial;
+  --default-transition-duration: var(--ds-duration);
+  --default-transition-timing-function: var(--ds-ease);
+
+  /* Typografie: sieben Stufen 12 / 13 / 14 / 16 / 20 / 24 / 32 mit den
+     Token-Namen (text-md als Grundstufe), Zeilenhöhe hängt an der Stufe. */
+  --font-*: initial;
+  --font-sans: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
+  --default-font-family: var(--ds-font-sans);
+  --default-mono-font-family: var(--ds-font-mono);
+
+  --text-*: initial;
+  --text-xs: var(--ds-text-xs);
+  --text-xs--line-height: var(--ds-leading);
+  --text-sm: var(--ds-text-sm);
+  --text-sm--line-height: var(--ds-leading);
+  --text-md: var(--ds-text-md);
+  --text-md--line-height: var(--ds-leading);
+  --text-lg: var(--ds-text-lg);
+  --text-lg--line-height: var(--ds-leading);
+  --text-xl: var(--ds-text-xl);
+  --text-xl--line-height: var(--ds-leading-tight);
+  --text-2xl: var(--ds-text-2xl);
+  --text-2xl--line-height: var(--ds-leading-tight);
+  --text-3xl: var(--ds-text-3xl);
+  --text-3xl--line-height: var(--ds-leading-tight);
+
+  --font-weight-*: initial;
+  --font-weight-normal: var(--ds-weight-regular);
+  --font-weight-medium: var(--ds-weight-medium);
+  --font-weight-semibold: var(--ds-weight-semibold);
+  --font-weight-bold: var(--ds-weight-bold);
+
+  --leading-*: initial;
+  --leading-tight: var(--ds-leading-tight);
+  --leading-normal: var(--ds-leading);
+
+  --tracking-*: initial;
+  --tracking-normal: 0;
+  --tracking-tight: var(--ds-tracking-tight);
+}
+
+/* Token-Klassen ohne eigenen Theme-Namespace in Tailwind 4 */
+@utility duration-slow {
+  --tw-duration: var(--ds-duration-slow);
+  transition-duration: var(--ds-duration-slow);
+}
+@utility z-topbar {
+  z-index: var(--ds-z-topbar);
+}
+@utility z-player {
+  z-index: var(--ds-z-player);
+}
+@utility z-backdrop {
+  z-index: var(--ds-z-backdrop);
+}
+@utility z-dialog {
+  z-index: var(--ds-z-dialog);
+}
+@utility z-toast {
+  z-index: var(--ds-z-toast);
+}
+/* Control-Höhen 28 / 36 / 40 und Listenzeile 44 */
+@utility h-control-sm {
+  height: var(--ds-control-sm);
+}
+@utility h-control-md {
+  height: var(--ds-control-md);
+}
+@utility h-control-lg {
+  height: var(--ds-control-lg);
+}
+@utility min-h-row {
+  min-height: var(--ds-row-height);
+}
+
+/* Verhalten von Tailwind 3 beibehalten: Rahmen ohne Farbklasse in der
+   Token-Rahmenfarbe (statt currentColor), Buttons mit Hand-Cursor */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--ds-border);
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 /* === Fokus: immer der Token-Ring (2 px Abstand, 2 px Akzent), nie outline === */
 #app :is(a, button, input, select, textarea, [tabindex]):focus-visible {
