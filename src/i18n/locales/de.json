@@ -64,6 +64,7 @@
   "conversion": {
     "uploading": "Dateien werden hochgeladen...",
     "converting": "Konvertierung läuft...",
+    "queued": "In der Warteschlange – Position {position}",
     "progress": "Fortschritt",
     "remaining": "Verbleibend",
     "cancel": "Abbrechen",
