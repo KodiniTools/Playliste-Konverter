@@ -21,7 +21,6 @@
  */
 
 const express = require('express')
-const cors = require('cors')
 const multer = require('multer')
 const { spawn } = require('child_process')
 const fs = require('fs')
@@ -336,7 +335,6 @@ function processQueue() {
 
 // --- Express-App -----------------------------------------------------------
 const app = express()
-app.use(cors())
 app.use(express.json())
 
 // Multer: Uploads temporär in TEMP_DIR ablegen.
@@ -389,7 +387,9 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     }
 
     // Session bestimmen oder neu anlegen.
-    let sessionId = req.body.session_id
+    // Express 5: ohne passenden Body-Parser ist req.body undefined
+    const body = req.body ?? {}
+    let sessionId = body.session_id
     if (sessionId !== undefined && !isValidSessionId(sessionId)) {
       await cleanupTmpUploads(files)
       return res.status(400).json({ error: 'Ungültige Session-ID' })
@@ -441,10 +441,9 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     }
 
     // Reihenfolge (order[]) und total_files auslesen.
-    const orderRaw = req.body['order[]'] ?? req.body.order
+    const orderRaw = body['order[]'] ?? body.order
     const orderList = Array.isArray(orderRaw) ? orderRaw : orderRaw !== undefined ? [orderRaw] : []
-    const chunkIndex =
-      req.body.chunk_index !== undefined ? parseInt(req.body.chunk_index, 10) : null
+    const chunkIndex = body.chunk_index !== undefined ? parseInt(body.chunk_index, 10) : null
 
     const stored = []
     for (let i = 0; i < files.length; i++) {
@@ -486,7 +485,8 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
 // --- Convert --------------------------------------------------------------
 app.post('/api/convert', async (req, res) => {
   try {
-    const sessionId = req.body.session_id || ''
+    const body = req.body ?? {}
+    const sessionId = body.session_id || ''
     if (!isValidSessionId(sessionId)) {
       return res.status(400).json({ error: 'Ungültige Session-ID' })
     }
@@ -502,11 +502,11 @@ app.post('/api/convert', async (req, res) => {
     }
 
     // Format validieren.
-    let format = req.body.format
+    let format = body.format
     if (!OUTPUT_FORMATS[format]) format = DEFAULT_FORMAT
 
     // Bitrate validieren + auf Format-Maximum begrenzen.
-    let bitrate = parseInt(req.body.bitrate, 10)
+    let bitrate = parseInt(body.bitrate, 10)
     if (!AVAILABLE_BITRATES.includes(bitrate)) bitrate = DEFAULT_BITRATE
     const maxBitrate = OUTPUT_FORMATS[format].maxBitrate
     if (bitrate > maxBitrate) bitrate = maxBitrate
@@ -694,7 +694,14 @@ app.use((err, req, res, next) => {
 fs.mkdirSync(TEMP_DIR, { recursive: true })
 setInterval(periodicCleanup, 15 * 60 * 1000)
 
-app.listen(PORT, '127.0.0.1', () => {
+app.listen(PORT, '127.0.0.1', (err) => {
+  // Express 5 meldet Listen-Fehler (z. B. Port belegt) hier statt per Exception:
+  // beenden, damit pm2 neu startet statt einen Prozess ohne Port laufen zu lassen.
+  if (err) {
+    // eslint-disable-next-line no-console
+    console.error('Server konnte nicht starten:', err.message)
+    process.exit(1)
+  }
   // eslint-disable-next-line no-console
   console.log(
     `Playlist Konverter Server läuft auf http://127.0.0.1:${PORT} (temp: ${TEMP_DIR}, ` +

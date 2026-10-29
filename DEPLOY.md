@@ -145,6 +145,27 @@ cd server && npm test        # bzw. im Repo-Root: npm run test:server
 
 ---
 
+## Rate-Limit aktivieren (einmalig)
+
+Die API ist pro IP auf 10 Anfragen/s (Puffer 40) begrenzt, darüber antwortet
+nginx mit 429. Reihenfolge beachten – erst die Zone, dann der location-Block:
+
+```bash
+cd /opt/playliste-konverter
+# 1. Zone in den http-Kontext legen
+sudo cp deploy/nginx-playlistkonverter-ratelimit.conf /etc/nginx/conf.d/playlistkonverter-ratelimit.conf
+# 2. Den PLAYLIST-KONVERTER-Block in /etc/nginx/sites-enabled/kodinitools.com
+#    durch den aktuellen Inhalt von deploy/nginx-playlistkonverter.conf ersetzen
+sudo nano /etc/nginx/sites-enabled/kodinitools.com
+# 3. Testen und laden
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+`/etc/nginx/conf.d/*.conf` muss in `nginx.conf` im `http`-Block eingebunden
+sein (Debian/Ubuntu-Standard): `grep -n 'conf.d' /etc/nginx/nginx.conf`.
+
+---
+
 ## Altes PHP-Backend entfernen (einmalig)
 
 Das PHP-Backend (`backend/`) ist nicht mehr Teil des Repos. Frühere Deploys
