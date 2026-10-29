@@ -78,8 +78,6 @@ const messages = {
       fileSize: 'Dateigröße',
       button: 'playlist.{format} herunterladen',
       newConversion: 'Neue Konvertierung starten',
-      promptText: 'Bitte geben Sie den Dateinamen ein:',
-      error: 'Download fehlgeschlagen. Bitte versuchen Sie es erneut.',
       shareToPlayer: 'An Ultimativen Musikplayer weitergeben',
       sharing: 'Wird übergeben …',
       shareError:
@@ -203,8 +201,6 @@ const messages = {
       fileSize: 'File size',
       button: 'Download playlist.{format}',
       newConversion: 'Start new conversion',
-      promptText: 'Please enter the filename:',
-      error: 'Download failed. Please try again.',
       shareToPlayer: 'Send to Ultimate Music Player',
       sharing: 'Sending …',
       shareError:

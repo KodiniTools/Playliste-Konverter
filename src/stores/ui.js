@@ -96,19 +96,9 @@ export const useUIStore = defineStore('ui', () => {
 
   window.addEventListener('locale-changed', onLocaleChanged)
 
-  function setLocale(newLocale) {
-    locale.value = newLocale
-  }
-
-  function toggleTheme() {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-  }
-
   return {
     theme,
     locale,
-    setLocale,
-    toggleTheme,
   }
 })
 

@@ -10,7 +10,6 @@ import { readPref, writePref } from '../utils/storage'
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
   const uploadProgress = ref(0)
-  const conversionProgress = ref(0)
   const status = ref('idle') // idle, uploading, converting, done, error
   const sessionId = ref(null)
   const downloadUrl = ref(null)
@@ -32,8 +31,6 @@ export const useConverterStore = defineStore('converter', () => {
 
   // Für Zeitberechnung
   const uploadStartTime = ref(null)
-  const uploadedBytes = ref(0)
-  const totalBytes = ref(0)
   const uploadSpeed = ref(0) // Bytes pro Sekunde
   const estimatedTimeRemaining = ref(null) // in Sekunden
 
@@ -213,8 +210,6 @@ export const useConverterStore = defineStore('converter', () => {
 
       // Zeitberechnung initialisieren
       uploadStartTime.value = Date.now()
-      uploadedBytes.value = 0
-      totalBytes.value = totalSize.value
       uploadSpeed.value = 0
       estimatedTimeRemaining.value = null
 
@@ -232,7 +227,6 @@ export const useConverterStore = defineStore('converter', () => {
         signal: abortController.signal,
         onUploadProgress: (e) => {
           uploadProgress.value = Math.round((e.loaded / e.total) * 100)
-          uploadedBytes.value = e.loaded
 
           const elapsedTime = (Date.now() - uploadStartTime.value) / 1000
           if (elapsedTime > 0.5) {
@@ -247,7 +241,6 @@ export const useConverterStore = defineStore('converter', () => {
 
       // Start conversion
       status.value = 'converting'
-      conversionProgress.value = 0
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
@@ -291,7 +284,6 @@ export const useConverterStore = defineStore('converter', () => {
       try {
         const res = await fetchStatus(sessionId.value, { signal: abortController?.signal })
 
-        conversionProgress.value = res.data.progress
         lastBackendProgress.value = res.data.progress
 
         if (res.data.status === 'done') {
@@ -339,7 +331,6 @@ export const useConverterStore = defineStore('converter', () => {
   function reset() {
     files.value = []
     uploadProgress.value = 0
-    conversionProgress.value = 0
     displayProgress.value = 0
     lastBackendProgress.value = 0
     isIndeterminate.value = false
@@ -350,8 +341,6 @@ export const useConverterStore = defineStore('converter', () => {
     outputFileSize.value = null
     isCancelling.value = false
     uploadStartTime.value = null
-    uploadedBytes.value = 0
-    totalBytes.value = 0
     uploadSpeed.value = 0
     estimatedTimeRemaining.value = null
 
@@ -366,7 +355,6 @@ export const useConverterStore = defineStore('converter', () => {
   return {
     files,
     uploadProgress,
-    conversionProgress,
     status,
     totalProgress,
     totalSize,

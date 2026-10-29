@@ -17,10 +17,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Backend
-backend/temp/*
-!backend/temp/.gitkeep
-
 # Node-Konvertierungsdienst (Laufzeit)
 server/temp/
 server/node_modules/

@@ -50,9 +50,9 @@ describe('UI-Store: Theme-Mechanik', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
   })
 
-  it('toggleTheme schaltet um und schreibt localStorage', async () => {
+  it('Theme-Wechsel im Store schaltet um und schreibt localStorage', async () => {
     const ui = useUIStore()
-    ui.toggleTheme()
+    ui.theme = 'dark'
     await nextTick()
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
     expect(document.documentElement.classList.contains('dark')).toBe(true)

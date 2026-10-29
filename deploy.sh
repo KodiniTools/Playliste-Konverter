@@ -13,14 +13,12 @@
 #   1. Auf den neuesten Stand von origin/main aktualisieren
 #   2. Frontend bauen (npm ci && npm run build)
 #   3. Frontend (dist/) in den Webroot synchronisieren
-#   4. Backend (PHP) in den Webroot synchronisieren – Sessions in temp/ bleiben erhalten
-#   5. Rechte für backend/temp setzen
-#   6. Nginx-Konfiguration testen und neu laden
+#   4. Node-Konvertierungsdienst (pm2) aktualisieren
+#   5. Nginx-Konfiguration testen und neu laden
 #
 # Überschreibbare Einstellungen via Umgebungsvariablen:
 #   DEPLOY_DIR    Ziel-/Webroot-Verzeichnis (Standard: /var/www/kodinitools.com/playlistkonverter)
 #   DEPLOY_BRANCH Zu deployender Branch (Standard: main)
-#   WEB_USER      Besitzer für backend/temp (Standard: www-data)
 #   RELOAD_NGINX  "1" = Nginx testen & neu laden, "0" = überspringen (Standard: 1)
 #
 set -euo pipefail
@@ -28,7 +26,6 @@ set -euo pipefail
 # --- Konfiguration ---------------------------------------------------------
 DEPLOY_DIR="${DEPLOY_DIR:-/var/www/kodinitools.com/playlistkonverter}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
-WEB_USER="${WEB_USER:-www-data}"
 RELOAD_NGINX="${RELOAD_NGINX:-1}"
 
 # Farben (nur wenn Terminal)
@@ -58,7 +55,7 @@ command -v rsync >/dev/null 2>&1 || fail "rsync ist nicht installiert (apt insta
 [ -d "$SCRIPT_DIR/.git" ] || fail "Kein Git-Checkout: $SCRIPT_DIR"
 
 # --- 1. Auf neuesten main-Stand bringen ------------------------------------
-step "[1/6] Aktualisiere auf origin/$DEPLOY_BRANCH ..."
+step "[1/5] Aktualisiere auf origin/$DEPLOY_BRANCH ..."
 git fetch origin "$DEPLOY_BRANCH"
 git checkout "$DEPLOY_BRANCH"
 # Deterministischer Stand: exakt origin/main (verwirft lokale Änderungen im Checkout)
@@ -66,43 +63,26 @@ git reset --hard "origin/$DEPLOY_BRANCH"
 info "Aktueller Commit: $(git rev-parse --short HEAD) – $(git log -1 --pretty=%s)"
 
 # --- 2. Frontend bauen -----------------------------------------------------
-step "[2/6] Frontend bauen ..."
+step "[2/5] Frontend bauen ..."
 npm ci
 npm run build
 [ -d dist ] || fail "Build-Ausgabe 'dist/' nicht gefunden."
 
 # --- 3. Frontend deployen --------------------------------------------------
-step "[3/6] Frontend nach Webroot synchronisieren ..."
+step "[3/5] Frontend nach Webroot synchronisieren ..."
 mkdir -p "$DEPLOY_DIR"
-# --delete entfernt veraltete (gehashte) Asset-Dateien; backend/ wird per
-# Exclude vor Löschung geschützt, damit Backend & Sessions unangetastet bleiben.
+# --delete entfernt veraltete (gehashte) Asset-Dateien. Ein altes backend/ aus
+# der früheren PHP-Lösung im Webroot wird bewusst NICHT automatisch gelöscht
+# (siehe DEPLOY.md, "Altes PHP-Backend entfernen").
 rsync -a --delete \
   --exclude '/backend' \
   --exclude '/backend/**' \
   dist/ "$DEPLOY_DIR/"
 
-# --- 4. Backend deployen ---------------------------------------------------
-step "[4/6] Backend nach Webroot synchronisieren ..."
-# Hochgeladene/laufende Sessions in temp/ nicht überschreiben oder löschen.
-mkdir -p "$DEPLOY_DIR/backend"
-rsync -a --delete \
-  --exclude 'temp/***' \
-  backend/ "$DEPLOY_DIR/backend/"
-
-# --- 5. Rechte für temp ----------------------------------------------------
-step "[5/6] Rechte für backend/temp setzen ..."
-mkdir -p "$DEPLOY_DIR/backend/temp"
-if chown -R "$WEB_USER:$WEB_USER" "$DEPLOY_DIR/backend/temp" 2>/dev/null; then
-  chmod 755 "$DEPLOY_DIR/backend/temp"
-  info "Besitzer $WEB_USER gesetzt."
-else
-  echo -e "${C_YELLOW}Hinweis: chown übersprungen (keine Rechte). Ggf. mit sudo ausführen.${C_RESET}"
-fi
-
-# --- 5b. Node-Konvertierungsdienst (pm2) -----------------------------------
+# --- 4. Node-Konvertierungsdienst (pm2) ------------------------------------
 # Der serverseitige Konvertierungsdienst läuft aus DIESEM Checkout heraus
 # (cwd = server/), nicht aus dem Webroot. Er wird hier (neu) gestartet.
-step "[5b] Node-Konvertierungsdienst (pm2) aktualisieren ..."
+step "[4/5] Node-Konvertierungsdienst (pm2) aktualisieren ..."
 if command -v pm2 >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
   ( cd "$SCRIPT_DIR/server" \
     && npm ci --omit=dev \
@@ -114,8 +94,8 @@ else
   info "pm2/node nicht gefunden – Node-Dienst-Schritt übersprungen."
 fi
 
-# --- 6. Nginx neu laden ----------------------------------------------------
-step "[6/6] Nginx testen & neu laden ..."
+# --- 5. Nginx neu laden ----------------------------------------------------
+step "[5/5] Nginx testen & neu laden ..."
 if [ "$RELOAD_NGINX" = "1" ] && command -v nginx >/dev/null 2>&1; then
   if nginx -t; then
     if command -v systemctl >/dev/null 2>&1; then

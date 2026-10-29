@@ -26,7 +26,6 @@ export async function uploadFiles(formData, { signal, onUploadProgress }) {
     const chunk = new FormData()
     chunk.append('files[]', fileEntries[i])
     chunk.append('order[]', orderEntries[i] ?? i)
-    chunk.append('total_files', fileEntries.length)
     chunk.append('chunk_index', i)
     if (sessionId) chunk.append('session_id', sessionId)
 
