@@ -1,0 +1,339 @@
+'use strict'
+
+/**
+ * Express-App mit allen Routen (ohne listen, siehe server.js).
+ *
+ * API (hinter nginx unter /playlistkonverter/api/ gemountet):
+ *   POST /api/upload         – eine Datei pro Request (files[]), Session-basiert
+ *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate)
+ *   GET  /api/status/:id     – { status, progress, file_size?, error?, queue_position? }
+ *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
+ *   POST /api/cancel/:id     – bricht ab: ffmpeg beenden, Slot und Dateien freigeben
+ *   GET  /health             – Health-Check für pm2/nginx
+ */
+const express = require('express')
+const multer = require('multer')
+const fs = require('fs')
+const fsp = require('fs/promises')
+const path = require('path')
+const crypto = require('crypto')
+const { hasRoomFor, exceedsPlaylistLimit, availableBytes, formatGB } = require('./limits')
+const {
+  TEMP_DIR,
+  MAX_FILE_SIZE,
+  MAX_FILES,
+  MAX_PLAYLIST_SIZE,
+  MIN_FREE_SPACE,
+  OUTPUT_FORMATS,
+  DEFAULT_FORMAT,
+  DEFAULT_BITRATE,
+  AVAILABLE_BITRATES,
+} = require('./config')
+const {
+  sessions,
+  cancelledIds,
+  isValidSessionId,
+  sanitizeFilename,
+  sessionDirPath,
+  listInputFiles,
+  safeUnlink,
+  cleanupTmpUploads,
+} = require('./sessions')
+const { enqueueJob, queuePosition } = require('./queue')
+const { removeSession } = require('./lifecycle')
+const { healthReport } = require('./health')
+
+const app = express()
+app.use(express.json())
+
+// Multer: Uploads temporär in TEMP_DIR ablegen.
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, TEMP_DIR),
+    filename: (req, file, cb) => cb(null, 'up_' + crypto.randomBytes(12).toString('hex')),
+  }),
+  limits: { fileSize: MAX_FILE_SIZE, files: MAX_FILES },
+})
+
+app.get('/health', async (req, res) => {
+  res.json(await healthReport())
+})
+
+// --- Upload ---------------------------------------------------------------
+
+/**
+ * Prüft vor dem Schreiben (also bevor multer die Datei annimmt), ob nach diesem
+ * Upload noch MIN_FREE_SPACE frei bleibt. Content-Length enthält die Datei plus
+ * etwas Multipart-Overhead – für die Reserve-Prüfung genau genug.
+ * Schlägt statfs selbst fehl, wird nicht blockiert (nur geloggt): ein Messfehler
+ * soll den Dienst nicht lahmlegen.
+ */
+async function ensureFreeSpace(req, res, next) {
+  try {
+    const incoming = parseInt(req.headers['content-length'] || '0', 10) || 0
+    const available = await availableBytes(TEMP_DIR)
+    if (!hasRoomFor({ available, incoming, reserve: MIN_FREE_SPACE })) {
+      // Restlichen Body verwerfen (nicht speichern), damit der Browser die
+      // Antwort sicher erhält statt eines Verbindungsabbruchs mitten im Upload.
+      req.resume()
+      return res.status(507).json({
+        error: 'Der Server hat gerade zu wenig freien Speicher. Bitte später erneut versuchen.',
+        code: 'INSUFFICIENT_STORAGE',
+      })
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Speicherprüfung fehlgeschlagen:', err.message)
+  }
+  return next()
+}
+
+app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
+  try {
+    const files = req.files || []
+    if (files.length === 0) {
+      return res.status(400).json({ error: 'Keine Dateien hochgeladen' })
+    }
+
+    // Session bestimmen oder neu anlegen.
+    // Express 5: ohne passenden Body-Parser ist req.body undefined
+    const body = req.body ?? {}
+    let sessionId = body.session_id
+    if (sessionId !== undefined && !isValidSessionId(sessionId)) {
+      await cleanupTmpUploads(files)
+      return res.status(400).json({ error: 'Ungültige Session-ID' })
+    }
+    if (sessionId && cancelledIds.has(sessionId)) {
+      await cleanupTmpUploads(files)
+      return res.status(410).json({ error: 'Vorgang wurde abgebrochen', code: 'SESSION_CANCELLED' })
+    }
+    if (!sessionId) {
+      sessionId = crypto.randomBytes(16).toString('hex')
+    }
+
+    // Gesamtgröße der Sitzung prüfen, bevor etwas in den Sitzungsordner wandert.
+    const existing = sessions.get(sessionId)
+    const requestBytes = files.reduce((sum, f) => sum + (f.size || 0), 0)
+    if (
+      exceedsPlaylistLimit({
+        current: existing?.totalBytes || 0,
+        incoming: requestBytes,
+        max: MAX_PLAYLIST_SIZE,
+      })
+    ) {
+      await cleanupTmpUploads(files)
+      // Die Sitzung kann nicht mehr fertig werden: bisherige Uploads sofort freigeben.
+      if (existing) await removeSession(sessionId)
+      return res.status(413).json({
+        error: `Die Playlist überschreitet das Maximum von ${formatGB(MAX_PLAYLIST_SIZE)}.`,
+        code: 'PLAYLIST_TOO_LARGE',
+        max_bytes: MAX_PLAYLIST_SIZE,
+      })
+    }
+
+    const dir = sessionDirPath(sessionId)
+    await fsp.mkdir(dir, { recursive: true })
+
+    let session = existing
+    if (!session) {
+      session = {
+        id: sessionId,
+        status: 'uploading',
+        progress: 0,
+        files: [],
+        totalBytes: 0,
+        createdAt: Date.now(),
+        format: DEFAULT_FORMAT,
+        bitrate: DEFAULT_BITRATE,
+      }
+      sessions.set(sessionId, session)
+    }
+
+    // Reihenfolge (order[]) und total_files auslesen.
+    const orderRaw = body['order[]'] ?? body.order
+    const orderList = Array.isArray(orderRaw) ? orderRaw : orderRaw !== undefined ? [orderRaw] : []
+    const chunkIndex = body.chunk_index !== undefined ? parseInt(body.chunk_index, 10) : null
+
+    const stored = []
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const ext = path.extname(file.originalname).toLowerCase().replace('.', '')
+      if (!['mp3', 'wav'].includes(ext)) {
+        await safeUnlink(file.path)
+        continue
+      }
+
+      let orderVal = orderList[i] !== undefined ? parseInt(orderList[i], 10) : chunkIndex
+      if (!Number.isFinite(orderVal)) orderVal = session.files.length
+      const prefix = String(orderVal).padStart(4, '0')
+      const safeName = sanitizeFilename(file.originalname)
+      const targetName = `${prefix}_${safeName}`
+      const targetPath = path.join(dir, targetName)
+
+      await fsp.rename(file.path, targetPath)
+      session.files.push(targetName)
+      session.totalBytes = (session.totalBytes || 0) + (file.size || 0)
+      stored.push(targetName)
+    }
+
+    if (stored.length === 0) {
+      return res.status(400).json({ error: 'Keine gültigen Audio-Dateien' })
+    }
+
+    return res.json({
+      success: true,
+      session_id: sessionId,
+      file_count: session.files.length,
+      chunk_index: chunkIndex,
+    })
+  } catch (err) {
+    return res.status(500).json({ error: 'Upload fehlgeschlagen: ' + err.message })
+  }
+})
+
+// --- Convert --------------------------------------------------------------
+app.post('/api/convert', async (req, res) => {
+  try {
+    const body = req.body ?? {}
+    const sessionId = body.session_id || ''
+    if (!isValidSessionId(sessionId)) {
+      return res.status(400).json({ error: 'Ungültige Session-ID' })
+    }
+
+    const session = sessions.get(sessionId)
+    const dir = sessionDirPath(sessionId)
+    if (!session || !fs.existsSync(dir)) {
+      return res.status(404).json({ error: 'Session nicht gefunden' })
+    }
+
+    if (session.status === 'converting' || session.status === 'queued') {
+      return res.status(409).json({ error: 'Konvertierung läuft bereits' })
+    }
+
+    // Format validieren.
+    let format = body.format
+    if (!OUTPUT_FORMATS[format]) format = DEFAULT_FORMAT
+
+    // Bitrate validieren + auf Format-Maximum begrenzen.
+    let bitrate = parseInt(body.bitrate, 10)
+    if (!AVAILABLE_BITRATES.includes(bitrate)) bitrate = DEFAULT_BITRATE
+    const maxBitrate = OUTPUT_FORMATS[format].maxBitrate
+    if (bitrate > maxBitrate) bitrate = maxBitrate
+
+    const inputFiles = await listInputFiles(dir)
+    if (inputFiles.length === 0) {
+      return res.status(400).json({ error: 'Keine Dateien zum Konvertieren' })
+    }
+
+    session.format = format
+    session.bitrate = bitrate
+    session.error = null
+    session.fileSize = null
+
+    enqueueJob(session)
+
+    return res.json({
+      success: true,
+      message: 'Konvertierung gestartet',
+      format,
+      bitrate,
+      queue_position: queuePosition(sessionId),
+    })
+  } catch (err) {
+    return res.status(500).json({ error: 'Konvertierung fehlgeschlagen: ' + err.message })
+  }
+})
+
+// --- Status ---------------------------------------------------------------
+app.get('/api/status/:id', (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID' })
+  }
+  const session = sessions.get(sessionId)
+  if (!session) {
+    return res.status(404).json({ error: 'Session nicht gefunden' })
+  }
+
+  const response = {
+    status: session.status,
+    progress: session.progress || 0,
+    error: session.error || null,
+  }
+  if (session.fileSize != null) response.file_size = session.fileSize
+  const queuePos = queuePosition(sessionId)
+  if (queuePos > 0) response.queue_position = queuePos
+  return res.json(response)
+})
+
+// --- Download -------------------------------------------------------------
+app.get('/api/download/:id', (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).type('text/plain').send('Ungültige Session-ID')
+  }
+  const session = sessions.get(sessionId)
+  const dir = sessionDirPath(sessionId)
+  if (!session) {
+    return res.status(404).type('text/plain').send('Session nicht gefunden')
+  }
+
+  const fmt = OUTPUT_FORMATS[session.format] || OUTPUT_FORMATS[DEFAULT_FORMAT]
+  const outputFile = path.join(dir, 'playlist.' + fmt.extension)
+  if (!fs.existsSync(outputFile)) {
+    return res.status(404).type('text/plain').send('Datei nicht gefunden')
+  }
+
+  res.setHeader('Content-Type', fmt.mime)
+  res.setHeader('Content-Disposition', `attachment; filename="playlist.${fmt.extension}"`)
+  res.setHeader('Content-Length', fs.statSync(outputFile).size)
+
+  const stream = fs.createReadStream(outputFile)
+  stream.pipe(res)
+  stream.on('error', () => {
+    if (!res.headersSent) res.status(500).end()
+  })
+  // Nach erfolgreichem Download Session aufräumen.
+  res.on('close', () => {
+    if (res.writableFinished) {
+      removeSession(sessionId).catch(() => {})
+    }
+  })
+})
+
+// --- Cancel ---------------------------------------------------------------
+/**
+ * Bricht eine Session ab: laufendes ffmpeg beenden (der Slot wird im finally von
+ * runConversion frei), Queue-Eintrag und Dateien entfernen. Idempotent und ohne
+ * Body, damit der Browser es auch per navigator.sendBeacon beim Schließen schickt.
+ */
+app.post('/api/cancel/:id', async (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID' })
+  }
+  // Nur bekannte Sessions merken, damit beliebige IDs die Liste nicht füllen
+  if (sessions.has(sessionId)) cancelledIds.set(sessionId, Date.now())
+  await removeSession(sessionId)
+  return res.status(204).end()
+})
+
+// --- Fehler aus multer (z. B. Datei > 500 MB) als JSON statt HTML-500 -------
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: `Eine Datei ist größer als ${MAX_FILE_SIZE / 1024 ** 2} MB.`,
+        code: 'FILE_TOO_LARGE',
+        max_bytes: MAX_FILE_SIZE,
+      })
+    }
+    return res.status(400).json({ error: 'Upload abgelehnt: ' + err.message, code: err.code })
+  }
+  // eslint-disable-next-line no-console
+  console.error(err)
+  return res.status(500).json({ error: 'Interner Fehler', code: 'INTERNAL' })
+})
+
+module.exports = app

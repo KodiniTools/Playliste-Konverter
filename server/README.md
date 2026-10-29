@@ -40,6 +40,24 @@ Da die Pfade unverändert sind, **muss das Frontend nicht angepasst werden** –
 nur nginx leitet `/playlistkonverter/api/` jetzt an den Node-Dienst statt an
 PHP-FPM weiter.
 
+## Aufbau
+
+| Datei | Aufgabe |
+|-------|---------|
+| `server.js` | Einstieg: Temp-Ordner, periodischer Cleanup, `listen` |
+| `app.js` | Express-Routen und Fehlerbehandlung |
+| `config.js` | Umgebungsvariablen, Formate, Bitraten |
+| `sessions.js` | In-Memory-Sessions, Sitzungsordner, Datei-Helfer |
+| `conversion.js` | ffmpeg-Pipeline (Stream-Copy oder Neukodierung), Fehler-Logging |
+| `queue.js` | Warteschlange, max. `MAX_CONCURRENT` parallele Konvertierungen |
+| `lifecycle.js` | Abbruch, Aufräumen nach Download und nach 1 Stunde |
+| `health.js` | `/health`: `status` ok/degraded, `checks.ffmpeg`, `checks.storage` |
+| `audio.js`, `limits.js` | Reine Helfer (ffmpeg-Argumente, Größen) |
+
+Fehlgeschlagene Konvertierungen stehen mit Session-ID und dem Ende der
+ffmpeg-Ausgabe im Log (`pm2 logs playlistkonverter-server`), die ffmpeg-Version
+beim Start ebenfalls.
+
 ## Voraussetzungen
 
 - Node.js (dieselbe Version wie die übrigen Kodini-Dienste)
