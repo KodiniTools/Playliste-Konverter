@@ -34,7 +34,7 @@ describe('Texte zu Limits', () => {
 
   it('Landing-Seite nennt das Gesamtlimit (DE/EN)', () => {
     const html = read('index.html')
-    expect(html).toContain(`MP3- oder WAV-Dateien bis ${gb} GB`)
-    expect(html).toContain(`MP3 or WAV files up to ${gb} GB`)
+    expect(html).toContain(`OGG, OPUS) bis ${gb} GB`)
+    expect(html).toContain(`OGG, OPUS) up to ${gb} GB`)
   })
 })

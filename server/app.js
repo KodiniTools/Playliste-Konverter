@@ -27,6 +27,7 @@ const {
   MAX_PLAYLIST_SIZE,
   MIN_FREE_SPACE,
   OUTPUT_FORMATS,
+  INPUT_EXTENSIONS,
   DEFAULT_FORMAT,
   DEFAULT_BITRATE,
   AVAILABLE_BITRATES,
@@ -160,7 +161,7 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const ext = path.extname(file.originalname).toLowerCase().replace('.', '')
-      if (!['mp3', 'wav'].includes(ext)) {
+      if (!INPUT_EXTENSIONS.includes(ext)) {
         await safeUnlink(file.path)
         continue
       }

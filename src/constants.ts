@@ -85,13 +85,20 @@ export const ACCEPTED_AUDIO_TYPES = [
   'audio/x-wav',
   'audio/wave',
   'audio/vnd.wave',
+  'audio/flac',
+  'audio/x-flac',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/ogg',
+  'audio/opus',
 ]
-export const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav']
+export const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg', '.opus']
 
 /** Wert für das accept-Attribut der Dateiauswahl. */
 export const ACCEPT_ATTRIBUTE = [...ACCEPTED_AUDIO_EXTENSIONS, ...ACCEPTED_AUDIO_TYPES].join(',')
 
-/** true, wenn der Server die Datei annimmt (Endung .mp3/.wav, beliebige Schreibweise). */
+/** true, wenn der Server die Datei annimmt (erlaubte Endung, beliebige Schreibweise). */
 export function isAcceptedAudioFile(file: { name: string }): boolean {
   const name = file.name.toLowerCase()
   return ACCEPTED_AUDIO_EXTENSIONS.some((extension) => name.endsWith(extension))

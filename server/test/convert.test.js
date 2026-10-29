@@ -36,7 +36,7 @@ function ffmpeg(args) {
 }
 
 /** Testdatei mit Sinuston erzeugen. */
-function makeTrack(dir, name, { freq, ext, rate = 44100, channels = 2, codec }) {
+function makeTrack(dir, name, { freq, ext, rate = 44100, channels = 2, codec, args = [] }) {
   const file = path.join(dir, name)
   const audioCodec = codec || (ext === 'mp3' ? 'libmp3lame' : 'pcm_s16le')
   ffmpeg([
@@ -49,6 +49,7 @@ function makeTrack(dir, name, { freq, ext, rate = 44100, channels = 2, codec }) 
     '-c:a',
     audioCodec,
     ...(ext === 'mp3' ? ['-b:a', '192k'] : []),
+    ...args,
     file,
   ])
   return file
@@ -221,6 +222,63 @@ test(
     assert.deepEqual(
       segmentFrequencies(out, 3).map((f) => Math.round(f / 100) * 100),
       [400, 600, 800],
+    )
+  },
+)
+
+test(
+  'N1: FLAC, M4A, AAC, OGG und OPUS gemischt: vollständig und in Reihenfolge',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-n1-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+
+    const files = [
+      makeTrack(work, 'a.flac', { ext: 'flac', freq: 400, codec: 'flac' }),
+      makeTrack(work, 'b.m4a', { ext: 'm4a', freq: 600, codec: 'aac', rate: 48000 }),
+      makeTrack(work, 'c.aac', { ext: 'aac', freq: 800, codec: 'aac' }),
+      makeTrack(work, 'd.ogg', { ext: 'ogg', freq: 1000, codec: 'libvorbis', channels: 1 }),
+      makeTrack(work, 'e.opus', { ext: 'opus', freq: 1200, codec: 'libopus', rate: 48000 }),
+    ]
+    const { sessionId, status } = await convertViaServer(srv.base, files, 'mp3', 192)
+    assert.equal(status.status, 'done', JSON.stringify(status))
+    const out = await download(srv.base, sessionId, path.join(work, 'out.mp3'))
+    assert.ok(Math.abs(duration(out) - 5 * SECONDS) < 0.5, `Dauer ${duration(out)}`)
+    assert.deepEqual(
+      segmentFrequencies(out, 5).map((f) => Math.round(f / 100) * 100),
+      [400, 600, 800, 1000, 1200],
+    )
+  },
+)
+
+test(
+  'N1: mehrere OGG-Vorbis-Dateien → OGG werden neu kodiert (kein kaputtes Stream-Copy)',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-ogg-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+
+    // Unterschiedliche Qualität → unterschiedliche Vorbis-Header; per Stream-Copy
+    // wäre der zweite Track danach nur noch Rauschen bzw. Stille
+    const files = [
+      makeTrack(work, 'v0.ogg', { ext: 'ogg', freq: 500, codec: 'libvorbis', args: ['-q:a', '0'] }),
+      makeTrack(work, 'v1.ogg', { ext: 'ogg', freq: 900, codec: 'libvorbis', args: ['-q:a', '9'] }),
+    ]
+    const { sessionId, status } = await convertViaServer(srv.base, files, 'ogg', 128)
+    assert.equal(status.status, 'done', JSON.stringify(status))
+    const out = await download(srv.base, sessionId, path.join(work, 'out.ogg'))
+    assert.ok(Math.abs(duration(out) - 2 * SECONDS) < 0.5, `Dauer ${duration(out)}`)
+    assert.deepEqual(
+      segmentFrequencies(out, 2).map((f) => Math.round(f / 100) * 100),
+      [500, 900],
     )
   },
 )

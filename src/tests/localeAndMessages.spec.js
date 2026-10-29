@@ -84,12 +84,12 @@ describe('Übersetzte Meldungen des Converter-Stores (F7)', () => {
 
   it('Hinzufügen, Überspringen und Entfernen auf Englisch, mit Plural', () => {
     const store = useConverterStore()
-    store.addFiles([new File(['x'], 'a.mp3'), new File(['x'], 'b.wav'), new File(['x'], 'c.ogg')])
+    store.addFiles([new File(['x'], 'a.mp3'), new File(['x'], 'b.wav'), new File(['x'], 'c.wma')])
     store.removeFile(store.files[0].id)
     store.removeAllFiles()
     expect(messages()).toEqual([
       '2 files added',
-      '1 file skipped (MP3/WAV only)',
+      '1 file skipped (unsupported audio format)',
       '“a.mp3” removed',
       '1 file removed',
     ])
