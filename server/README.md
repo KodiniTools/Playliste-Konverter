@@ -33,6 +33,7 @@ Test `test/convert.test.js`).
 | POST    | `/playlistkonverter/api/convert`         | Startet die Konvertierung (`session_id`, `format`, `bitrate`) |
 | GET     | `/playlistkonverter/api/status/<id>`     | `{ status, progress, file_size?, error? }` |
 | GET     | `/playlistkonverter/api/download/<id>`   | Liefert die fertige Datei, räumt danach auf |
+| POST    | `/playlistkonverter/api/cancel/<id>`     | Bricht ab: beendet ffmpeg, gibt Slot und Dateien frei (204; späterer Upload zur Session → 410) |
 | GET     | `/playlistkonverter/health`              | Health-Check |
 
 Da die Pfade unverändert sind, **muss das Frontend nicht angepasst werden** –

@@ -2,7 +2,13 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useToastStore } from './toast'
 import { MAX_PLAYLIST_SIZE, OUTPUT_FORMATS, AVAILABLE_BITRATES } from '../constants'
-import { uploadFiles, startConversion, fetchStatus, getDownloadUrl } from '../api/converter'
+import {
+  uploadFiles,
+  startConversion,
+  fetchStatus,
+  getDownloadUrl,
+  cancelSession,
+} from '../api/converter'
 import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
@@ -225,6 +231,10 @@ export const useConverterStore = defineStore('converter', () => {
 
       const uploadRes = await uploadFiles(formData, {
         signal: abortController.signal,
+        // Früh merken, damit Abbrechen während des Uploads die Server-Session freigibt
+        onSessionId: (id) => {
+          sessionId.value = id
+        },
         onUploadProgress: (e) => {
           uploadProgress.value = Math.round((e.loaded / e.total) * 100)
 
@@ -317,6 +327,7 @@ export const useConverterStore = defineStore('converter', () => {
   function cancel() {
     const toastStore = useToastStore()
     isCancelling.value = true
+    releaseServerSession()
 
     if (abortController) {
       abortController.abort()
@@ -327,6 +338,18 @@ export const useConverterStore = defineStore('converter', () => {
     toastStore.info('Vorgang wird abgebrochen...')
     reset()
   }
+
+  /** Laufende Server-Session (Upload oder Konvertierung) auf dem Server abbrechen. */
+  function releaseServerSession() {
+    const active = status.value === 'uploading' || status.value === 'converting'
+    if (active && sessionId.value) cancelSession(sessionId.value)
+  }
+
+  // Tab schließen oder Seite verlassen: Server-Session freigeben. Bleibt die
+  // Seite im Back-Forward-Cache (persisted), läuft der Vorgang danach weiter.
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) releaseServerSession()
+  })
 
   function reset() {
     files.value = []

@@ -9,10 +9,11 @@ import { UPLOAD_TIMEOUT, CONVERT_START_TIMEOUT, STATUS_POLL_TIMEOUT } from '../c
  * paralleles Hochladen keinen Durchsatzgewinn, da sich alle Übertragungen
  * dieselbe Leitung teilen.
  * @param {FormData} formData  Enthält files[] und order[]
- * @param {{ signal: AbortSignal, onUploadProgress: function }} options
+ * @param {{ signal: AbortSignal, onUploadProgress: function, onSessionId?: function }} options
+ *   onSessionId wird mit der Session-ID aufgerufen, sobald die erste Datei angekommen ist.
  * @returns {Promise<{ data: { session_id: string } }>}
  */
-export async function uploadFiles(formData, { signal, onUploadProgress }) {
+export async function uploadFiles(formData, { signal, onUploadProgress, onSessionId }) {
   const fileEntries = formData.getAll('files[]')
   const orderEntries = formData.getAll('order[]')
 
@@ -46,7 +47,10 @@ export async function uploadFiles(formData, { signal, onUploadProgress }) {
     })
 
     // Erste Antwort liefert session_id; Folge-Uploads nutzen dieselbe
-    if (!sessionId) sessionId = res.data.session_id
+    if (!sessionId) {
+      sessionId = res.data.session_id
+      onSessionId?.(sessionId)
+    }
     // Restliche Bytes dieser Datei gutschreiben (für den Fall dass Ereignis fehlt)
     const remaining = fileSize - prevLoaded
     if (remaining > 0) {
@@ -84,6 +88,23 @@ export function fetchStatus(sessionId, { signal }) {
     timeout: STATUS_POLL_TIMEOUT,
     signal,
   })
+}
+
+/**
+ * Bittet den Server, eine Session abzubrechen: laufendes ffmpeg beenden, Slot und
+ * Dateien freigeben. Funktioniert auch beim Schließen des Tabs (sendBeacon, sonst
+ * fetch mit keepalive). Fehler werden ignoriert – der Server räumt spätestens
+ * nach 1 Stunde selbst auf.
+ * @param {string} sessionId
+ */
+export function cancelSession(sessionId) {
+  const url = `${API_BASE_URL}/cancel/${sessionId}`
+  try {
+    if (navigator.sendBeacon?.(url)) return
+    fetch(url, { method: 'POST', keepalive: true }).catch(() => {})
+  } catch {
+    // Abbrechen im Browser gilt trotzdem
+  }
 }
 
 /**
