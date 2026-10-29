@@ -17,13 +17,18 @@ const MAX_PLAYLIST_SIZE = parseBytes(process.env.MAX_PLAYLIST_SIZE, 5 * 1024 ** 
 const MIN_FREE_SPACE = parseBytes(process.env.MIN_FREE_SPACE, 20 * 1024 ** 3)
 const SESSION_MAX_AGE = 60 * 60 * 1000 // 1 Stunde
 
+// Erlaubte Eingabe-Endungen (gleiche Liste wie ACCEPTED_AUDIO_EXTENSIONS der App)
+const INPUT_EXTENSIONS = ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus']
+
+// Stream-Copy (streamCopyCodec) nur für MP3: MP3-Frames sind unabhängig. Bei
+// Vorbis und Opus trägt jede Datei eigene Codec-Header, die der concat-Demuxer
+// nicht übernimmt – solche Eingaben (seit OGG/OPUS erlaubt sind) werden neu kodiert.
 const OUTPUT_FORMATS = {
   webm: {
     extension: 'webm',
     mime: 'audio/webm',
     codec: 'libopus',
     maxBitrate: 256,
-    streamCopyCodec: 'opus',
   },
   mp3: {
     extension: 'mp3',
@@ -37,7 +42,6 @@ const OUTPUT_FORMATS = {
     mime: 'audio/ogg',
     codec: 'libvorbis',
     maxBitrate: 320,
-    streamCopyCodec: 'vorbis',
   },
 }
 const DEFAULT_FORMAT = 'mp3'
@@ -56,6 +60,7 @@ module.exports = {
   MIN_FREE_SPACE,
   SESSION_MAX_AGE,
   OUTPUT_FORMATS,
+  INPUT_EXTENSIONS,
   DEFAULT_FORMAT,
   DEFAULT_BITRATE,
   AVAILABLE_BITRATES,

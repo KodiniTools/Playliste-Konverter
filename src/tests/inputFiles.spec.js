@@ -4,20 +4,31 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
-import { ACCEPT_ATTRIBUTE, isAcceptedAudioFile } from '../constants'
+import { ACCEPT_ATTRIBUTE, ACCEPTED_AUDIO_EXTENSIONS, isAcceptedAudioFile } from '../constants'
 import { useConverterStore } from '../stores/converter'
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 describe('isAcceptedAudioFile', () => {
-  it.each(['a.mp3', 'B.MP3', 'c.Wav', 'track.final.WAV'])('nimmt %s an', (name) => {
+  it.each([
+    'a.mp3',
+    'B.MP3',
+    'c.Wav',
+    'track.final.WAV',
+    'd.flac',
+    'e.M4A',
+    'f.aac',
+    'g.ogg',
+    'h.Opus',
+  ])('nimmt %s an', (name) => {
     expect(isAcceptedAudioFile({ name })).toBe(true)
   })
 
-  it.each(['a.ogg', 'a.flac', 'mp3', 'a.mp3.txt', 'a'])('lehnt %s ab', (name) => {
+  it.each(['a.png', 'a.wma', 'mp3', 'a.mp3.txt', 'a', 'a.flac.zip'])('lehnt %s ab', (name) => {
     expect(isAcceptedAudioFile({ name })).toBe(false)
   })
 
@@ -25,6 +36,16 @@ describe('isAcceptedAudioFile', () => {
     for (const value of ['.mp3', '.wav', 'audio/mpeg', 'audio/x-wav', 'audio/wave']) {
       expect(ACCEPT_ATTRIBUTE.split(',')).toContain(value)
     }
+  })
+})
+
+describe('Eingabeformate App = Server (N1)', () => {
+  it('erlaubt dieselben Endungen wie server/config.js', () => {
+    const require = createRequire(import.meta.url)
+    const { INPUT_EXTENSIONS } = require('../../server/config.js')
+    expect(ACCEPTED_AUDIO_EXTENSIONS.map((e) => e.slice(1)).sort()).toEqual(
+      [...INPUT_EXTENSIONS].sort(),
+    )
   })
 })
 

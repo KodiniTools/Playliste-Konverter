@@ -25,7 +25,7 @@
     "hint": "Higher bitrate = better quality, larger file"
   },
   "uploader": {
-    "dropText": "Drop MP3 or WAV files here",
+    "dropText": "Drop audio files here (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "or",
     "selectButton": "Select files",
     "selectFolderButton": "Select folder",
@@ -60,7 +60,7 @@
   "toast": {
     "close": "Close",
     "filesAdded": "{n} file added | {n} files added",
-    "filesSkipped": "{n} file skipped (MP3/WAV only) | {n} files skipped (MP3/WAV only)",
+    "filesSkipped": "{n} file skipped (unsupported audio format) | {n} files skipped (unsupported audio format)",
     "fileRemoved": "“{name}” removed",
     "filesRemoved": "{n} file removed | {n} files removed",
     "cancelling": "Cancelling …",

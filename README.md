@@ -1,6 +1,6 @@
 # Playlist Konverter
 
-Web-Tool zum Zusammenfügen mehrerer MP3/WAV-Tracks zu einer Datei (MP3, WebM/Opus
+Web-Tool zum Zusammenfügen mehrerer Audio-Tracks (MP3, WAV, FLAC, M4A/AAC, OGG, OPUS) zu einer Datei (MP3, WebM/Opus
 oder OGG/Vorbis), live unter <https://kodinitools.com/playlistkonverter/>.
 
 ## Features
@@ -94,7 +94,7 @@ Einmalige Einrichtung, Einzelschritte, Variablen und Diagnose: [`DEPLOY.md`](DEP
 | Größe pro Datei         | 500 MB | Server (413)                                    |
 | Freie Platzreserve      | 20 GB  | Server (507 bei Unterschreitung)                |
 | Parallele Konvertierung | 3      | Server (weitere Jobs warten in der Queue)       |
-| Eingabeformate          | MP3, WAV | App und Server                                |
+| Eingabeformate          | MP3, WAV, FLAC, M4A, AAC, OGG, OPUS | App und Server                                |
 
 ## Troubleshooting
 

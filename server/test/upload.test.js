@@ -142,11 +142,26 @@ test('Ungültige Werte in der Umgebung fallen auf die Standards zurück', async 
   assert.ok([200, 507].includes(res.status), `Status ${res.status}`)
 })
 
-test('Nur MP3/WAV werden angenommen (bestehendes Verhalten bleibt)', async (t) => {
+test('Andere Dateien als Audio-Formate werden abgelehnt', async (t) => {
   const srv = await startServer({ MAX_PLAYLIST_SIZE: '5M', MIN_FREE_SPACE: '0' })
   t.after(() => srv.stop())
 
   const res = await upload(srv.base, { bytes: 1024, name: 'bild.png' })
   assert.equal(res.status, 400)
   assert.deepEqual(listFiles(srv.tempDir), [])
+})
+
+test('N1: FLAC, M4A, AAC, OGG und OPUS werden angenommen (auch in Großbuchstaben)', async (t) => {
+  const srv = await startServer({ MAX_PLAYLIST_SIZE: '5M', MIN_FREE_SPACE: '0' })
+  t.after(() => srv.stop())
+
+  let sessionId
+  const names = ['a.flac', 'b.M4A', 'c.aac', 'd.ogg', 'e.opus']
+  for (const [index, name] of names.entries()) {
+    const res = await upload(srv.base, { bytes: 1024, name, sessionId, index })
+    assert.equal(res.status, 200, name)
+    sessionId = (await res.json()).session_id
+  }
+  const stored = listFiles(srv.tempDir).map((f) => path.basename(f))
+  assert.equal(stored.filter((f) => /^\d{4}_/.test(f)).length, names.length)
 })

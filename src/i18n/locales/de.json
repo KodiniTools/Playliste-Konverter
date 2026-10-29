@@ -25,7 +25,7 @@
     "hint": "Höhere Bitrate = bessere Qualität, größere Datei"
   },
   "uploader": {
-    "dropText": "MP3 oder WAV Dateien hier ablegen",
+    "dropText": "Audio-Dateien hier ablegen (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "oder",
     "selectButton": "Dateien auswählen",
     "selectFolderButton": "Ordner auswählen",
@@ -60,7 +60,7 @@
   "toast": {
     "close": "Schließen",
     "filesAdded": "{n} Datei hinzugefügt | {n} Dateien hinzugefügt",
-    "filesSkipped": "{n} Datei übersprungen (nur MP3/WAV) | {n} Dateien übersprungen (nur MP3/WAV)",
+    "filesSkipped": "{n} Datei übersprungen (kein unterstütztes Audioformat) | {n} Dateien übersprungen (kein unterstütztes Audioformat)",
     "fileRemoved": "„{name}“ entfernt",
     "filesRemoved": "{n} Datei entfernt | {n} Dateien entfernt",
     "cancelling": "Vorgang wird abgebrochen …",

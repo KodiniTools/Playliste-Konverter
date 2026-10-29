@@ -13,7 +13,9 @@ läuft der Fortschritt bis 100 % und die Datei steht danach zum Download bereit.
 - **Stream-Copy** (schnell, ohne Qualitätsverlust): nur wenn ALLE Dateien in Codec,
   Samplerate und Kanalzahl übereinstimmen und schon im Zielformat vorliegen
   (z. B. nur MP3s mit 44,1 kHz Stereo → MP3). Dann concat-Demuxer mit `-c:a copy`.
-- **Neukodierung** (alle anderen Fälle, z. B. MP3 + WAV gemischt): jede Datei wird
+  Nur für MP3: Vorbis- und Opus-Dateien tragen eigene Codec-Header, die der
+  concat-Demuxer nicht übernimmt, und werden deshalb immer neu kodiert.
+- **Neukodierung** (alle anderen Fälle, z. B. MP3 + WAV oder FLAC gemischt): jede Datei wird
   einzeln von einem eigenen ffmpeg in einheitliches PCM (Float, Stereo, feste
   Samplerate) dekodiert und nacheinander in **einen** Encoder gestreamt.
   Kein Zwischenspeicher auf der Platte, keine Grenze bei der Dateianzahl.
