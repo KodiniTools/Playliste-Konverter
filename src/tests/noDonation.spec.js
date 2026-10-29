@@ -14,7 +14,7 @@ function collect(dir, out = []) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
     if (statSync(full).isDirectory()) collect(full, out)
-    else if (/\.(vue|js|css)$/.test(entry) && full !== SELF) out.push(full)
+    else if (/\.(vue|js|ts|css)$/.test(entry) && full !== SELF) out.push(full)
   }
   return out
 }

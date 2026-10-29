@@ -125,7 +125,7 @@ curl -s http://127.0.0.1:9016/health  # Health-Check des Dienstes
 
 | Variable (`ecosystem.config.cjs`) | Standard | Wirkung |
 | --- | --- | --- |
-| `MAX_PLAYLIST_SIZE` | `5G` | Gesamtgröße pro Sitzung; darüber `413 PLAYLIST_TOO_LARGE`, die Sitzung wird sofort gelöscht. Muss zu `MAX_PLAYLIST_SIZE` in `src/constants.js` passen. |
+| `MAX_PLAYLIST_SIZE` | `5G` | Gesamtgröße pro Sitzung; darüber `413 PLAYLIST_TOO_LARGE`, die Sitzung wird sofort gelöscht. Muss zu `MAX_PLAYLIST_SIZE` in `src/constants.ts` passen. |
 | `MAX_FILE_SIZE` | `500M` | Größe pro Datei; darüber `413 FILE_TOO_LARGE`. |
 | `MIN_FREE_SPACE` | `20G` | Freier Platz, der auf der Partition des Temp-Ordners bleiben muss; sonst `507 INSUFFICIENT_STORAGE`, bevor etwas geschrieben wird. |
 

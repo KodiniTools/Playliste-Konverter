@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useToastStore } from './toast'
-import { MAX_PLAYLIST_SIZE, OUTPUT_FORMATS, AVAILABLE_BITRATES } from '../constants'
+import {
+  MAX_PLAYLIST_SIZE,
+  OUTPUT_FORMATS,
+  AVAILABLE_BITRATES,
+  isOutputFormat,
+  type OutputFormatId,
+} from '../constants'
 import {
   uploadFiles,
   startConversion,
@@ -9,28 +15,42 @@ import {
   getDownloadUrl,
   cancelSession,
   subscribeStatus,
+  type ConversionStatus,
 } from '../api/converter'
 import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
 import { logger } from '../utils/logger'
+import { isAbortError } from '../utils/errors'
+
+/** Ein Track der Playlist. */
+export interface PlaylistItem {
+  file: File
+  id: number
+  name: string
+  size: number
+}
+
+export type ConverterStatus = 'idle' | 'uploading' | 'converting' | 'done' | 'error'
+
+type Timer = ReturnType<typeof setTimeout>
 
 export const useConverterStore = defineStore('converter', () => {
-  const files = ref([])
+  const files = ref<PlaylistItem[]>([])
   const uploadProgress = ref(0)
-  const status = ref('idle') // idle, uploading, converting, done, error
-  const sessionId = ref(null)
-  const downloadUrl = ref(null)
-  const errorMessage = ref(null)
-  const outputFileSize = ref(null) // Größe der konvertierten Datei
-  const outputFormat = ref(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
-  const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate'), 10), outputFormat.value)) // Standard: 192 kbps
+  const status = ref<ConverterStatus>('idle')
+  const sessionId = ref<string | null>(null)
+  const downloadUrl = ref<string | null>(null)
+  const errorMessage = ref<string | null>(null)
+  const outputFileSize = ref<number | null>(null) // Größe der konvertierten Datei
+  const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
+  const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
 
   // Für Abbrechen-Funktion
-  let abortController = null
-  let pollingTimer = null
-  let closeEvents = null
-  let smoothProgressInterval = null
+  let abortController: AbortController | null = null
+  let pollingTimer: Timer | null = null
+  let closeEvents: (() => void) | null = null
+  let smoothProgressInterval: ReturnType<typeof setInterval> | null = null
   const isCancelling = ref(false)
 
   // Für simulierten flüssigen Fortschritt
@@ -41,9 +61,9 @@ export const useConverterStore = defineStore('converter', () => {
   const queuePosition = ref(0)
 
   // Für Zeitberechnung
-  const uploadStartTime = ref(null)
+  const uploadStartTime = ref<number | null>(null)
   const uploadSpeed = ref(0) // Bytes pro Sekunde
-  const estimatedTimeRemaining = ref(null) // in Sekunden
+  const estimatedTimeRemaining = ref<number | null>(null) // in Sekunden
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
@@ -81,7 +101,7 @@ export const useConverterStore = defineStore('converter', () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   })
 
-  function addFiles(newFiles) {
+  function addFiles(newFiles: FileList | File[]) {
     const toastStore = useToastStore()
     const validFiles = Array.from(newFiles).filter(
       (f) =>
@@ -115,7 +135,7 @@ export const useConverterStore = defineStore('converter', () => {
     }
   }
 
-  function removeFile(id) {
+  function removeFile(id: number) {
     const toastStore = useToastStore()
     const file = files.value.find((f) => f.id === id)
     files.value = files.value.filter((f) => f.id !== id)
@@ -131,13 +151,14 @@ export const useConverterStore = defineStore('converter', () => {
     toastStore.info(`${count} ${count === 1 ? 'Datei' : 'Dateien'} entfernt`)
   }
 
-  function moveFile(fromIndex, toIndex) {
+  function moveFile(fromIndex: number, toIndex: number) {
     const item = files.value.splice(fromIndex, 1)[0]
+    if (item === undefined) return
     files.value.splice(toIndex, 0, item)
   }
 
-  function setOutputFormat(format) {
-    if (OUTPUT_FORMATS[format]) {
+  function setOutputFormat(format: string) {
+    if (isOutputFormat(format)) {
       outputFormat.value = format
       writePref('outputFormat', format)
       // Bitrate anpassen falls über Maximum des neuen Formats
@@ -148,7 +169,7 @@ export const useConverterStore = defineStore('converter', () => {
     }
   }
 
-  function setBitrate(value) {
+  function setBitrate(value: number) {
     const validBitrate = AVAILABLE_BITRATES.find((b) => b.value === value)
     if (validBitrate) {
       // Begrenze auf Format-Maximum
@@ -165,7 +186,7 @@ export const useConverterStore = defineStore('converter', () => {
 
   const availableFormats = computed(() => {
     return Object.entries(OUTPUT_FORMATS).map(([key, value]) => ({
-      id: key,
+      id: key as OutputFormatId,
       ...value,
     }))
   })
@@ -238,7 +259,7 @@ export const useConverterStore = defineStore('converter', () => {
       const formData = new FormData()
       files.value.forEach((item, idx) => {
         formData.append('files[]', item.file)
-        formData.append('order[]', idx)
+        formData.append('order[]', String(idx))
       })
 
       const uploadRes = await uploadFiles(formData, {
@@ -250,7 +271,7 @@ export const useConverterStore = defineStore('converter', () => {
         onUploadProgress: (e) => {
           uploadProgress.value = Math.round((e.loaded / e.total) * 100)
 
-          const elapsedTime = (Date.now() - uploadStartTime.value) / 1000
+          const elapsedTime = (Date.now() - (uploadStartTime.value ?? Date.now())) / 1000
           if (elapsedTime > 0.5) {
             uploadSpeed.value = e.loaded / elapsedTime
             const remainingBytes = e.total - e.loaded
@@ -259,28 +280,30 @@ export const useConverterStore = defineStore('converter', () => {
         },
       })
 
-      sessionId.value = uploadRes.data.session_id
+      const id = uploadRes.data.session_id
+      if (!id) throw new Error('Keine Session-ID vom Server erhalten')
+      sessionId.value = id
 
       // Start conversion
       status.value = 'converting'
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
-      await startConversion(sessionId.value, outputFormat.value, bitrate.value, {
+      await startConversion(id, outputFormat.value, bitrate.value, {
         signal: abortController.signal,
       })
 
       // Poll status
-      await pollStatus()
+      pollStatus(id)
     } catch (err) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
+      if (isAbortError(err) || isCancelling.value) {
         logger.info('Vorgang vom Nutzer abgebrochen')
         toastStore.info('Vorgang abgebrochen')
         reset()
         return
       }
 
-      logger.error('Konvertierung fehlgeschlagen:', err, err.response?.data)
+      logger.error('Konvertierung fehlgeschlagen:', err, responseOf(err)?.data)
       status.value = 'error'
       errorMessage.value = uploadErrorMessage(err)
       toastStore.error(errorMessage.value)
@@ -289,9 +312,9 @@ export const useConverterStore = defineStore('converter', () => {
 
   /**
    * Status vom Server übernehmen (aus SSE oder Polling).
-   * @returns {boolean} true, wenn der Vorgang beendet ist (done/error)
+   * @returns true, wenn der Vorgang beendet ist (done/error)
    */
-  function applyStatus(data) {
+  function applyStatus(data: ConversionStatus, id: string): boolean {
     const toastStore = useToastStore()
     lastBackendProgress.value = data.progress || 0
     queuePosition.value = data.status === 'queued' ? data.queue_position || 0 : 0
@@ -301,7 +324,7 @@ export const useConverterStore = defineStore('converter', () => {
       displayProgress.value = 100
       isIndeterminate.value = false
       status.value = 'done'
-      downloadUrl.value = getDownloadUrl(sessionId.value)
+      downloadUrl.value = getDownloadUrl(id)
       outputFileSize.value = data.file_size || null
       toastStore.success('Konvertierung abgeschlossen!')
       return true
@@ -309,7 +332,7 @@ export const useConverterStore = defineStore('converter', () => {
     if (data.status === 'error') {
       stopIntervals()
       status.value = 'error'
-      errorMessage.value = data.error
+      errorMessage.value = data.error ?? null
       toastStore.error(data.error || 'Konvertierung fehlgeschlagen')
       return true
     }
@@ -325,16 +348,16 @@ export const useConverterStore = defineStore('converter', () => {
   }
 
   /** Fallback: Status pollen; die nächste Abfrage startet erst nach der Antwort. */
-  function startPolling() {
+  function startPolling(id: string) {
     const pollOnce = async () => {
       pollingTimer = null
       if (isCancelling.value || status.value !== 'converting') return
       try {
-        const res = await fetchStatus(sessionId.value, { signal: abortController?.signal })
+        const res = await fetchStatus(id, { signal: abortController?.signal })
         if (isCancelling.value || status.value !== 'converting') return
-        if (!applyStatus(res.data)) pollingTimer = setTimeout(pollOnce, 1000)
+        if (!applyStatus(res.data, id)) pollingTimer = setTimeout(pollOnce, 1000)
       } catch (err) {
-        if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
+        if (isAbortError(err) || isCancelling.value) {
           stopIntervals()
           return
         }
@@ -344,7 +367,7 @@ export const useConverterStore = defineStore('converter', () => {
     pollingTimer = setTimeout(pollOnce, 1000)
   }
 
-  async function pollStatus() {
+  function pollStatus(id: string) {
     displayProgress.value = 0
     lastBackendProgress.value = 0
     isIndeterminate.value = false
@@ -353,9 +376,9 @@ export const useConverterStore = defineStore('converter', () => {
     startProgressSimulation()
 
     // Bevorzugt Server-Sent Events; bei Verbindungsproblemen auf Polling umschalten
-    closeEvents = subscribeStatus(sessionId.value, {
+    closeEvents = subscribeStatus(id, {
       onStatus: (data) => {
-        if (!isCancelling.value && status.value === 'converting') applyStatus(data)
+        if (!isCancelling.value && status.value === 'converting') applyStatus(data, id)
       },
       onGone: () => {
         if (!isCancelling.value && status.value === 'converting') failConnection()
@@ -365,10 +388,10 @@ export const useConverterStore = defineStore('converter', () => {
           closeEvents()
           closeEvents = null
         }
-        if (!isCancelling.value && status.value === 'converting' && !pollingTimer) startPolling()
+        if (!isCancelling.value && status.value === 'converting' && !pollingTimer) startPolling(id)
       },
     })
-    if (!closeEvents) startPolling()
+    if (!closeEvents) startPolling(id)
   }
 
   function cancel() {
@@ -457,21 +480,47 @@ export const useConverterStore = defineStore('converter', () => {
 })
 
 /** Unbekanntes oder fehlendes Format aus dem Speicher → MP3. */
-export function normalizeFormat(format) {
-  return OUTPUT_FORMATS[format] ? format : 'mp3'
+export function normalizeFormat(format: unknown): OutputFormatId {
+  return isOutputFormat(format) ? format : 'mp3'
 }
 
 /**
  * Gespeicherte Bitrate auf eine angebotene Stufe bringen: unbekannt → 192 kbps,
  * über dem Format-Maximum → höchste erlaubte Stufe.
  */
-export function normalizeBitrate(value, format) {
-  const maxBitrate = OUTPUT_FORMATS[format]?.maxBitrate || 320
+export function normalizeBitrate(value: number, format: string): number {
+  const maxBitrate = isOutputFormat(format) ? OUTPUT_FORMATS[format].maxBitrate : 320
   const known = AVAILABLE_BITRATES.some((b) => b.value === value)
   const wanted = known ? value : 192
   if (wanted <= maxBitrate) return wanted
   const allowed = AVAILABLE_BITRATES.filter((b) => b.value <= maxBitrate)
-  return allowed[allowed.length - 1].value
+  // allowed ist nie leer (jedes Format erlaubt 64 kbps)
+  return allowed.at(-1)?.value ?? 64
+}
+
+interface ErrorResponse {
+  status?: number
+  data?: unknown
+}
+
+/** Server-Fehlerantwort (JSON) von Upload und Convert. */
+interface ServerErrorBody {
+  code?: string
+  error?: string
+  max_bytes?: number
+}
+
+/** `message` eines Fehlers (auch Fehlerobjekte, die keine Error-Instanz sind). */
+function messageOf(err: unknown): string | undefined {
+  if (typeof err !== 'object' || err === null || !('message' in err)) return undefined
+  return typeof err.message === 'string' ? err.message : undefined
+}
+
+/** `response` eines axios-Fehlers oder HttpError (utils/http), sonst undefined. */
+function responseOf(err: unknown): ErrorResponse | undefined {
+  if (typeof err !== 'object' || err === null || !('response' in err)) return undefined
+  const response = err.response
+  return typeof response === 'object' && response !== null ? response : undefined
 }
 
 /**
@@ -479,8 +528,12 @@ export function normalizeBitrate(value, format) {
  * Limit-Codes des Servers (server/server.js) werden übersetzt; sonst bleibt es
  * bei der Server-Meldung bzw. der technischen Fehlermeldung.
  */
-export function uploadErrorMessage(err) {
-  const data = err?.response?.data
+export function uploadErrorMessage(err: unknown): string {
+  const response = responseOf(err)
+  const data =
+    typeof response?.data === 'object' && response.data !== null
+      ? (response.data as ServerErrorBody)
+      : undefined
   const t = i18n.global.t
   switch (data?.code) {
     case 'PLAYLIST_TOO_LARGE':
@@ -493,7 +546,7 @@ export function uploadErrorMessage(err) {
       return t('error.serverStorage')
     default:
       // nginx-Rate-Limit (deploy/nginx-playlistkonverter.conf) antwortet mit HTML, ohne code
-      if (err?.response?.status === 429) return t('error.rateLimited')
-      return data?.error || err?.message || 'Upload fehlgeschlagen'
+      if (response?.status === 429) return t('error.rateLimited')
+      return data?.error || messageOf(err) || 'Upload fehlgeschlagen'
   }
 }

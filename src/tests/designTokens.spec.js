@@ -176,7 +176,7 @@ describe('Theme-Mechanik in app.html', () => {
 
   it('setzt data-theme vor dem ersten Paint, bevor das App-Skript lädt', () => {
     const prePaint = appHtml.indexOf("setAttribute('data-theme'")
-    const appScript = appHtml.indexOf('src="/src/main.js"')
+    const appScript = appHtml.indexOf('src="/src/main.ts"')
     expect(prePaint).toBeGreaterThan(-1)
     expect(appScript).toBeGreaterThan(prePaint)
   })
@@ -242,7 +242,7 @@ describe('Unterseiten FAQ und Anleitung', () => {
     expect(faqHtml).toContain("setAttribute('aria-expanded', String(open))")
   })
 
-  it('Anleitung und FAQ nennen dieselben Grenzen wie constants.js', () => {
+  it('Anleitung und FAQ nennen dieselben Grenzen wie constants.ts', () => {
     const gb = (bytes) => bytes / 1024 ** 3
     const de = (bytes) => gb(bytes).toLocaleString('de-DE')
     const en = (bytes) => gb(bytes).toLocaleString('en-US')

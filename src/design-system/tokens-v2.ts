@@ -1,35 +1,30 @@
 /**
- * Tokens v2: Zugriff auf tokens-v2.json aus JavaScript.
- * CSS-Namespace --ds-*, Laufzeit-Quelle tokens-v2.css. JS-Port von
+ * Tokens v2: Zugriff auf tokens-v2.json aus TypeScript.
+ * CSS-Namespace --ds-*, Laufzeit-Quelle tokens-v2.css. Port von
  * KodiniTools/collage-maker (src/design-system/tokens-v2.ts, Stand 9dc4eca).
  */
 import tokens from './tokens-v2.json'
 
-/** @typedef {'dark' | 'light'} ThemeName */
-/** @typedef {keyof typeof tokens.color.dark} ColorTokenV2Name */
+export type ThemeName = 'dark' | 'light'
+export type ColorTokenV2Name = keyof typeof tokens.color.dark
 
 /** Die kompletten v2-Tokens, Struktur siehe tokens-v2.json. */
 export const designTokensV2 = tokens
 
 /**
  * Farbwert eines v2-Tokens für ein Theme, z. B. colorTokenV2('dark', 'accent') → '#d4a257'.
- * @param {ThemeName} theme
- * @param {ColorTokenV2Name} name
- * @returns {string}
  */
-export function colorTokenV2(theme, name) {
+export function colorTokenV2(theme: ThemeName, name: ColorTokenV2Name): string {
   return tokens.color[theme][name].$value
 }
 
 /**
  * Flache Farbkarte eines Themes, z. B. für Canvas- oder SVG-Zeichnung.
- * @param {ThemeName} theme
- * @returns {Readonly<Record<ColorTokenV2Name, string>>}
  */
-export function themeColorsV2(theme) {
+export function themeColorsV2(theme: ThemeName): Readonly<Record<ColorTokenV2Name, string>> {
   const source = tokens.color[theme]
-  const result = {}
-  for (const key of Object.keys(source)) {
+  const result = {} as Record<ColorTokenV2Name, string>
+  for (const key of Object.keys(source) as ColorTokenV2Name[]) {
     result[key] = source[key].$value
   }
   return Object.freeze(result)
@@ -37,20 +32,15 @@ export function themeColorsV2(theme) {
 
 /**
  * CSS-Variablenname eines v2-Farb-Tokens, z. B. colorCssVarV2('accent') → '--ds-accent'.
- * @param {ColorTokenV2Name} name
- * @returns {string}
  */
-export function colorCssVarV2(name) {
+export function colorCssVarV2(name: ColorTokenV2Name): string {
   return tokens.color.dark[name].$extensions.css
 }
 
 /**
  * var()-Ausdruck mit optionalem Fallback: cssVarV2('text2') → 'var(--ds-text-2)'.
- * @param {ColorTokenV2Name} name
- * @param {string} [fallback]
- * @returns {string}
  */
-export function cssVarV2(name, fallback) {
+export function cssVarV2(name: ColorTokenV2Name, fallback?: string): string {
   const variable = colorCssVarV2(name)
   return fallback === undefined ? `var(${variable})` : `var(${variable}, ${fallback})`
 }

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { useConverterStore } from '../stores/converter'
   import { useI18n } from 'vue-i18n'
 

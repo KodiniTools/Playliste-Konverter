@@ -13,7 +13,7 @@ und CSS konsistent und prüft den Kontrast (WCAG AA).
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `tokens-v2.css`               | **Laufzeit-Quelle.** CSS Custom Properties `--ds-*`, Dark auf `:root`, Light auf `.light-theme` und `:root[data-theme='light']`. |
 | `tokens-v2.json`              | Maschinenlesbare Fassung (W3C-Design-Tokens-nah), `$extensions.css` nennt die Variable.                                          |
-| `tokens-v2.js`                | Zugriff aus JS (Port von `tokens-v2.ts`), z. B. `themeColorsV2('light')`.                                                        |
+| `tokens-v2.ts`                | Typisierter Zugriff (Port aus dem Collage Maker), z. B. `themeColorsV2('light')`.                                                |
 | `__tests__/tokens-v2.spec.js` | Konsistenz JSON ↔ CSS, Light-Spiegelung, Namespace, Kontrast-Audit, Einbindung.                                                  |
 | `__tests__/tokenTestUtils.js` | CSS-Block-Parser, Token-Walker, Kontrastberechnung.                                                                              |
 | `../styles/foundation.css`    | Gemeinsame Grundlage für App und Landing-Seite: Tokens, Supreme, Body, Farbschema, SSI-Partials, reduzierte Bewegung.            |
@@ -22,7 +22,7 @@ und CSS konsistent und prüft den Kontrast (WCAG AA).
 
 ## Theme-Mechanik
 
-`src/stores/ui.js` setzt `html[data-theme]` (für Tokens und SSI-Partials), `body.light-theme`
+`src/stores/ui.ts` setzt `html[data-theme]` (für Tokens und SSI-Partials), `body.light-theme`
 (Parität zum Playlist Generator) und weiterhin `html.dark` (Altbestand für externe Skripte) und
 schreibt `localStorage.theme`. Ein Inline-Skript in `app.html` setzt `data-theme` vor dem ersten
 Paint aus `localStorage.theme`, damit es keinen Dark-Flash gibt. Standard ist Light. Ändert die

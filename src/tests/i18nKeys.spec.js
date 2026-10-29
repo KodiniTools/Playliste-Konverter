@@ -25,7 +25,7 @@ function readCode() {
   return CODE_DIRS.flatMap((dir) => {
     const full = join(SRC_DIR, dir)
     return readdirSync(full)
-      .filter((file) => /\.(vue|js)$/.test(file))
+      .filter((file) => /\.(vue|ts)$/.test(file) && !file.endsWith('.d.ts'))
       .map((file) => readFileSync(join(full, file), 'utf8'))
   }).join('\n')
 }

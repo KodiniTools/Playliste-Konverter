@@ -136,7 +136,7 @@ describe('Kontrast (WCAG AA, mindestens 4.5:1)', () => {
   })
 })
 
-describe('tokens-v2.js', () => {
+describe('tokens-v2.ts', () => {
   it('liefert Farbwerte, Variablennamen und var()-Ausdrücke', () => {
     expect(colorTokenV2('dark', 'accent')).toBe('#d4a257')
     expect(colorTokenV2('light', 'accent')).toBe('#c9984d')

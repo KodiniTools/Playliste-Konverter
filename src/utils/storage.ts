@@ -15,10 +15,8 @@ export const STORAGE_PREFIX = 'playlistkonverter.'
 /**
  * Eigenen Wert lesen; fehlt er, den früheren ungepräfixten Schlüssel.
  * Gesperrter Speicher (privater Modus) liefert null.
- * @param {string} name
- * @returns {string|null}
  */
-export function readPref(name) {
+export function readPref(name: string): string | null {
   try {
     return localStorage.getItem(STORAGE_PREFIX + name) ?? localStorage.getItem(name)
   } catch {
@@ -28,10 +26,8 @@ export function readPref(name) {
 
 /**
  * Eigenen Wert schreiben (Fehler wie voller oder gesperrter Speicher werden ignoriert).
- * @param {string} name
- * @param {string|number} value
  */
-export function writePref(name, value) {
+export function writePref(name: string, value: string | number): void {
   try {
     localStorage.setItem(STORAGE_PREFIX + name, String(value))
   } catch {

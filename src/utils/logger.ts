@@ -5,12 +5,10 @@
  * kodinitools.com sauber bleibt.
  */
 export const logger = {
-  /** @param {...unknown} args */
-  info(...args) {
+  info(...args: unknown[]) {
     if (import.meta.env.DEV) console.info('[Playlist-Konverter]', ...args)
   },
-  /** @param {...unknown} args */
-  error(...args) {
+  error(...args: unknown[]) {
     console.error('[Playlist-Konverter]', ...args)
   },
 }

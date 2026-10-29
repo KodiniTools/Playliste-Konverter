@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useToastStore } from '../stores/toast'
@@ -9,23 +9,23 @@
   const { t } = useI18n()
   const isDragging = ref(false)
 
-  async function onDrop(e) {
+  async function onDrop(e: DragEvent) {
     isDragging.value = false
 
     try {
       const items = e.dataTransfer?.items
       if (items && items.length > 0) {
-        const files = []
-        const promises = []
+        const files: File[] = []
+        const promises: Promise<void>[] = []
 
         for (const item of items) {
           const entry = item.webkitGetAsEntry?.()
           if (entry?.isDirectory) {
-            promises.push(readDirectoryEntries(entry, files))
+            promises.push(readDirectoryEntries(entry as FileSystemDirectoryEntry, files))
           } else if (entry?.isFile) {
             promises.push(
-              new Promise((resolve) => {
-                entry.file(
+              new Promise<void>((resolve) => {
+                ;(entry as FileSystemFileEntry).file(
                   (f) => {
                     files.push(f)
                     resolve()
@@ -55,8 +55,8 @@
     }
   }
 
-  function readDirectoryEntries(dirEntry, files) {
-    return new Promise((resolve) => {
+  function readDirectoryEntries(dirEntry: FileSystemDirectoryEntry, files: File[]): Promise<void> {
+    return new Promise<void>((resolve) => {
       const reader = dirEntry.createReader()
       const readBatch = () => {
         reader.readEntries(
@@ -66,10 +66,11 @@
               return
             }
             const promises = entries.map((entry) => {
-              if (entry.isDirectory) return readDirectoryEntries(entry, files)
+              if (entry.isDirectory)
+                return readDirectoryEntries(entry as FileSystemDirectoryEntry, files)
               if (entry.isFile)
-                return new Promise((res) => {
-                  entry.file(
+                return new Promise<void>((res) => {
+                  ;(entry as FileSystemFileEntry).file(
                     (f) => {
                       files.push(f)
                       res()
@@ -94,29 +95,31 @@
     })
   }
 
-  function onFileSelect(e) {
+  function onFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement
     try {
-      store.addFiles(e.target.files)
+      if (input.files) store.addFiles(input.files)
     } catch {
       toastStore.error(t('uploader.errorFileSelect'))
     } finally {
-      e.target.value = ''
+      input.value = ''
     }
   }
 
-  function onFolderSelect(e) {
+  function onFolderSelect(e: Event) {
+    const input = e.target as HTMLInputElement
     try {
-      store.addFiles(e.target.files)
+      if (input.files) store.addFiles(input.files)
     } catch {
       toastStore.error(t('uploader.errorFileSelect'))
     } finally {
-      e.target.value = ''
+      input.value = ''
     }
   }
 
-  function handlePaste(e) {
+  function handlePaste(e: ClipboardEvent) {
     try {
-      const audioFiles = []
+      const audioFiles: File[] = []
 
       const items = e.clipboardData?.items
       if (items) {
@@ -143,7 +146,7 @@
 
       if (audioFiles.length > 0) {
         store.addFiles(audioFiles)
-      } else if (e.clipboardData?.files?.length > 0) {
+      } else if ((e.clipboardData?.files?.length ?? 0) > 0) {
         toastStore.warning(t('uploader.noPasteFiles'))
       }
     } catch {

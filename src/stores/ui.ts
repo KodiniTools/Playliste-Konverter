@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
+export type ThemeName = 'dark' | 'light'
+
 export const useUIStore = defineStore('ui', () => {
   // Theme und Locale werden von der externen SSI-Navigation (nav.html) gesteuert.
   // Theme-Mechanik wie im Collage Maker: html[data-theme] schaltet die
@@ -19,7 +21,7 @@ export const useUIStore = defineStore('ui', () => {
     )
   }
 
-  function applyTheme(newTheme) {
+  function applyTheme(newTheme: ThemeName) {
     document.documentElement.setAttribute('data-theme', newTheme)
     document.documentElement.classList.toggle('dark', newTheme === 'dark')
     document.body?.classList.toggle('light-theme', newTheme === 'light')
@@ -37,7 +39,7 @@ export const useUIStore = defineStore('ui', () => {
 
   // data-lang-* Elemente aktualisieren (SSI-Übersetzungsmuster:
   // <span data-lang-de="Deutsch" data-lang-en="English"></span>)
-  function updateDataLangElements(lang) {
+  function updateDataLangElements(lang: string) {
     const attr = `data-lang-${lang}`
     document.querySelectorAll(`[${attr}]`).forEach((el) => {
       el.textContent = el.getAttribute(attr)
@@ -86,8 +88,8 @@ export const useUIStore = defineStore('ui', () => {
   })
 
   // nav.html dispatcht 'locale-changed' mit { detail: { locale: 'de'|'en' } }
-  function onLocaleChanged(event) {
-    const newLang = event.detail?.locale
+  function onLocaleChanged(event: Event) {
+    const newLang = (event as CustomEvent<{ locale?: string } | null>).detail?.locale
     if (newLang && newLang !== locale.value) {
       _suppressDispatch = true
       locale.value = newLang
@@ -103,6 +105,6 @@ export const useUIStore = defineStore('ui', () => {
 })
 
 /** Nur 'dark' und 'light' sind gültig; alles andere fällt auf den Standard Light zurück. */
-export function normalizeTheme(value) {
+export function normalizeTheme(value: unknown): ThemeName {
   return value === 'dark' ? 'dark' : 'light'
 }

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 
   /**
@@ -12,29 +12,30 @@
    *             Enter/Leertaste wählen, Esc schließt ohne Auswahl, Tab wählt und verlässt.
    * Der Fokus bleibt immer auf dem Auslöser; geschlossen wird auch bei Klick außerhalb.
    */
-  const props = defineProps({
-    /** Gewählter Wert (v-model), String oder Zahl */
-    modelValue: { type: [String, Number], required: true },
-    /** Optionen: { value, label, description? } */
-    options: {
-      type: Array,
-      required: true,
-      validator: (list) => list.every((option) => option && 'value' in option && 'label' in option),
-    },
-    /** Sichtbares Feldlabel (Pflicht für Barrierefreiheit) */
-    label: { type: String, required: true },
-  })
+  interface DropdownOption {
+    value: string | number
+    label: string
+    description?: string
+  }
 
-  const emit = defineEmits(['update:modelValue'])
+  const props = defineProps<{
+    /** Gewählter Wert (v-model), String oder Zahl */
+    modelValue: string | number
+    options: DropdownOption[]
+    /** Sichtbares Feldlabel (Pflicht für Barrierefreiheit) */
+    label: string
+  }>()
+
+  const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
 
   const uid = useId()
   const labelId = `dd-label-${uid}`
   const buttonId = `dd-button-${uid}`
   const listboxId = `dd-listbox-${uid}`
-  const optionId = (index) => `dd-option-${uid}-${index}`
+  const optionId = (index: number) => `dd-option-${uid}-${index}`
 
-  const root = ref(null)
-  const trigger = ref(null)
+  const root = ref<HTMLElement | null>(null)
+  const trigger = ref<HTMLElement | null>(null)
   const isOpen = ref(false)
   const activeIndex = ref(-1)
   const openUpward = ref(false)
@@ -68,7 +69,7 @@
     activeIndex.value = -1
   }
 
-  function choose(index) {
+  function choose(index: number) {
     const option = props.options[index]
     if (option && option.value !== props.modelValue) emit('update:modelValue', option.value)
     close()
@@ -79,12 +80,12 @@
     else open()
   }
 
-  function move(delta) {
+  function move(delta: number) {
     const count = props.options.length
     activeIndex.value = Math.min(count - 1, Math.max(0, activeIndex.value + delta))
   }
 
-  function onKeydown(event) {
+  function onKeydown(event: KeyboardEvent) {
     const { key } = event
     if (!isOpen.value) {
       if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(key)) {
@@ -132,8 +133,8 @@
     }
   }
 
-  function onDocumentPointerDown(event) {
-    if (root.value && !root.value.contains(event.target)) close()
+  function onDocumentPointerDown(event: PointerEvent) {
+    if (root.value && !root.value.contains(event.target as Node | null)) close()
   }
 
   // Aktive Option sichtbar halten (bei langen Listen)
