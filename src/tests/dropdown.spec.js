@@ -10,6 +10,12 @@ import FormatSelector from '../components/FormatSelector.vue'
 import SizeWarning from '../components/SizeWarning.vue'
 import { useConverterStore, normalizeBitrate, normalizeFormat } from '../stores/converter'
 import { SIZE_THRESHOLD_ORANGE, SIZE_THRESHOLD_YELLOW } from '../constants'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
+const LOCALES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'i18n', 'locales')
+const readLocale = (locale) => readFileSync(join(LOCALES_DIR, `${locale}.json`), 'utf8')
 
 const OPTIONS = [
   { value: 'webm', label: 'WebM (Opus)', description: 'Kompakt, modern' },
@@ -202,7 +208,8 @@ describe('Größenhinweise ohne Minutenangaben', () => {
   )
 
   it('keine Minutenangaben in den Übersetzungen', () => {
-    const messages = JSON.stringify(i18n.global.messages.value)
+    // Rohtexte: im Bundle liegen die Übersetzungen vorkompiliert als Funktionen
+    const messages = ['de', 'en'].map((l) => readLocale(l)).join('\n')
     expect(messages).not.toMatch(/\d+-\d+ (?:Minuten|minutes)|estimatedTime/)
   })
 })

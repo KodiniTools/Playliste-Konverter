@@ -30,6 +30,8 @@ oder OGG/Vorbis), live unter <https://kodinitools.com/playlistkonverter/>.
 
 ## Development
 
+Voraussetzung: Node.js 20.19+ oder 22.12+ (Vite 8), auch auf dem Server, auf dem `deploy.sh` baut.
+
 ```bash
 npm install
 npm --prefix server install

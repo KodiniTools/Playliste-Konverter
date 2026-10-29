@@ -53,6 +53,9 @@ command -v git  >/dev/null 2>&1 || fail "git ist nicht installiert."
 command -v npm  >/dev/null 2>&1 || fail "npm ist nicht installiert."
 command -v rsync >/dev/null 2>&1 || fail "rsync ist nicht installiert (apt install rsync)."
 [ -d "$SCRIPT_DIR/.git" ] || fail "Kein Git-Checkout: $SCRIPT_DIR"
+# Vite 8 braucht Node 20.19+ bzw. 22.12+ (siehe "engines" in package.json)
+node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit((a===20&&b>=19)||(a===22&&b>=12)||a>22?0:1)' \
+  || fail "Node $(node -v) ist zu alt für den Build – benötigt 20.19+ oder 22.12+."
 
 # --- 1. Auf neuesten main-Stand bringen ------------------------------------
 step "[1/5] Aktualisiere auf origin/$DEPLOY_BRANCH ..."
