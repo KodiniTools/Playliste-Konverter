@@ -148,6 +148,8 @@ export const useConverterStore = defineStore('converter', () => {
   }
 
   function moveFile(fromIndex: number, toIndex: number) {
+    const last = files.value.length - 1
+    if (fromIndex < 0 || fromIndex > last || toIndex < 0 || toIndex > last) return
     const item = files.value.splice(fromIndex, 1)[0]
     if (item === undefined) return
     files.value.splice(toIndex, 0, item)
@@ -295,7 +297,7 @@ export const useConverterStore = defineStore('converter', () => {
       if (isAbortError(err) || isCancelling.value) {
         logger.info('Vorgang vom Nutzer abgebrochen')
         toastStore.info(t('toast.cancelled'))
-        reset()
+        resetJob()
         return
       }
 
@@ -403,7 +405,8 @@ export const useConverterStore = defineStore('converter', () => {
 
     stopIntervals()
     toastStore.info(t('toast.cancelling'))
-    reset()
+    // Die Playlist bleibt erhalten, damit sie direkt erneut konvertiert werden kann
+    resetJob()
   }
 
   /** Laufende Server-Session (Upload oder Konvertierung) auf dem Server abbrechen. */
@@ -418,8 +421,8 @@ export const useConverterStore = defineStore('converter', () => {
     if (!event.persisted) releaseServerSession()
   })
 
-  function reset() {
-    files.value = []
+  /** Vorgang (Upload, Konvertierung, Fehler, Ergebnis) zurücksetzen; die Playlist bleibt. */
+  function resetJob() {
     uploadProgress.value = 0
     displayProgress.value = 0
     lastBackendProgress.value = 0
@@ -441,6 +444,12 @@ export const useConverterStore = defineStore('converter', () => {
     }
 
     stopIntervals()
+  }
+
+  /** Alles zurücksetzen, auch die Playlist (neue Konvertierung). */
+  function reset() {
+    resetJob()
+    files.value = []
   }
 
   return {
@@ -472,6 +481,7 @@ export const useConverterStore = defineStore('converter', () => {
     setBitrate,
     convert,
     cancel,
+    resetJob,
     reset,
   }
 })

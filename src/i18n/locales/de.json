@@ -42,7 +42,10 @@
     "tracks": "Tracks",
     "totalSize": "Gesamtgröße",
     "removeAll": "Alle entfernen",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "moved": "„{name}“ ist jetzt an Position {position} von {total}."
   },
   "toast": {
     "close": "Schließen",

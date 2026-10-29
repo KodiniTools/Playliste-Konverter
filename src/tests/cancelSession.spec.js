@@ -66,6 +66,8 @@ describe('Abbrechen auf dem Server', () => {
     expect(api.cancelSession).toHaveBeenCalledTimes(1)
     expect(api.cancelSession).toHaveBeenCalledWith(SESSION)
     expect(store.status).toBe('idle')
+    // F6: Abbrechen behält die Playlist
+    expect(store.files).toHaveLength(1)
   })
 
   it('während der Konvertierung: Session wird freigegeben', async () => {
@@ -79,6 +81,15 @@ describe('Abbrechen auf dem Server', () => {
 
     store.cancel()
     expect(api.cancelSession).toHaveBeenCalledWith(SESSION)
+    expect(store.status).toBe('idle')
+    expect(store.files).toHaveLength(1)
+    expect(store.downloadUrl).toBeNull()
+  })
+
+  it('reset (neue Konvertierung) leert dagegen auch die Playlist', () => {
+    const store = storeWithFile()
+    store.reset()
+    expect(store.files).toHaveLength(0)
   })
 
   it('Tab schließen während des Uploads gibt die Session frei', () => {

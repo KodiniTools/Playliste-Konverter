@@ -185,7 +185,7 @@
           <button
             type="button"
             class="mt-2 text-md font-medium text-link underline transition-colors hover:text-accent"
-            @click="store.reset"
+            @click="store.resetJob"
           >
             {{ t('error.reset') }}
           </button>

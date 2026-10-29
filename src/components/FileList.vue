@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { useConverterStore, type PlaylistItem } from '../stores/converter'
   import { usePlayerStore } from '../stores/player'
+  import { nextTick, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { formatBytes } from '../utils/format'
 
@@ -24,6 +25,43 @@
 
   function onDragEnd() {
     draggedIndex = null
+  }
+
+  // Ansage für Screenreader nach dem Verschieben per Taste/Button
+  const moveAnnouncement = ref('')
+
+  /**
+   * Track um eine Position verschieben (Buttons und Alt+Pfeiltaste; geht auch
+   * ohne Drag & Drop, also per Touch und Tastatur). Der Fokus bleibt auf dem
+   * Track; ist die gedrückte Richtung danach gesperrt, wechselt er zur anderen.
+   */
+  async function moveBy(index: number, delta: -1 | 1, direction: 'up' | 'down') {
+    const target = index + delta
+    const item = store.files[index]
+    if (!item || target < 0 || target >= store.files.length) return
+    store.moveFile(index, target)
+    moveAnnouncement.value = t('fileList.moved', {
+      name: item.name,
+      position: target + 1,
+      total: store.files.length,
+    })
+    await nextTick()
+    const other = direction === 'up' ? 'down' : 'up'
+    const pressed = document.querySelector<HTMLButtonElement>(
+      `[data-move="${direction}"][data-track-id="${item.id}"]`,
+    )
+    const fallback = document.querySelector<HTMLButtonElement>(
+      `[data-move="${other}"][data-track-id="${item.id}"]`,
+    )
+    if (pressed && !pressed.disabled) pressed.focus()
+    else fallback?.focus()
+  }
+
+  function onRowKeydown(e: KeyboardEvent, index: number) {
+    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+    e.preventDefault()
+    if (e.key === 'ArrowUp') void moveBy(index, -1, 'up')
+    else void moveBy(index, 1, 'down')
   }
 
   function isActive(item: PlaylistItem) {
@@ -74,6 +112,7 @@
         @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"
         @dragend="onDragEnd"
+        @keydown="onRowKeydown($event, index)"
       >
         <!-- Track Nummer -->
         <span class="hidden w-6 font-mono text-sm tabular-nums text-ink-3 sm:inline sm:w-8"
@@ -123,6 +162,62 @@
           <p class="text-xs tabular-nums text-ink-2">{{ formatBytes(item.size) }}</p>
         </div>
 
+        <!-- Reihenfolge ändern (Touch/Tastatur; Alt+↑/↓ auf dem Track) -->
+        <div class="flex flex-shrink-0 items-center">
+          <button
+            type="button"
+            data-move="up"
+            :data-track-id="item.id"
+            :disabled="index === 0"
+            :title="t('fileList.moveUp')"
+            :aria-label="`${t('fileList.moveUp')}: ${item.name}`"
+            aria-keyshortcuts="Alt+ArrowUp"
+            class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+            @click.stop="moveBy(index, -1, 'up')"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 15l7-7 7 7"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            data-move="down"
+            :data-track-id="item.id"
+            :disabled="index === store.files.length - 1"
+            :title="t('fileList.moveDown')"
+            :aria-label="`${t('fileList.moveDown')}: ${item.name}`"
+            aria-keyshortcuts="Alt+ArrowDown"
+            class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+            @click.stop="moveBy(index, 1, 'down')"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+
         <!-- Remove Button -->
         <button
           type="button"
@@ -148,5 +243,6 @@
         </button>
       </div>
     </div>
+    <p class="sr-only" aria-live="polite">{{ moveAnnouncement }}</p>
   </section>
 </template>

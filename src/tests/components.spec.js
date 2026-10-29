@@ -121,4 +121,55 @@ describe('FileList', () => {
     await remove.trigger('click')
     expect(store.files).toHaveLength(0)
   })
+
+  // F8: Reihenfolge ohne Drag & Drop (Touch, Tastatur)
+  function listOfThree() {
+    const store = useConverterStore()
+    store.files = ['a.mp3', 'b.mp3', 'c.mp3'].map((name, i) => ({ id: i + 1, name, size: 1 }))
+    const wrapper = mount(FileList, {
+      attachTo: document.body,
+      global: { plugins: [pinia, i18n] },
+    })
+    const names = () => store.files.map((f) => f.name)
+    return { store, wrapper, names }
+  }
+
+  it('↑/↓-Buttons verschieben Tracks; an den Rändern gesperrt', async () => {
+    const { wrapper, names } = listOfThree()
+    expect(wrapper.get('[data-move="up"][data-track-id="1"]').attributes('disabled')).toBeDefined()
+    expect(
+      wrapper.get('[data-move="down"][data-track-id="3"]').attributes('disabled'),
+    ).toBeDefined()
+    expect(wrapper.get('[data-move="down"][data-track-id="1"]').attributes('aria-label')).toBe(
+      'Nach unten: a.mp3',
+    )
+
+    await wrapper.get('[data-move="down"][data-track-id="1"]').trigger('click')
+    expect(names()).toEqual(['b.mp3', 'a.mp3', 'c.mp3'])
+    await wrapper.get('[data-move="up"][data-track-id="3"]').trigger('click')
+    expect(names()).toEqual(['b.mp3', 'c.mp3', 'a.mp3'])
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[aria-live="polite"]').text()).toBe(
+      '„c.mp3“ ist jetzt an Position 2 von 3.',
+    )
+    wrapper.unmount()
+  })
+
+  it('Alt+Pfeiltaste verschiebt; Fokus wechselt am Rand auf die andere Richtung', async () => {
+    const { wrapper, names } = listOfThree()
+    const up = wrapper.get('[data-move="up"][data-track-id="2"]')
+    up.element.focus()
+    await up.trigger('keydown', { key: 'ArrowUp', altKey: true })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(names()).toEqual(['b.mp3', 'a.mp3', 'c.mp3'])
+    // b ist jetzt oben, "nach oben" gesperrt: Fokus liegt auf "nach unten" von b
+    expect(document.activeElement).toBe(
+      wrapper.get('[data-move="down"][data-track-id="2"]').element,
+    )
+
+    // ohne Alt passiert nichts
+    await up.trigger('keydown', { key: 'ArrowDown' })
+    expect(names()).toEqual(['b.mp3', 'a.mp3', 'c.mp3'])
+    wrapper.unmount()
+  })
 })
