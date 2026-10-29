@@ -113,8 +113,9 @@ curl -s http://127.0.0.1:9016/health  # Health-Check des Dienstes
   ausschließlich über den nginx-Proxy `/playlistkonverter/api/`.
 - Sessions/Temp-Dateien werden nach dem Download sowie automatisch nach 1 Stunde
   gelöscht – ein separater Cleanup-Cronjob ist nicht mehr nötig.
-- Die alten PHP-Dateien unter `backend/` werden nicht mehr angesprochen, sobald
-  nginx auf Port 9016 zeigt.
+- Das frühere PHP-Backend ist aus dem Repo entfernt. Ein altes `backend/` im
+  Webroot löscht `deploy.sh` bewusst nicht automatisch (siehe Abschnitt
+  „Altes PHP-Backend entfernen“).
 
 ---
 
@@ -140,4 +141,23 @@ Tests des Dienstes (startet echte Server-Prozesse mit kleinen Limits in einem Te
 
 ```bash
 cd server && npm test        # bzw. im Repo-Root: npm run test:server
+```
+
+---
+
+## Altes PHP-Backend entfernen (einmalig)
+
+Das PHP-Backend (`backend/`) ist nicht mehr Teil des Repos. Frühere Deploys
+haben es nach `/var/www/kodinitools.com/playlistkonverter/backend/` kopiert,
+wo es weiter öffentlich erreichbar sein kann. Prüfen und danach von Hand
+löschen:
+
+```bash
+# "<?php …" = Quelltext wird ausgeliefert, JSON = PHP wird noch ausgeführt,
+# HTML der Landing-Page = nicht erreichbar (try_files-Fallback)
+curl -s https://kodinitools.com/playlistkonverter/backend/api/status.php | head -c 200; echo
+
+sudo rm -rf /var/www/kodinitools.com/playlistkonverter/backend
+# Falls eingerichtet: alte Cronjobs für worker.php / cleanup.php entfernen
+crontab -l | grep -n 'playlistkonverter/backend'
 ```

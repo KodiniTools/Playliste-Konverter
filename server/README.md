@@ -87,5 +87,5 @@ nginx -t && systemctl reload nginx
   ein periodischer Cleanup (alle 15 min) räumt zusätzlich verwaiste
   Verzeichnisse auf. Der bisherige PHP-Cleanup-Cronjob wird dafür nicht mehr
   benötigt.
-- Die PHP-Dateien unter `backend/` bleiben im Repo, werden aber nicht mehr
-  angesprochen, sobald nginx auf den Node-Dienst zeigt.
+- Das frühere PHP-Backend ist aus dem Repo entfernt; Hinweise zum Aufräumen
+  auf dem Server stehen in [`../DEPLOY.md`](../DEPLOY.md).

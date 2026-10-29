@@ -1,235 +1,109 @@
-# Playlist zu WebM Konverter
+# Playlist Konverter
 
-Server-basiertes Tool zum Konvertieren von bis zu 100 MP3/WAV Tracks in eine WebM-Datei.
+Web-Tool zum Zusammenfügen mehrerer MP3/WAV-Tracks zu einer Datei (MP3, WebM/Opus
+oder OGG/Vorbis), live unter <https://kodinitools.com/playlistkonverter/>.
 
 ## Features
 
-- Multi-File Upload (Drag & Drop)
-- Track-Reihenfolge änderbar
-- Fortschrittsanzeige (Upload + Konvertierung)
-- Server-seitige FFmpeg-Verarbeitung
-- Automatisches Cleanup nach Download
+- Upload per Drag & Drop, Datei- oder Ordnerauswahl und Einfügen aus der Zwischenablage
+- Track-Reihenfolge per Drag & Drop, Vorschau über einen Sticky-Player
+- Ausgabe als MP3, WebM (Opus) oder OGG (Vorbis), 64–320 kbps
+- Fortschrittsanzeige für Upload und Konvertierung, Abbrechen jederzeit
+- Gestaffelte Größenwarnungen bis zum Limit von 5 GB pro Playlist
+- Weitergabe der fertigen Datei an den Ultimativen Musikplayer (gemeinsame IndexedDB)
+- Deutsch/Englisch, Hell/Dunkel (gesteuert von der KodiniTools-Navigation)
 
 ## Tech-Stack
 
 ### Frontend
-- Vue 3 (Composition API)
-- Pinia (State Management)
+
+- Vue 3 (Composition API, `<script setup>`), Pinia, vue-i18n
 - Tailwind CSS auf den KodiniTools-Tokens v2 (`--ds-*`, siehe `src/design-system/README.md`)
-- Axios
-- Vite, Vitest + Vue Test Utils
+- Axios, Vite, Vitest + Vue Test Utils, ESLint + Prettier
 
-### Backend
-- PHP 8.3
-- FFmpeg
-- Nginx
+### Server (`server/`)
 
-## Installation
-
-### 1. Frontend bauen
-
-```powershell
-npm install
-npm run build
-```
-
-### 2. Upload zum Server
-
-```powershell
-# Frontend
-scp -r dist/* root@145.223.81.100:/var/www/kodinitools.com/playlistkonverter/
-
-# Backend
-scp -r backend root@145.223.81.100:/var/www/kodinitools.com/playlistkonverter/
-```
-
-### 3. Server-Konfiguration
-
-**Nginx Config ergänzen** (`/etc/nginx/sites-available/kodinitools.com`):
-
-```nginx
-# Frontend
-location /playlistkonverter/ {
-    alias /var/www/kodinitools.com/playlistkonverter/;
-    try_files $uri $uri/ /playlistkonverter/index.html;
-}
-
-# Backend API
-location /playlistkonverter/api/ {
-    alias /var/www/kodinitools.com/playlistkonverter/backend/api/;
-    
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $request_filename;
-        include fastcgi_params;
-    }
-}
-```
-
-**Temp-Verzeichnis & Rechte:**
-
-```bash
-chown -R www-data:www-data /var/www/kodinitools.com/playlistkonverter/backend/temp
-chmod 755 /var/www/kodinitools.com/playlistkonverter/backend/temp
-```
-
-**FFmpeg installieren:**
-
-```bash
-ffmpeg -version
-# Falls nicht installiert:
-apt install ffmpeg
-```
-
-**PHP-Konfiguration anpassen** (`/etc/php/8.3/fpm/php.ini`):
-
-```ini
-upload_max_filesize = 1GB
-post_max_size = 1GB
-max_execution_time = 300
-memory_limit = 512M
-```
-
-**PHP-FPM neu starten:**
-
-```bash
-systemctl restart php8.3-fpm
-```
-
-**Nginx neu laden:**
-
-```bash
-nginx -t
-systemctl reload nginx
-```
-
-### 4. Automatisches Cleanup einrichten
-
-**Cron für alte Sessions (älter als 24h):**
-
-```bash
-crontab -e
-# Folgende Zeile hinzufügen:
-0 2 * * * find /var/www/kodinitools.com/playlistkonverter/backend/temp/* -mtime +1 -exec rm -rf {} \;
-```
+- Node.js + Express, multer, ffmpeg/ffprobe
+- Läuft dauerhaft unter pm2 (`playlistkonverter-server`) auf `127.0.0.1:9016`,
+  öffentlich nur über den nginx-Proxy `/playlistkonverter/api/`
+- Details zu Pipeline, API und Umgebungsvariablen: [`server/README.md`](server/README.md)
 
 ## Development
 
 ```bash
 npm install
-npm run dev
-npm test        # Vitest: Tokens, Theme-Mechanik, Komponenten
+npm --prefix server install
+
+npm run dev            # Vite-Dev-Server
+npm test               # App-Tests (Vitest)
+npm run test:server    # Server-Tests (node --test)
+npm run build
 npm run lint
+npm run format:check
 ```
 
-Vite-Proxy leitet `/api` Requests zu `localhost:3008` weiter.
+Der Vite-Proxy leitet `/api` an `localhost:3008` weiter. Für lokale Tests mit
+echtem Server den Dienst auf diesem Port starten (ffmpeg/ffprobe im `PATH`):
+
+```bash
+PORT=3008 npm --prefix server start
+```
 
 ## Dateistruktur
 
 ```
-vue-playlist-converter/
+Playliste-Konverter/
+├── index.html, faq.html, funktion.html   # Statische Seiten (Landing, FAQ, Anleitung)
+├── app.html                              # Einstieg der Vue-App
 ├── src/
-│   ├── components/
-│   │   ├── FileUploader.vue
-│   │   ├── FileList.vue
-│   │   ├── ConversionProgress.vue
-│   │   └── DownloadButton.vue
-│   ├── stores/
-│   │   └── converter.js
-│   ├── App.vue
-│   ├── main.js
-│   └── style.css
-├── backend/
-│   ├── api/
-│   │   ├── upload.php
-│   │   ├── convert.php
-│   │   ├── status.php
-│   │   ├── download.php
-│   │   └── .htaccess
-│   └── temp/
-├── index.html
-├── vite.config.js
-├── tailwind.config.js
-├── postcss.config.js
-├── package.json
-├── deploy.ps1
-├── deploy.sh
-└── README.md
+│   ├── api/converter.js                  # Upload, Convert, Status, Download-URL
+│   ├── components/                       # Vue-Komponenten
+│   ├── stores/                           # converter, player, toast, ui (Pinia)
+│   ├── design-system/                    # Tokens v2 (CSS/JSON/JS)
+│   ├── i18n/                             # DE/EN-Texte
+│   ├── landing/, styles/                 # CSS der statischen Seiten und Grundlage
+│   ├── utils/                            # Format, localStorage, geteilte IndexedDB
+│   └── tests/                            # Vitest-Specs
+├── server/                               # Node-Konvertierungsdienst + Tests
+├── deploy/nginx-playlistkonverter.conf   # nginx-Abschnitt für kodinitools.com
+├── deploy.sh                             # Deploy auf dem Server aus origin/main
+└── DEPLOY.md                             # Deploy- und Betriebsanleitung
 ```
 
 ## Deployment
 
-### Server-seitig aus `main` (`deploy.sh`)
-
-Direkt auf dem Server in einem Git-Checkout des Repos ausführen. Das Script
-aktualisiert auf `origin/main`, baut das Frontend und synchronisiert Frontend
-und Backend in den Webroot – laufende Sessions in `backend/temp/` bleiben erhalten:
+Auf dem Server im Git-Checkout (nicht im Webroot):
 
 ```bash
-cd /opt/playliste-konverter   # Git-Checkout (NICHT der Webroot)
+cd /opt/playliste-konverter
 ./deploy.sh
 ```
 
-Überschreibbare Einstellungen (Umgebungsvariablen):
+`deploy.sh` setzt auf `origin/main` zurück, baut das Frontend, synchronisiert
+`dist/` in den Webroot, lädt den Node-Dienst per pm2 neu und testet/lädt nginx.
+Einmalige Einrichtung, Einzelschritte, Variablen und Diagnose: [`DEPLOY.md`](DEPLOY.md).
 
-| Variable        | Standard                                        | Beschreibung                          |
-| --------------- | ----------------------------------------------- | ------------------------------------- |
-| `DEPLOY_DIR`    | `/var/www/kodinitools.com/playlistkonverter`    | Ziel-/Webroot-Verzeichnis             |
-| `DEPLOY_BRANCH` | `main`                                          | Zu deployender Branch                 |
-| `WEB_USER`      | `www-data`                                      | Besitzer für `backend/temp`           |
-| `RELOAD_NGINX`  | `1`                                             | `0` = Nginx-Reload überspringen       |
+## Limits
 
-```bash
-# Beispiel: nur ausspielen, ohne Nginx neu zu laden
-RELOAD_NGINX=0 ./deploy.sh
-```
-
-Voraussetzungen auf dem Server: `git`, `node`/`npm`, `rsync`, `ffmpeg`.
-
-### Lokal via SSH/SCP (`deploy.ps1`)
-
-Windows/PowerShell-Variante, die lokal baut und per `scp` hochlädt – siehe
-[Installation](#installation).
-
-## API-Endpoints
-
-### POST /api/upload
-Empfängt Dateien und erstellt Session.
-
-### POST /api/convert
-Startet FFmpeg-Konvertierung.
-
-### GET /api/status/{session_id}
-Fragt Konvertierungsstatus ab (Polling).
-
-### GET /api/download/{session_id}
-Lädt fertige WebM-Datei herunter.
-
-## Limitierungen
-
-- Max Upload-Größe: 1GB (PHP-konfigurierbar)
-- Max Tracks: 100 (empfohlen)
-- RAM: ~200MB + Dateigröße für FFmpeg
-- Timeout: 5 Min (PHP-konfigurierbar)
+| Limit                   | Wert   | Durchgesetzt in                                 |
+| ----------------------- | ------ | ----------------------------------------------- |
+| Größe pro Playlist      | 5 GB   | App (`src/constants.js`) und Server (413)       |
+| Größe pro Datei         | 500 MB | Server (413)                                    |
+| Freie Platzreserve      | 20 GB  | Server (507 bei Unterschreitung)                |
+| Parallele Konvertierung | 3      | Server (weitere Jobs warten in der Queue)       |
+| Eingabeformate          | MP3, WAV | App und Server                                |
 
 ## Troubleshooting
 
-**Upload-Fehler:**
-- PHP-Limits prüfen: `php -i | grep upload`
-- Temp-Rechte prüfen: `ls -la backend/temp/`
-
-**FFmpeg-Fehler:**
-- Log ansehen: `backend/temp/{session_id}/ffmpeg.log`
-- FFmpeg testen: `ffmpeg -version`
-
-**Nginx-Fehler:**
-- Error-Log: `tail -f /var/log/nginx/error.log`
-- Config-Test: `nginx -t`
+- Dienst-Status und Logs: `pm2 list`, `pm2 logs playlistkonverter-server`
+- Health-Check: `curl -s http://127.0.0.1:9016/health`
+- ffmpeg prüfen: `ffmpeg -version`
+- nginx: `nginx -t`, `tail -f /var/log/nginx/error.log`
 
 ## License
 
 MIT License
 
 ## Autor
-Dinko Ramić, Kodini Tools, kodinitools.com
 
+Dinko Ramić, Kodini Tools, kodinitools.com

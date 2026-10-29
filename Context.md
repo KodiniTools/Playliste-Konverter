@@ -271,10 +271,10 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 
 | Technologie | Zweck |
 |-------------|-------|
-| PHP 8.3 | Server-seitige Logik |
-| FFmpeg | Audio-Verarbeitung |
-| SQLite | Warteschlangen-Datenbank |
-| Nginx | Webserver |
+| Node.js + Express (`server/`) | Konvertierungsdienst unter pm2, Port 9016 |
+| multer | Datei-Uploads |
+| FFmpeg + ffprobe | Audio-Verarbeitung |
+| Nginx | Webserver, Proxy für `/playlistkonverter/api/` |
 
 ---
 
@@ -308,20 +308,12 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 │   ├── config.js                 # API Base URL
 │   └── style.css                 # Globale Styles
 │
-├── backend/                      # PHP Backend
-│   ├── api/                      # REST API Endpoints
-│   │   ├── upload.php            # Datei-Upload Handler
-│   │   ├── convert.php           # Konvertierung starten
-│   │   ├── status.php            # Fortschritt abfragen
-│   │   ├── download.php          # Datei herunterladen
-│   │   └── .htaccess             # URL-Rewriting
-│   ├── config.php                # Backend-Konfiguration
-│   ├── security.php              # Sicherheitsfunktionen
-│   ├── queue.php                 # Warteschlangen-Klasse
-│   ├── worker.php                # Hintergrund-Worker
-│   ├── cleanup.php               # Session-Bereinigung
-│   ├── queue.db                  # SQLite-Datenbank
-│   └── temp/                     # Temporäre Dateien
+├── server/                       # Node-Konvertierungsdienst
+│   ├── server.js                 # Express-API, Queue, Cleanup
+│   ├── audio.js                  # ffmpeg-Argumente, Probe, Stream-Copy-Prüfung
+│   ├── limits.js                 # Größen- und Speicherlimits
+│   ├── ecosystem.config.cjs      # pm2-Konfiguration
+│   └── test/                     # node --test
 │
 ├── package.json                  # Node-Abhängigkeiten
 ├── vite.config.js                # Vite-Konfiguration
@@ -408,13 +400,12 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 
 1. Dateien werden mit Reihenfolge-Information hochgeladen
 2. Session-ID wird generiert (32-Zeichen Hex)
-3. Dateien werden in `backend/temp/{session_id}/` gespeichert
+3. Dateien werden in `server/temp/{session_id}/` gespeichert (`TEMP_DIR`)
 4. Konvertierung: Stream-Copy nur bei identisch kodierten Dateien, sonst Neukodierung aller Dateien über eine Decoder→Encoder-Pipeline (siehe `server/README.md`)
 
 ### Konvertierungs-Ablauf
 
-- **Direktmodus**: FFmpeg startet sofort
-- **Warteschlangen-Modus**: Job wird in SQLite-Queue eingereiht
+- Bis zu 3 Konvertierungen parallel (`MAX_CONCURRENT`), weitere warten in einer In-Memory-Queue
 - Status-Polling alle 1 Sekunde
 - Fortschritt wird aus FFmpeg-Log berechnet
 
@@ -445,23 +436,13 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 
 ## Sicherheitsfunktionen
 
-Das Backend implementiert umfassende Sicherheitsmaßnahmen in `security.php`:
+Der Node-Dienst (`server/server.js`) prüft:
 
 - **Session-ID-Validierung**: Nur 32-Zeichen Hex erlaubt
-- **PID-Validierung**: Bereich 0-4194304
-- **Extension-Whitelist**: webm, mp3, ogg
-- **Bitrate-Whitelist**: 64, 128, 192, 256, 320
-- **Dateinamen-Sanitisierung**: Entfernt unsichere Zeichen
-- **Path-Traversal-Schutz**: `realpath`-Prüfungen
-- **MIME-Type-Validierung**: Bei Uploads
-
-### HTTP-Sicherheitsheader
-
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Cache-Control: no-store, no-cache, must-revalidate`
+- **Endungs-Whitelist** beim Upload: mp3, wav
+- **Format-/Bitrate-Whitelist**: webm/mp3/ogg, 64–320 kbps (begrenzt auf das Format-Maximum)
+- **Dateinamen-Sanitisierung**: `path.basename` + Ersetzen unsicherer Zeichen
+- **Größen- und Speicherlimits**: siehe unten
 
 ### Limits
 
@@ -480,12 +461,11 @@ Das Backend implementiert umfassende Sicherheitsmaßnahmen in `security.php`:
 - Dev-Server Proxy: `/api` → `localhost:3008`
 - Output-Verzeichnis: `dist/`
 
-### `backend/config.php`
+### `server/ecosystem.config.cjs`
 
-- Queue-System Toggle: `use_queue: false/true`
-- Max. gleichzeitige Jobs: 3
-- Session-Cleanup-Alter: 1 Stunde
-- Ausgabeformate mit max. Bitraten
+- Port 9016, max. gleichzeitige Jobs: 3
+- `MAX_PLAYLIST_SIZE` 5G, `MIN_FREE_SPACE` 20G
+- Weitere Variablen: `server/README.md`
 
 ### `tailwind.config.js`
 
@@ -528,43 +508,11 @@ Erstellt optimierte Dateien im `dist/`-Verzeichnis.
 
 ### Server-Anforderungen
 
-- PHP 8.3 mit FPM
-- Nginx mit Rewrite-Regeln
+- Node.js + pm2
+- Nginx (Abschnitt `deploy/nginx-playlistkonverter.conf`)
 - FFmpeg + ffprobe installiert
-- Min. 512MB RAM
-- Max. Upload: 1GB (konfigurierbar)
 
-### Nginx-Konfiguration (Beispiel)
-
-```nginx
-location /playlistkonverter/ {
-    alias /path/to/dist/;
-}
-
-location /playlistkonverter/api/ {
-    fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
-}
-```
-
-### Warteschlangen-System
-
-Für hohe Last kann das Queue-System aktiviert werden:
-
-```php
-// backend/config.php
-'use_queue' => true
-```
-
-Cronjob für Worker (jede Minute):
-```bash
-* * * * * php /path/to/backend/worker.php
-```
-
-### Cleanup-Cronjob
-
-```bash
-*/15 * * * * php /path/to/backend/cleanup.php
-```
+Ablauf und Befehle: `DEPLOY.md` (`./deploy.sh` im Git-Checkout auf dem Server).
 
 ---
 
@@ -584,7 +532,7 @@ Unterstützte Sprachen:
 
 - Dateien werden nach Download automatisch gelöscht
 - Session-Verzeichnisse werden nach 1 Stunde bereinigt
-- `cleanup.php` sollte regelmäßig per Cronjob ausgeführt werden
+- Der Node-Dienst räumt alle 15 Minuten selbst auf, ein Cronjob ist nicht nötig
 
 ### Browser-Kompatibilität
 
@@ -686,16 +634,16 @@ Folgende Einstellungen werden im Browser gespeichert:
 ### Session-Management
 
 - Session-ID: 32-Zeichen Hex-String
-- Temporäre Dateien in `backend/temp/{session_id}/`
+- Temporäre Dateien in `server/temp/{session_id}/`
 - Automatische Bereinigung nach Download
-- Cronjob-basierte Bereinigung alter Sessions (1 Stunde)
+- Periodische Bereinigung alter Sessions (1 Stunde) im Node-Dienst
 
 ### FFmpeg-Integration
 
-- Concat-Demuxer für nahtloses Zusammenfügen
+- Concat-Demuxer (Stream-Copy) nur bei identisch kodierten Eingaben, sonst Decoder→Encoder-Pipeline
 - Codec-Auswahl basierend auf Ausgabeformat:
   - WebM → libopus
   - MP3 → libmp3lame
   - OGG → libvorbis
-- Hintergrund-Ausführung mit PID-Tracking
-- Fortschritts-Parsing aus Log-Dateien
+- Prozesse werden im Node-Dienst gehalten
+- Fortschritt aus ffmpeg `time=` relativ zur per ffprobe ermittelten Gesamtdauer
