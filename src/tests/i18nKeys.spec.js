@@ -48,3 +48,22 @@ describe('i18n-Schlüssel', () => {
     expect(unused).toEqual([])
   })
 })
+
+describe('vue-i18n (Composition-Modus)', () => {
+  it('läuft im Composition-Modus und interpoliert Parameter', () => {
+    expect(i18n.mode).toBe('composition')
+    const { t, locale } = i18n.global
+    const previous = locale.value
+    locale.value = 'en'
+    expect(t('download.button', { format: 'mp3' })).toBe('Download playlist.mp3')
+    locale.value = previous
+  })
+
+  it('fällt bei unbekannter Sprache auf Deutsch zurück', () => {
+    const { t, locale } = i18n.global
+    const previous = locale.value
+    locale.value = 'fr'
+    expect(t('fileList.removeAll')).toBe('Alle entfernen')
+    locale.value = previous
+  })
+})
