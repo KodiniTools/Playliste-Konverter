@@ -3,6 +3,7 @@
   import { useConverterStore } from '../stores/converter'
   import { useToastStore } from '../stores/toast'
   import { useI18n } from 'vue-i18n'
+  import { ACCEPT_ATTRIBUTE, isAcceptedAudioFile } from '../constants'
 
   const store = useConverterStore()
   const toastStore = useToastStore()
@@ -117,6 +118,11 @@
     }
   }
 
+  /** Audio aus der Zwischenablage; nicht unterstützte Formate meldet addFiles als übersprungen. */
+  function isPastedAudio(file: File): boolean {
+    return file.type.startsWith('audio/') || isAcceptedAudioFile(file)
+  }
+
   function handlePaste(e: ClipboardEvent) {
     try {
       const audioFiles: File[] = []
@@ -126,10 +132,7 @@
         for (const item of items) {
           if (item.kind === 'file') {
             const file = item.getAsFile()
-            if (
-              file &&
-              (file.type.startsWith('audio/') || /\.(mp3|wav|ogg|webm)$/i.test(file.name))
-            ) {
+            if (file && isPastedAudio(file)) {
               audioFiles.push(file)
             }
           }
@@ -138,7 +141,7 @@
 
       if (audioFiles.length === 0 && e.clipboardData?.files?.length) {
         for (const file of e.clipboardData.files) {
-          if (file.type.startsWith('audio/') || /\.(mp3|wav|ogg|webm)$/i.test(file.name)) {
+          if (isPastedAudio(file)) {
             audioFiles.push(file)
           }
         }
@@ -218,7 +221,7 @@
         <input
           type="file"
           multiple
-          accept=".mp3,.wav,audio/mpeg,audio/wav"
+          :accept="ACCEPT_ATTRIBUTE"
           class="sr-only"
           @change="onFileSelect"
         />
