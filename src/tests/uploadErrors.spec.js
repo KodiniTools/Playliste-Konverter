@@ -42,11 +42,30 @@ describe('uploadErrorMessage', () => {
     expect(msg).toContain('try again')
   })
 
-  it('unbekannte Fehler behalten die Server- oder Fehlermeldung', () => {
+  it('Server-Codes werden übersetzt, die deutsche Server-Meldung nicht angezeigt', () => {
+    i18n.global.locale.value = 'en'
+    const msg = (code) => uploadErrorMessage(axiosError(400, { error: 'deutsch', code }))
+    expect(msg('NO_FILES')).toBe('No files selected.')
+    expect(msg('SESSION_NOT_FOUND')).toContain('session has expired')
+    expect(msg('INVALID_SESSION')).toContain('session has expired')
+    expect(msg('ALREADY_CONVERTING')).toContain('already being converted')
+    expect(msg('INTERNAL')).toContain('Internal server error')
+  })
+
+  it('unbekannte Fehler: allgemeine Meldung statt technischem Text', () => {
     expect(uploadErrorMessage(axiosError(500, { error: 'Upload fehlgeschlagen: EIO' }))).toBe(
-      'Upload fehlgeschlagen: EIO',
+      i18n.global.t('error.uploadFailed'),
     )
-    expect(uploadErrorMessage({ message: 'Network Error' })).toBe('Network Error')
-    expect(uploadErrorMessage(undefined)).toBe('Upload fehlgeschlagen')
+    expect(uploadErrorMessage(new Error('Keine Session-ID vom Server erhalten'))).toBe(
+      i18n.global.t('error.uploadFailed'),
+    )
+    expect(uploadErrorMessage(undefined)).toBe(i18n.global.t('error.uploadFailed'))
+  })
+
+  it('ohne Antwort vom Server: Hinweis auf die Verbindung', () => {
+    const network = i18n.global.t('error.network')
+    expect(uploadErrorMessage({ message: 'Network Error', code: 'ERR_NETWORK' })).toBe(network)
+    expect(uploadErrorMessage(new TypeError('Failed to fetch'))).toBe(network)
+    expect(uploadErrorMessage(new DOMException('Zeitüberschreitung', 'TimeoutError'))).toBe(network)
   })
 })

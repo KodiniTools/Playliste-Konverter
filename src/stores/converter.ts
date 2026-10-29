@@ -22,7 +22,7 @@ import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
 import { logger } from '../utils/logger'
-import { isAbortError } from '../utils/errors'
+import { isAbortError, isNetworkError } from '../utils/errors'
 
 /** Ein Track der Playlist. */
 export interface PlaylistItem {
@@ -35,6 +35,9 @@ export interface PlaylistItem {
 export type ConverterStatus = 'idle' | 'uploading' | 'converting' | 'done' | 'error'
 
 type Timer = ReturnType<typeof setTimeout>
+
+// Meldungen in der aktuellen Sprache (auch außerhalb von Komponenten)
+const t = i18n.global.t
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref<PlaylistItem[]>([])
@@ -120,15 +123,11 @@ export const useConverterStore = defineStore('converter', () => {
           size: f.size,
         })),
       )
-      toastStore.success(
-        `${validFiles.length} ${validFiles.length === 1 ? 'Datei' : 'Dateien'} hinzugefügt`,
-      )
+      toastStore.success(t('toast.filesAdded', validFiles.length))
     }
 
     if (invalidCount > 0) {
-      toastStore.warning(
-        `${invalidCount} ${invalidCount === 1 ? 'Datei' : 'Dateien'} übersprungen (nur MP3/WAV)`,
-      )
+      toastStore.warning(t('toast.filesSkipped', invalidCount))
     }
   }
 
@@ -137,7 +136,7 @@ export const useConverterStore = defineStore('converter', () => {
     const file = files.value.find((f) => f.id === id)
     files.value = files.value.filter((f) => f.id !== id)
     if (file) {
-      toastStore.info(`"${file.name}" entfernt`)
+      toastStore.info(t('toast.fileRemoved', { name: file.name }))
     }
   }
 
@@ -145,7 +144,7 @@ export const useConverterStore = defineStore('converter', () => {
     const toastStore = useToastStore()
     const count = files.value.length
     files.value = []
-    toastStore.info(`${count} ${count === 1 ? 'Datei' : 'Dateien'} entfernt`)
+    toastStore.info(t('toast.filesRemoved', count))
   }
 
   function moveFile(fromIndex: number, toIndex: number) {
@@ -232,7 +231,7 @@ export const useConverterStore = defineStore('converter', () => {
 
   async function convert() {
     if (files.value.length === 0) {
-      errorMessage.value = 'Keine Dateien ausgewählt'
+      errorMessage.value = t('error.noFiles')
       return
     }
 
@@ -295,7 +294,7 @@ export const useConverterStore = defineStore('converter', () => {
     } catch (err) {
       if (isAbortError(err) || isCancelling.value) {
         logger.info('Vorgang vom Nutzer abgebrochen')
-        toastStore.info('Vorgang abgebrochen')
+        toastStore.info(t('toast.cancelled'))
         reset()
         return
       }
@@ -323,14 +322,15 @@ export const useConverterStore = defineStore('converter', () => {
       status.value = 'done'
       downloadUrl.value = getDownloadUrl(id)
       outputFileSize.value = data.file_size || null
-      toastStore.success('Konvertierung abgeschlossen!')
+      toastStore.success(t('toast.done'))
       return true
     }
     if (data.status === 'error') {
       stopIntervals()
       status.value = 'error'
-      errorMessage.value = data.error ?? null
-      toastStore.error(data.error || 'Konvertierung fehlgeschlagen')
+      logger.error('Konvertierung fehlgeschlagen:', data.error_code, data.error)
+      errorMessage.value = statusErrorMessage(data)
+      toastStore.error(errorMessage.value)
       return true
     }
     return false
@@ -340,8 +340,8 @@ export const useConverterStore = defineStore('converter', () => {
     const toastStore = useToastStore()
     stopIntervals()
     status.value = 'error'
-    errorMessage.value = 'Statusabfrage fehlgeschlagen'
-    toastStore.error('Verbindung zum Server verloren')
+    errorMessage.value = t('error.statusFailed')
+    toastStore.error(t('toast.connectionLost'))
   }
 
   /** Fallback: Status pollen; die nächste Abfrage startet erst nach der Antwort. */
@@ -402,7 +402,7 @@ export const useConverterStore = defineStore('converter', () => {
     }
 
     stopIntervals()
-    toastStore.info('Vorgang wird abgebrochen...')
+    toastStore.info(t('toast.cancelling'))
     reset()
   }
 
@@ -507,12 +507,6 @@ interface ServerErrorBody {
   max_bytes?: number
 }
 
-/** `message` eines Fehlers (auch Fehlerobjekte, die keine Error-Instanz sind). */
-function messageOf(err: unknown): string | undefined {
-  if (typeof err !== 'object' || err === null || !('message' in err)) return undefined
-  return typeof err.message === 'string' ? err.message : undefined
-}
-
 /** `response` eines axios-Fehlers oder HttpError (utils/http), sonst undefined. */
 function responseOf(err: unknown): ErrorResponse | undefined {
   if (typeof err !== 'object' || err === null || !('response' in err)) return undefined
@@ -521,9 +515,9 @@ function responseOf(err: unknown): ErrorResponse | undefined {
 }
 
 /**
- * Nutzerfreundliche Meldung für Fehler aus Upload/Konvertierung. Die
- * Limit-Codes des Servers (server/server.js) werden übersetzt; sonst bleibt es
- * bei der Server-Meldung bzw. der technischen Fehlermeldung.
+ * Nutzerfreundliche Meldung für Fehler aus Upload/Konvertierung in der
+ * aktuellen Sprache. Der Server liefert einen `code` (server/app.js); seine
+ * deutsche `error`-Meldung ist nur für Logs gedacht.
  */
 export function uploadErrorMessage(err: unknown): string {
   const response = responseOf(err)
@@ -531,7 +525,6 @@ export function uploadErrorMessage(err: unknown): string {
     typeof response?.data === 'object' && response.data !== null
       ? (response.data as ServerErrorBody)
       : undefined
-  const t = i18n.global.t
   switch (data?.code) {
     case 'PLAYLIST_TOO_LARGE':
       return t('error.playlistTooLarge', {
@@ -541,9 +534,39 @@ export function uploadErrorMessage(err: unknown): string {
       return t('error.fileTooLarge', { max: formatBytes(data.max_bytes, 0) ?? '500 MB' })
     case 'INSUFFICIENT_STORAGE':
       return t('error.serverStorage')
+    case 'NO_FILES':
+      return t('error.noFiles')
+    case 'INVALID_SESSION':
+    case 'SESSION_NOT_FOUND':
+      return t('error.sessionExpired')
+    case 'SESSION_CANCELLED':
+      return t('toast.cancelled')
+    case 'ALREADY_CONVERTING':
+      return t('error.alreadyConverting')
+    case 'INTERNAL':
+      return t('error.internal')
     default:
       // nginx-Rate-Limit (deploy/nginx-playlistkonverter.conf) antwortet mit HTML, ohne code
       if (response?.status === 429) return t('error.rateLimited')
-      return data?.error || messageOf(err) || 'Upload fehlgeschlagen'
+      if (!response && isNetworkError(err)) return t('error.network')
+      return t('error.uploadFailed')
+  }
+}
+
+/** Nutzerfreundliche Meldung für eine fehlgeschlagene Konvertierung (Status `error`). */
+export function statusErrorMessage(
+  data: Pick<ConversionStatus, 'error_code' | 'error_file'>,
+): string {
+  switch (data.error_code) {
+    case 'FILE_UNREADABLE':
+      return data.error_file
+        ? t('error.fileUnreadable', { name: data.error_file })
+        : t('error.conversionFailed')
+    case 'NO_FILES':
+      return t('error.noFiles')
+    case 'INTERNAL':
+      return t('error.internal')
+    default:
+      return t('error.conversionFailed')
   }
 }

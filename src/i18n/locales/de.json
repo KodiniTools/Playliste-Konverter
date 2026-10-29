@@ -45,7 +45,15 @@
     "remove": "Entfernen"
   },
   "toast": {
-    "close": "Schließen"
+    "close": "Schließen",
+    "filesAdded": "{n} Datei hinzugefügt | {n} Dateien hinzugefügt",
+    "filesSkipped": "{n} Datei übersprungen (nur MP3/WAV) | {n} Dateien übersprungen (nur MP3/WAV)",
+    "fileRemoved": "„{name}“ entfernt",
+    "filesRemoved": "{n} Datei entfernt | {n} Dateien entfernt",
+    "cancelling": "Vorgang wird abgebrochen …",
+    "cancelled": "Vorgang abgebrochen",
+    "done": "Konvertierung abgeschlossen!",
+    "connectionLost": "Verbindung zum Server verloren"
   },
   "preview": {
     "play": "Track abspielen",
@@ -88,7 +96,16 @@
     "playlistTooLarge": "Der Server hat den Upload abgelehnt: Die Playlist ist größer als {max}. Bitte Dateien entfernen.",
     "fileTooLarge": "Der Server hat den Upload abgelehnt: Eine Datei ist größer als {max}.",
     "serverStorage": "Der Server hat gerade zu wenig freien Speicher. Bitte versuche es in ein paar Minuten erneut.",
-    "rateLimited": "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten und erneut versuchen."
+    "rateLimited": "Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten und erneut versuchen.",
+    "noFiles": "Keine Dateien ausgewählt.",
+    "uploadFailed": "Der Upload ist fehlgeschlagen. Bitte erneut versuchen.",
+    "conversionFailed": "Die Konvertierung ist fehlgeschlagen. Bitte erneut versuchen.",
+    "fileUnreadable": "„{name}“ konnte nicht gelesen werden. Bitte die Datei entfernen oder ersetzen.",
+    "statusFailed": "Der Status der Konvertierung konnte nicht abgefragt werden.",
+    "network": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen.",
+    "sessionExpired": "Die Sitzung ist abgelaufen. Bitte die Konvertierung neu starten.",
+    "alreadyConverting": "Diese Playlist wird bereits konvertiert.",
+    "internal": "Interner Serverfehler. Bitte später erneut versuchen."
   },
   "sizeWarning": {
     "title": "Playlist zu groß!",

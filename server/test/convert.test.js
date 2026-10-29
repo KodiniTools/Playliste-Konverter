@@ -260,5 +260,7 @@ test(
     const { status } = await convertViaServer(srv.base, [good, bad])
     assert.equal(status.status, 'error')
     assert.match(status.error, /kaputt\.wav/)
+    assert.equal(status.error_code, 'FILE_UNREADABLE')
+    assert.equal(status.error_file, 'kaputt.wav')
   },
 )
