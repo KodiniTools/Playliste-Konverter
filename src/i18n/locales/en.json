@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "Playlist Converter",
+    "subtitle": "Merge multiple audio tracks into one file – up to 5 GB"
+  },
+  "format": {
+    "title": "Output Format",
+    "webm": {
+      "description": "Compact, modern"
+    },
+    "mp3": {
+      "description": "Universal compatibility"
+    },
+    "ogg": {
+      "description": "Open source"
+    }
+  },
+  "bitrate": {
+    "64": "Low",
+    "128": "Standard",
+    "192": "High",
+    "256": "Very high",
+    "320": "Maximum",
+    "title": "Audio Quality",
+    "hint": "Higher bitrate = better quality, larger file"
+  },
+  "uploader": {
+    "dropText": "Drop MP3 or WAV files here",
+    "orText": "or",
+    "selectButton": "Select files",
+    "selectFolderButton": "Select folder",
+    "errorFileAccess": "Could not read file",
+    "errorDirectoryAccess": "Folder could not be read completely",
+    "errorDrop": "Error processing dropped files",
+    "errorFileSelect": "Error reading selected files",
+    "pasteHint": "to paste from clipboard",
+    "noPasteFiles": "No audio files found in clipboard",
+    "errorPaste": "Error pasting from clipboard"
+  },
+  "fileList": {
+    "title": "Playlist",
+    "tracks": "Tracks",
+    "totalSize": "Total size",
+    "removeAll": "Remove all",
+    "remove": "Remove"
+  },
+  "toast": {
+    "close": "Close"
+  },
+  "preview": {
+    "play": "Play track",
+    "pause": "Pause",
+    "volume": "Volume",
+    "volumeHint": "Preview only - does not affect output file"
+  },
+  "player": {
+    "noTrack": "No track selected",
+    "previous": "Previous track",
+    "next": "Next track",
+    "seek": "Seek",
+    "playError": "“{name}” cannot be played in this browser.",
+    "playBlocked": "The browser blocked playback. Please press play again."
+  },
+  "conversion": {
+    "uploading": "Uploading files...",
+    "converting": "Converting...",
+    "progress": "Progress",
+    "remaining": "Remaining",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling..."
+  },
+  "download": {
+    "title": "Conversion completed!",
+    "subtitle": "Your playlist is ready for download",
+    "fileSize": "File size",
+    "button": "Download playlist.{format}",
+    "newConversion": "Start new conversion",
+    "shareToPlayer": "Send to Ultimate Music Player",
+    "sharing": "Sending …",
+    "shareError": "Could not send the playlist to the music player. Please download the file or convert again."
+  },
+  "button": {
+    "convert": "Convert track(s)"
+  },
+  "error": {
+    "reset": "Reset",
+    "playlistTooLarge": "The server rejected the upload: the playlist is larger than {max}. Please remove some files.",
+    "fileTooLarge": "The server rejected the upload: a file is larger than {max}.",
+    "serverStorage": "The server is low on free storage right now. Please try again in a few minutes.",
+    "rateLimited": "Too many requests in a short time. Please wait a moment and try again."
+  },
+  "sizeWarning": {
+    "title": "Playlist too large!",
+    "message": "The total size of your playlist exceeds the maximum of {maxSize}. Please remove some files to continue.",
+    "currentSize": "Current size",
+    "maxSize": "Maximum size",
+    "overBy": "Exceeding by"
+  },
+  "sizeOk": {
+    "title": "Playlist ready!",
+    "message": "Your playlist size is within the allowed limit. You can proceed with the conversion."
+  },
+  "sizeYellowWarning": {
+    "title": "Larger Playlist",
+    "message": "Your playlist is relatively large. Upload and conversion will take longer."
+  },
+  "sizeOrangeWarning": {
+    "title": "Very Large Playlist",
+    "message": "Your playlist is very large. Upload and conversion may take a while. Please be patient."
+  },
+  "sharedFiles": {
+    "loading": "Loading {count} normalised file(s) …",
+    "loaded": "{count} normalised file(s) loaded successfully.",
+    "empty": "No shared files found.",
+    "error": "Error loading shared files."
+  }
+}

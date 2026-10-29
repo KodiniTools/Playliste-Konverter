@@ -31,9 +31,11 @@ function readCode() {
 }
 
 describe('i18n-Schlüssel', () => {
-  const { messages } = i18n.global
-  const de = flatKeys(messages.value.de).sort()
-  const en = flatKeys(messages.value.en).sort()
+  // Rohdateien lesen: im Bundle sind die Übersetzungen vorkompiliert
+  const raw = (locale) =>
+    JSON.parse(readFileSync(join(SRC_DIR, 'i18n', 'locales', `${locale}.json`), 'utf8'))
+  const de = flatKeys(raw('de')).sort()
+  const en = flatKeys(raw('en')).sort()
 
   it('DE und EN haben dieselben Schlüssel', () => {
     expect(en).toEqual(de)
