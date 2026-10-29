@@ -19,6 +19,8 @@ import {
   type ConversionStatus,
 } from '../api/converter'
 import { formatBytes } from '../utils/format'
+import { probeDuration } from '../utils/audioDuration'
+import { duplicateKey, sortItems, type SortMode } from '../utils/playlistOrder'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
 import { logger } from '../utils/logger'
@@ -30,6 +32,8 @@ export interface PlaylistItem {
   id: number
   name: string
   size: number
+  /** Dauer in Sekunden; undefined = wird noch ermittelt, null = unbekannt */
+  duration?: number | null
 }
 
 export type ConverterStatus = 'idle' | 'uploading' | 'converting' | 'done' | 'error'
@@ -108,6 +112,49 @@ export const useConverterStore = defineStore('converter', () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   })
 
+  /** Gesamtdauer der Tracks, deren Dauer bekannt ist (Sekunden). */
+  const totalDuration = computed(() =>
+    files.value.reduce((sum, f) => sum + (typeof f.duration === 'number' ? f.duration : 0), 0),
+  )
+
+  /** Noch nicht alle Dauern ermittelt. */
+  const durationsPending = computed(() => files.value.some((f) => f.duration === undefined))
+
+  /** Mindestens eine Dauer konnte der Browser nicht lesen (Gesamtdauer ist dann ein Mindestwert). */
+  const durationsIncomplete = computed(() => files.value.some((f) => f.duration === null))
+
+  /** IDs der Tracks, die eine frühere Datei der Liste wiederholen (gleicher Name und Größe). */
+  const duplicateIds = computed(() => {
+    const seen = new Set<string>()
+    const ids = new Set<number>()
+    for (const item of files.value) {
+      const key = duplicateKey(item)
+      if (seen.has(key)) ids.add(item.id)
+      else seen.add(key)
+    }
+    return ids
+  })
+
+  // Dauern nacheinander im Hintergrund ermitteln (N3)
+  const durationQueue: number[] = []
+  let probingDurations = false
+
+  async function probeQueuedDurations() {
+    if (probingDurations) return
+    probingDurations = true
+    try {
+      for (let id = durationQueue.shift(); id !== undefined; id = durationQueue.shift()) {
+        const item = files.value.find((f) => f.id === id)
+        if (!item) continue
+        const duration = await probeDuration(item.file)
+        const current = files.value.find((f) => f.id === id)
+        if (current) current.duration = duration
+      }
+    } finally {
+      probingDurations = false
+    }
+  }
+
   function addFiles(newFiles: FileList | File[]) {
     const toastStore = useToastStore()
     const validFiles = Array.from(newFiles).filter(isAcceptedAudioFile)
@@ -115,15 +162,26 @@ export const useConverterStore = defineStore('converter', () => {
     const invalidCount = newFiles.length - validFiles.length
 
     if (validFiles.length > 0) {
-      files.value.push(
-        ...validFiles.map((f) => ({
+      const knownKeys = new Set(files.value.map(duplicateKey))
+      let duplicateCount = 0
+      const items: PlaylistItem[] = validFiles.map((f) => {
+        const item: PlaylistItem = {
           file: f,
           id: nextTrackId++,
           name: f.name,
           size: f.size,
-        })),
-      )
+          duration: undefined,
+        }
+        const key = duplicateKey(item)
+        if (knownKeys.has(key)) duplicateCount++
+        else knownKeys.add(key)
+        return item
+      })
+      files.value.push(...items)
+      durationQueue.push(...items.map((item) => item.id))
+      void probeQueuedDurations()
       toastStore.success(t('toast.filesAdded', validFiles.length))
+      if (duplicateCount > 0) toastStore.warning(t('toast.duplicates', duplicateCount))
     }
 
     if (invalidCount > 0) {
@@ -145,6 +203,11 @@ export const useConverterStore = defineStore('converter', () => {
     const count = files.value.length
     files.value = []
     toastStore.info(t('toast.filesRemoved', count))
+  }
+
+  /** Playlist neu ordnen: A–Z, nach Tracknummer, umkehren oder zufällig (N7). */
+  function sortFiles(mode: SortMode) {
+    files.value = sortItems(files.value, mode)
   }
 
   function moveFile(fromIndex: number, toIndex: number) {
@@ -477,6 +540,11 @@ export const useConverterStore = defineStore('converter', () => {
     removeFile,
     removeAllFiles,
     moveFile,
+    sortFiles,
+    totalDuration,
+    durationsPending,
+    durationsIncomplete,
+    duplicateIds,
     setOutputFormat,
     setBitrate,
     convert,
