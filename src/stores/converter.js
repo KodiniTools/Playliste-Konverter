@@ -443,6 +443,8 @@ export function uploadErrorMessage(err) {
     case 'INSUFFICIENT_STORAGE':
       return t('error.serverStorage')
     default:
+      // nginx-Rate-Limit (deploy/nginx-playlistkonverter.conf) antwortet mit HTML, ohne code
+      if (err?.response?.status === 429) return t('error.rateLimited')
       return data?.error || err?.message || 'Upload fehlgeschlagen'
   }
 }

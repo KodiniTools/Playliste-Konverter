@@ -23,6 +23,11 @@ describe('uploadErrorMessage', () => {
     expect(msg).toContain('größer als 5 GB')
   })
 
+  it('429 vom nginx-Rate-Limit wird verständlich gemeldet', () => {
+    const msg = uploadErrorMessage(axiosError(429, '<html>429 Too Many Requests</html>'))
+    expect(msg).toContain('Zu viele Anfragen')
+  })
+
   it('FILE_TOO_LARGE nennt das Limit pro Datei', () => {
     const msg = uploadErrorMessage(
       axiosError(413, { code: 'FILE_TOO_LARGE', max_bytes: 500 * 1024 ** 2 }),

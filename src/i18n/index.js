@@ -93,6 +93,8 @@ const messages = {
       fileTooLarge: 'Der Server hat den Upload abgelehnt: Eine Datei ist größer als {max}.',
       serverStorage:
         'Der Server hat gerade zu wenig freien Speicher. Bitte versuche es in ein paar Minuten erneut.',
+      rateLimited:
+        'Zu viele Anfragen in kurzer Zeit. Bitte einen Moment warten und erneut versuchen.',
     },
     sizeWarning: {
       title: 'Playlist zu groß!',
@@ -216,6 +218,7 @@ const messages = {
       fileTooLarge: 'The server rejected the upload: a file is larger than {max}.',
       serverStorage:
         'The server is low on free storage right now. Please try again in a few minutes.',
+      rateLimited: 'Too many requests in a short time. Please wait a moment and try again.',
     },
     sizeWarning: {
       title: 'Playlist too large!',
