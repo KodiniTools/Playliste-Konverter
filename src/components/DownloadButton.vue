@@ -4,7 +4,8 @@
   import { useToastStore } from '../stores/toast'
   import { useI18n } from 'vue-i18n'
   import { formatBytes } from '../utils/format'
-  import { OUTPUT_FORMATS, MUSIC_PLAYER_SHARE_URL } from '../constants'
+  import { OUTPUT_FORMATS, SHARE_TARGETS } from '../constants'
+  import type { ShareTarget } from '../constants'
   import { replaceSharedFiles } from '../utils/sharedFileRepository'
   import { errorName } from '../utils/errors'
   import StatusIcon from './StatusIcon.vue'
@@ -16,7 +17,7 @@
 
   // Der Server löscht die Session nach dem ersten vollständigen Download.
   // Einmal geladen, wird die Datei deshalb hier vorgehalten, damit Download
-  // und Weitergabe an den Musikplayer beide (in beliebiger Reihenfolge)
+  // und Weitergabe (Musikplayer, Normalisierer) in beliebiger Reihenfolge
   // funktionieren. Nach dem Speichern per Dateidialog ist das die gespeicherte
   // Datei auf der Festplatte (File), kein Puffer im Arbeitsspeicher.
   let outputBlob: Blob | null = null
@@ -123,7 +124,7 @@
 
         logger.info('Datei gespeichert')
       } else if (outputBlob) {
-        // Datei wurde bereits für den Musikplayer geladen – Session ist evtl. schon weg
+        // Datei wurde bereits für eine Weitergabe geladen – Session ist evtl. schon weg
         downloadCachedBlob(outputBlob, filename)
       } else {
         // Fallback für ältere Browser
@@ -140,36 +141,39 @@
     }
   }
 
-  const sharing = ref(false)
+  /** Ziel, an das gerade übergeben wird (sperrt beide Buttons). */
+  const sharingId = ref<ShareTarget['id'] | null>(null)
 
   /**
-   * Übergibt die konvertierte Playlist über die gemeinsame IndexedDB an den
-   * Ultimativen Musikplayer und öffnet ihn in einem neuen Tab.
+   * Übergibt die konvertierte Playlist über die gemeinsame IndexedDB an ein
+   * anderes KodiniTools-Werkzeug (Musikplayer, Normalisierer) und öffnet es
+   * in einem neuen Tab.
    */
-  async function handleShareToPlayer() {
-    if (sharing.value) return
-    sharing.value = true
+  async function handleShare(target: ShareTarget) {
+    if (sharingId.value) return
+    sharingId.value = target.id
 
     // Tab synchron im Klick öffnen, sonst blockiert der Popup-Blocker.
-    const playerWindow = window.open('about:blank', '_blank')
+    const targetWindow = window.open('about:blank', '_blank')
 
     try {
-      const config = formatConfig.value
       const blob = await fetchOutputBlob()
-      await replaceSharedFiles([{ blob, name: store.outputFileName, mimeType: config.mimeType }])
+      await replaceSharedFiles([
+        { blob, name: store.outputFileName, mimeType: formatConfig.value.mimeType },
+      ])
 
-      if (playerWindow) {
-        playerWindow.opener = null
-        playerWindow.location.href = MUSIC_PLAYER_SHARE_URL
+      if (targetWindow) {
+        targetWindow.opener = null
+        targetWindow.location.href = target.url
       } else {
-        window.location.href = MUSIC_PLAYER_SHARE_URL
+        window.location.href = target.url
       }
     } catch (err) {
-      logger.error('Weitergabe an den Musikplayer fehlgeschlagen:', err)
-      playerWindow?.close()
-      toast.error(t('download.shareError'))
+      logger.error(`Weitergabe (${target.id}) fehlgeschlagen:`, err)
+      targetWindow?.close()
+      toast.error(t('download.shareError', { tool: t(target.toolKey) }))
     } finally {
-      sharing.value = false
+      sharingId.value = null
     }
   }
 </script>
@@ -196,16 +200,18 @@
       {{ t('download.button', { name: store.outputFileName }) }}
     </button>
 
-    <div class="mt-3">
+    <div class="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
       <button
+        v-for="target in SHARE_TARGETS"
+        :key="target.id"
         type="button"
         class="inline-flex h-control-lg items-center rounded-md border border-line bg-surface-1 px-6 text-md font-semibold text-ink transition-colors hover:bg-surface-2 disabled:cursor-wait disabled:opacity-60"
-        :disabled="sharing"
-        :aria-busy="sharing"
-        data-testid="share-to-player"
-        @click="handleShareToPlayer"
+        :disabled="sharingId !== null"
+        :aria-busy="sharingId === target.id"
+        :data-testid="`share-to-${target.id}`"
+        @click="handleShare(target)"
       >
-        {{ sharing ? t('download.sharing') : t('download.shareToPlayer') }}
+        {{ sharingId === target.id ? t('download.sharing') : t(target.labelKey) }}
       </button>
     </div>
 

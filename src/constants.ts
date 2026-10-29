@@ -16,9 +16,6 @@ export const MAX_PLAYLIST_SIZE = 5 * 1024 * 1024 * 1024
 export const SIZE_THRESHOLD_YELLOW = 2.5 * 1024 * 1024 * 1024 // 2.5 GB
 export const SIZE_THRESHOLD_ORANGE = 4 * 1024 * 1024 * 1024 // 4 GB
 
-// Unterstützte Ausgabeformate
-// Ultimativer Musikplayer (gleiche Domain) – liest die Playlist aus der
-// gemeinsamen IndexedDB, wenn er mit ?source=playlistkonverter geöffnet wird.
 /**
  * KodiniTools-Apps, deren Dateien die App über die gemeinsame IndexedDB
  * übernimmt, wenn sie mit ?source=<id> geöffnet wird (N8).
@@ -29,7 +26,36 @@ export function isSharedSource(value: unknown): value is (typeof SHARED_SOURCES)
   return typeof value === 'string' && (SHARED_SOURCES as readonly string[]).includes(value)
 }
 
+// Ziele für die fertige Playlist (gleiche Domain). Sie lesen die Datei aus
+// der gemeinsamen IndexedDB, wenn sie mit ?source=playlistkonverter öffnen.
 export const MUSIC_PLAYER_SHARE_URL = '/ultimativer-musikplayer/app/?source=playlistkonverter'
+// Landing-Seite leitet mit ?source selbst zur App weiter (N8)
+export const NORMALIZER_SHARE_URL = '/audionormalisierer/?source=playlistkonverter'
+
+export interface ShareTarget {
+  id: 'player' | 'normalizer'
+  url: string
+  /** i18n-Schlüssel für Button und Werkzeugname */
+  labelKey: string
+  toolKey: string
+}
+
+export const SHARE_TARGETS: readonly ShareTarget[] = [
+  {
+    id: 'player',
+    url: MUSIC_PLAYER_SHARE_URL,
+    labelKey: 'download.shareToPlayer',
+    toolKey: 'download.toolPlayer',
+  },
+  {
+    id: 'normalizer',
+    url: NORMALIZER_SHARE_URL,
+    labelKey: 'download.shareToNormalizer',
+    toolKey: 'download.toolNormalizer',
+  },
+]
+
+// Unterstützte Ausgabeformate
 
 export interface OutputFormatConfig {
   extension: string

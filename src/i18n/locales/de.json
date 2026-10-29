@@ -125,8 +125,11 @@
     "button": "„{name}“ herunterladen",
     "newConversion": "Neue Konvertierung starten",
     "shareToPlayer": "An Ultimativen Musikplayer weitergeben",
+    "shareToNormalizer": "Im Audio-Normalisierer öffnen",
     "sharing": "Wird übergeben …",
-    "shareError": "Weitergabe an den Musikplayer fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren."
+    "shareError": "Weitergabe an den {tool} fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren.",
+    "toolPlayer": "Musikplayer",
+    "toolNormalizer": "Audio-Normalisierer"
   },
   "button": {
     "convert": "Track(s) konvertieren"

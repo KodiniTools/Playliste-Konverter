@@ -125,8 +125,11 @@
     "button": "Download “{name}”",
     "newConversion": "Start new conversion",
     "shareToPlayer": "Send to Ultimate Music Player",
+    "shareToNormalizer": "Open in Audio Normalizer",
     "sharing": "Sending …",
-    "shareError": "Could not send the playlist to the music player. Please download the file or convert again."
+    "shareError": "Could not send the playlist to the {tool}. Please download the file or convert again.",
+    "toolPlayer": "music player",
+    "toolNormalizer": "Audio Normalizer"
   },
   "button": {
     "convert": "Convert track(s)"
