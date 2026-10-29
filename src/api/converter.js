@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import { UPLOAD_TIMEOUT, CONVERT_START_TIMEOUT, STATUS_POLL_TIMEOUT } from '../constants'
+import { requestJson } from '../utils/http'
 
 /**
- * Lädt Audiodateien hoch – eine Datei pro Request, damit der Fortschritt stimmt
+ * Lädt Audiodateien hoch (axios, weil fetch keinen Upload-Fortschritt meldet) – eine Datei pro Request, damit der Fortschritt stimmt
  * und Server-Limits (post_max_size) nicht überschritten werden. Der Upload läuft
  * sequenziell: Bei bandbreitenbegrenzten Verbindungen (der Regelfall) bringt
  * paralleles Hochladen keinen Durchsatzgewinn, da sich alle Übertragungen
@@ -70,21 +71,22 @@ export async function uploadFiles(formData, { signal, onUploadProgress, onSessio
  * @param {{ signal: AbortSignal }} options
  */
 export function startConversion(sessionId, format, bitrate, { signal }) {
-  return axios.post(
-    `${API_BASE_URL}/convert`,
-    { session_id: sessionId, format, bitrate },
-    { timeout: CONVERT_START_TIMEOUT, signal },
-  )
+  return requestJson(`${API_BASE_URL}/convert`, {
+    method: 'POST',
+    body: { session_id: sessionId, format, bitrate },
+    timeout: CONVERT_START_TIMEOUT,
+    signal,
+  })
 }
 
 /**
  * Fragt den Konvertierungsstatus ab.
  * @param {string} sessionId
  * @param {{ signal: AbortSignal }} options
- * @returns {Promise<{ status: string, progress: number, file_size?: number, error?: string }>}
+ * @returns {Promise<{ data: { status: string, progress: number, file_size?: number, error?: string, queue_position?: number } }>}
  */
 export function fetchStatus(sessionId, { signal }) {
-  return axios.get(`${API_BASE_URL}/status/${sessionId}`, {
+  return requestJson(`${API_BASE_URL}/status/${sessionId}`, {
     timeout: STATUS_POLL_TIMEOUT,
     signal,
   })
