@@ -35,7 +35,7 @@
     "mono": "Mono (ein Kanal, z. B. für Sprache)"
   },
   "mix": {
-    "title": "Übergänge und Lautstärke",
+    "title": "Übergänge und Bearbeitung",
     "transition": "Zwischen den Tracks",
     "none": "Direkt",
     "gap": "Pause",
@@ -44,7 +44,18 @@
     "secondsValue": "{n} s",
     "loudnorm": "Lautstärke der Tracks angleichen",
     "loudnormHint": "Leise und laute Tracks klingen danach gleich laut (−16 LUFS).",
-    "reencodeHint": "Übergänge und Angleichung brauchen eine Neukodierung, die Konvertierung dauert dadurch etwas länger."
+    "reencodeHint": "Übergänge, Angleichung und Zuschnitt brauchen eine Neukodierung, die Konvertierung dauert dadurch etwas länger.",
+    "trimSilence": "Stille am Anfang und Ende entfernen",
+    "trimSilenceHint": "Schneidet stille Stellen am Rand jedes Tracks ab, z. B. vor dem Intro."
+  },
+  "trim": {
+    "toggle": "Zuschneiden",
+    "start": "Start",
+    "end": "Ende",
+    "reset": "Ganzen Track verwenden",
+    "hint": "Zeit als m:ss, z. B. 0:15 oder 3:02,5. Leer = Anfang bzw. Ende des Tracks.",
+    "invalid": "Ungültiger Bereich: Das Ende muss nach dem Start und innerhalb des Tracks liegen.",
+    "badge": "geschnitten {range}"
   },
   "output": {
     "title": "Dateiname und Tags",

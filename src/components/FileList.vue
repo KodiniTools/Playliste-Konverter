@@ -3,8 +3,9 @@
   import { usePlayerStore } from '../stores/player'
   import { nextTick, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { formatBytes, formatDuration, formatTime } from '../utils/format'
+  import { formatBytes, formatDuration, formatTime, formatTrimTime } from '../utils/format'
   import { SORT_MODES, type SortMode } from '../utils/playlistOrder'
+  import TrimEditor from './TrimEditor.vue'
 
   const store = useConverterStore()
   const player = usePlayerStore()
@@ -63,6 +64,22 @@
     e.preventDefault()
     if (e.key === 'ArrowUp') void moveBy(index, -1, 'up')
     else void moveBy(index, 1, 'down')
+  }
+
+  // Geöffneter Zuschnitt-Editor (immer nur einer)
+  const openTrimId = ref<number | null>(null)
+
+  function toggleTrim(id: number) {
+    openTrimId.value = openTrimId.value === id ? null : id
+  }
+
+  function isTrimmed(item: PlaylistItem) {
+    return item.trimStart !== undefined || item.trimEnd !== undefined
+  }
+
+  function trimRange(item: PlaylistItem) {
+    const end = item.trimEnd ?? item.duration
+    return `${formatTrimTime(item.trimStart ?? 0)}–${typeof end === 'number' ? formatTrimTime(end) : '…'}`
   }
 
   function isActive(item: PlaylistItem) {
@@ -140,92 +157,180 @@
     </div>
 
     <div class="max-h-[420px] space-y-2 overflow-y-auto">
-      <div
-        v-for="(item, index) in store.files"
-        :key="item.id"
-        draggable="true"
-        :class="[
-          'flex min-h-row cursor-move items-center gap-2 rounded-sm border p-2 transition-colors sm:gap-3 sm:p-3',
-          isActive(item)
-            ? 'border-accent bg-accent-soft'
-            : 'border-line bg-surface-2 hover:bg-surface-3',
-        ]"
-        @dragstart="onDragStart($event, index)"
-        @dragover="onDragOver($event, index)"
-        @dragend="onDragEnd"
-        @keydown="onRowKeydown($event, index)"
-      >
-        <!-- Track Nummer -->
-        <span class="hidden w-6 font-mono text-sm tabular-nums text-ink-3 sm:inline sm:w-8"
-          >{{ index + 1 }}.</span
-        >
-
-        <!-- Play/Pause Button (Auswahl für den Sticky-Player) -->
-        <button
-          type="button"
-          :title="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
-          :aria-label="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
+      <div v-for="(item, index) in store.files" :key="item.id" class="space-y-1">
+        <div
+          draggable="true"
           :class="[
-            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+            'flex min-h-row cursor-move items-center gap-2 rounded-sm border p-2 transition-colors sm:gap-3 sm:p-3',
             isActive(item)
-              ? 'bg-accent text-on-accent hover:bg-accent-hover'
-              : 'border border-line-strong bg-surface-1 text-ink hover:bg-surface-3',
+              ? 'border-accent bg-accent-soft'
+              : 'border-line bg-surface-2 hover:bg-surface-3',
           ]"
-          @click.stop="player.toggle(item)"
+          @dragstart="onDragStart($event, index)"
+          @dragover="onDragOver($event, index)"
+          @dragend="onDragEnd"
+          @keydown="onRowKeydown($event, index)"
         >
-          <!-- Pause Icon (nur wenn dieser Track aktiv spielt) -->
-          <svg
-            v-if="isActive(item) && player.isPlaying"
-            class="h-4 w-4"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+          <!-- Track Nummer -->
+          <span class="hidden w-6 font-mono text-sm tabular-nums text-ink-3 sm:inline sm:w-8"
+            >{{ index + 1 }}.</span
           >
-            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-          </svg>
-          <!-- Play Icon -->
-          <svg
-            v-else
-            class="ml-0.5 h-4 w-4"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </button>
 
-        <!-- Track Info -->
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-md font-medium text-ink">
-            {{ item.name }}
-          </p>
-          <p class="text-xs tabular-nums text-ink-2">
-            {{ formatBytes(item.size) }}
-            <template v-if="typeof item.duration === 'number'">
-              <span aria-hidden="true">·</span> {{ formatTime(item.duration) }}
-            </template>
-            <span
-              v-if="store.duplicateIds.has(item.id)"
-              class="ml-1 font-medium text-warning"
-              :title="t('fileList.duplicateHint')"
-              >· {{ t('fileList.duplicate') }}</span
-            >
-          </p>
-        </div>
-
-        <!-- Reihenfolge ändern (Touch/Tastatur; Alt+↑/↓ auf dem Track) -->
-        <div class="flex flex-shrink-0 items-center">
+          <!-- Play/Pause Button (Auswahl für den Sticky-Player) -->
           <button
             type="button"
-            data-move="up"
-            :data-track-id="item.id"
-            :disabled="index === 0"
-            :title="t('fileList.moveUp')"
-            :aria-label="`${t('fileList.moveUp')}: ${item.name}`"
-            aria-keyshortcuts="Alt+ArrowUp"
-            class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-            @click.stop="moveBy(index, -1, 'up')"
+            :title="isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')"
+            :aria-label="
+              isActive(item) && player.isPlaying ? t('preview.pause') : t('preview.play')
+            "
+            :class="[
+              'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+              isActive(item)
+                ? 'bg-accent text-on-accent hover:bg-accent-hover'
+                : 'border border-line-strong bg-surface-1 text-ink hover:bg-surface-3',
+            ]"
+            @click.stop="player.toggle(item)"
+          >
+            <!-- Pause Icon (nur wenn dieser Track aktiv spielt) -->
+            <svg
+              v-if="isActive(item) && player.isPlaying"
+              class="h-4 w-4"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+            <!-- Play Icon -->
+            <svg
+              v-else
+              class="ml-0.5 h-4 w-4"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+
+          <!-- Track Info -->
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-md font-medium text-ink">
+              {{ item.name }}
+            </p>
+            <p class="text-xs tabular-nums text-ink-2">
+              {{ formatBytes(item.size) }}
+              <template v-if="typeof item.duration === 'number'">
+                <span aria-hidden="true">·</span> {{ formatTime(item.duration) }}
+              </template>
+              <span v-if="isTrimmed(item)" class="ml-1 text-accent" data-testid="trim-badge"
+                >· {{ t('trim.badge', { range: trimRange(item) }) }}</span
+              >
+              <span
+                v-if="store.duplicateIds.has(item.id)"
+                class="ml-1 font-medium text-warning"
+                :title="t('fileList.duplicateHint')"
+                >· {{ t('fileList.duplicate') }}</span
+              >
+            </p>
+          </div>
+
+          <!-- Reihenfolge ändern (Touch/Tastatur; Alt+↑/↓ auf dem Track) -->
+          <div class="flex flex-shrink-0 items-center">
+            <button
+              type="button"
+              data-move="up"
+              :data-track-id="item.id"
+              :disabled="index === 0"
+              :title="t('fileList.moveUp')"
+              :aria-label="`${t('fileList.moveUp')}: ${item.name}`"
+              aria-keyshortcuts="Alt+ArrowUp"
+              class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+              @click.stop="moveBy(index, -1, 'up')"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 15l7-7 7 7"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-move="down"
+              :data-track-id="item.id"
+              :disabled="index === store.files.length - 1"
+              :title="t('fileList.moveDown')"
+              :aria-label="`${t('fileList.moveDown')}: ${item.name}`"
+              aria-keyshortcuts="Alt+ArrowDown"
+              class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+              @click.stop="moveBy(index, 1, 'down')"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Zuschneiden (N9) -->
+          <button
+            type="button"
+            :title="t('trim.toggle')"
+            :aria-label="`${t('trim.toggle')}: ${item.name}`"
+            :aria-expanded="openTrimId === item.id"
+            :data-trim-toggle="item.id"
+            :class="[
+              'flex h-control-sm w-7 flex-shrink-0 items-center justify-center rounded-sm transition-colors hover:bg-surface-3',
+              isTrimmed(item) || openTrimId === item.id
+                ? 'text-accent'
+                : 'text-ink-3 hover:text-ink',
+            ]"
+            @click.stop="toggleTrim(item.id)"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <circle cx="6" cy="6" r="3" stroke-width="2" />
+              <circle cx="6" cy="18" r="3" stroke-width="2" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"
+              />
+            </svg>
+          </button>
+
+          <!-- Remove Button -->
+          <button
+            type="button"
+            :title="t('fileList.remove')"
+            :aria-label="`${t('fileList.remove')}: ${item.name}`"
+            class="flex h-control-sm w-7 flex-shrink-0 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-danger"
+            @click.stop="handleRemoveFile(item.id)"
           >
             <svg
               class="h-4 w-4"
@@ -238,61 +343,12 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M5 15l7-7 7 7"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            data-move="down"
-            :data-track-id="item.id"
-            :disabled="index === store.files.length - 1"
-            :title="t('fileList.moveDown')"
-            :aria-label="`${t('fileList.moveDown')}: ${item.name}`"
-            aria-keyshortcuts="Alt+ArrowDown"
-            class="flex h-control-sm w-7 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-            @click.stop="moveBy(index, 1, 'down')"
-          >
-            <svg
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
+                d="M6 18L18 6M6 6l12 12"
               />
             </svg>
           </button>
         </div>
-
-        <!-- Remove Button -->
-        <button
-          type="button"
-          :title="t('fileList.remove')"
-          :aria-label="`${t('fileList.remove')}: ${item.name}`"
-          class="flex h-control-sm w-7 flex-shrink-0 items-center justify-center rounded-sm text-ink-3 transition-colors hover:bg-surface-3 hover:text-danger"
-          @click.stop="handleRemoveFile(item.id)"
-        >
-          <svg
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+        <TrimEditor v-if="openTrimId === item.id" :item="item" />
       </div>
     </div>
     <p class="sr-only" aria-live="polite">{{ moveAnnouncement }}</p>

@@ -33,3 +33,29 @@ export function formatDuration(seconds: number | null | undefined): string {
   const secs = total % 60
   return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
+
+/**
+ * Zeitangabe für das Trimmen: m:ss, mit Zehnteln nur wenn nötig (1:05.5).
+ */
+export function formatTrimTime(seconds: number): string {
+  const tenths = Math.round(seconds * 10)
+  const whole = Math.floor(tenths / 10)
+  const fraction = tenths % 10
+  const hours = Math.floor(whole / 3600)
+  const mins = Math.floor((whole % 3600) / 60)
+  const secs = (whole % 60).toString().padStart(2, '0')
+  const base =
+    hours > 0 ? `${hours}:${mins.toString().padStart(2, '0')}:${secs}` : `${mins}:${secs}`
+  return fraction > 0 ? `${base}.${fraction}` : base
+}
+
+/**
+ * Eingabe wie „83“, „1:23“, „1:23,5“ oder „1:02:03“ in Sekunden; ungültig → null.
+ */
+export function parseTime(input: string): number | null {
+  const text = input.trim().replace(',', '.')
+  if (!/^\d+(?::\d{1,2}){0,2}(?:\.\d+)?$/.test(text)) return null
+  const parts = text.split(':').map(Number)
+  if (parts.slice(1).some((part) => part >= 60)) return null
+  return parts.reduce((total, part) => total * 60 + part, 0)
+}

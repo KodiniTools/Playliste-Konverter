@@ -5,8 +5,9 @@
   import { MAX_TRANSITION_SECONDS, MIN_TRANSITION_SECONDS, type TransitionType } from '../constants'
 
   /**
-   * Pause oder Crossfade zwischen den Tracks (N4) und Lautheitsangleichung (N5).
-   * Beides erzwingt auf dem Server die Neukodierung.
+   * Pause oder Crossfade zwischen den Tracks (N4), Lautheitsangleichung (N5)
+   * und Stille am Rand entfernen (N9). Alles erzwingt auf dem Server die
+   * Neukodierung, ebenso zugeschnittene Tracks.
    */
   const store = useConverterStore()
   const { t, locale } = useI18n()
@@ -30,8 +31,18 @@
     get: () => store.loudnorm,
     set: (value: boolean) => store.setLoudnorm(value),
   })
+  const trimSilence = computed({
+    get: () => store.trimSilence,
+    set: (value: boolean) => store.setTrimSilence(value),
+  })
 
-  const reencode = computed(() => store.transition !== 'none' || store.loudnorm)
+  const reencode = computed(
+    () =>
+      store.transition !== 'none' ||
+      store.loudnorm ||
+      store.trimSilence ||
+      store.files.some((f) => f.trimStart !== undefined || f.trimEnd !== undefined),
+  )
 </script>
 
 <template>
@@ -93,6 +104,19 @@
       <span>
         {{ t('mix.loudnorm') }}
         <span class="block text-xs text-ink-3">{{ t('mix.loudnormHint') }}</span>
+      </span>
+    </label>
+
+    <label class="mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
+      <input
+        v-model="trimSilence"
+        type="checkbox"
+        data-testid="trim-silence"
+        class="mt-0.5 h-4 w-4 accent-accent"
+      />
+      <span>
+        {{ t('mix.trimSilence') }}
+        <span class="block text-xs text-ink-3">{{ t('mix.trimSilenceHint') }}</span>
       </span>
     </label>
 

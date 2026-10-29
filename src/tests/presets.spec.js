@@ -67,6 +67,8 @@ describe('Presets im Store', () => {
         transition: 'none',
         transition_seconds: 2,
         loudnorm: false,
+        tracks: [null],
+        trim_silence: false,
       },
       expect.anything(),
     )

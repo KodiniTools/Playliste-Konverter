@@ -120,6 +120,16 @@ export interface ConversionOptions {
   transition_seconds?: number
   /** Lautheit der Tracks angleichen (N5) */
   loudnorm?: boolean
+  /** Zuschnitt je Track in Upload-Reihenfolge, null = ganzer Track (N9) */
+  tracks?: (TrackTrim | null)[]
+  /** Stille am Anfang und Ende jedes Tracks entfernen (N9) */
+  trim_silence?: boolean
+}
+
+/** Zugeschnittener Bereich eines Tracks in Sekunden; end null = bis zum Ende. */
+export interface TrackTrim {
+  start: number
+  end: number | null
 }
 
 /** Cover-Bild (JPEG/PNG) zur Session hochladen; nur für MP3 relevant (N6). */

@@ -26,6 +26,7 @@ import {
   cancelSession,
   subscribeStatus,
   uploadCover,
+  type TrackTrim,
   type ConversionStatus,
   type OutputTags,
 } from '../api/converter'
@@ -45,6 +46,9 @@ export interface PlaylistItem {
   size: number
   /** Dauer in Sekunden; undefined = wird noch ermittelt, null = unbekannt */
   duration?: number | null
+  /** Zugeschnittener Bereich in Sekunden (N9); fehlt = Anfang bzw. Ende des Tracks */
+  trimStart?: number
+  trimEnd?: number
 }
 
 export type ConverterStatus = 'idle' | 'uploading' | 'converting' | 'done' | 'error'
@@ -69,6 +73,8 @@ export const useConverterStore = defineStore('converter', () => {
   const transition = ref<TransitionType>(normalizeTransition(readPref('transition')))
   const transitionSeconds = ref(normalizeTransitionSeconds(readPref('transitionSeconds')))
   const loudnorm = ref(readPref('loudnorm') === '1')
+  // Stille am Anfang und Ende jedes Tracks entfernen (N9)
+  const trimSilence = ref(readPref('trimSilence') === '1')
 
   // Dateiname, Tags und Cover der Ausgabe (N6) – gelten nur für diese Playlist
   const outputName = ref('')
@@ -134,9 +140,16 @@ export const useConverterStore = defineStore('converter', () => {
   })
 
   /** Gesamtdauer der Tracks, deren Dauer bekannt ist (Sekunden). */
-  const totalDuration = computed(() =>
-    files.value.reduce((sum, f) => sum + (typeof f.duration === 'number' ? f.duration : 0), 0),
-  )
+  /** Länge der fertigen Playlist: zugeschnittene Tracks plus Pausen bzw. minus Überblendungen. */
+  const totalDuration = computed(() => {
+    const tracks = files.value.reduce((sum, f) => sum + (effectiveDuration(f) ?? 0), 0)
+    const joins = Math.max(0, files.value.length - 1)
+    if (transition.value === 'gap') return tracks + joins * transitionSeconds.value
+    if (transition.value === 'crossfade') {
+      return Math.max(0, tracks - joins * transitionSeconds.value)
+    }
+    return tracks
+  })
 
   /** Noch nicht alle Dauern ermittelt. */
   const durationsPending = computed(() => files.value.some((f) => f.duration === undefined))
@@ -280,6 +293,27 @@ export const useConverterStore = defineStore('converter', () => {
   function setLoudnorm(value: boolean) {
     loudnorm.value = value
     writePref('loudnorm', value ? '1' : '0')
+  }
+
+  function setTrimSilence(value: boolean) {
+    trimSilence.value = value
+    writePref('trimSilence', value ? '1' : '0')
+  }
+
+  /**
+   * Track zuschneiden (N9). null = Anfang bzw. Ende des Tracks. Ungültige
+   * Bereiche (Ende vor Start, hinter der bekannten Dauer) → false.
+   */
+  function setTrim(id: number, start: number | null, end: number | null): boolean {
+    const item = files.value.find((f) => f.id === id)
+    if (!item) return false
+    const from = start ?? 0
+    const length = typeof item.duration === 'number' ? item.duration : null
+    if (from < 0 || (length !== null && from >= length)) return false
+    if (end !== null && (end <= from || (length !== null && end > length + 0.05))) return false
+    item.trimStart = from > 0 ? from : undefined
+    item.trimEnd = end !== null && (length === null || end < length) ? end : undefined
+    return true
   }
 
   /** Preset anwenden: Format, Bitrate und Kanäle auf einmal (N11). */
@@ -442,6 +476,8 @@ export const useConverterStore = defineStore('converter', () => {
           transition: transition.value,
           transition_seconds: transitionSeconds.value,
           loudnorm: loudnorm.value,
+          tracks: files.value.map(trimOf),
+          trim_silence: trimSilence.value,
         },
         { signal: abortController.signal },
       )
@@ -650,6 +686,9 @@ export const useConverterStore = defineStore('converter', () => {
     setTransitionSeconds,
     loudnorm,
     setLoudnorm,
+    trimSilence,
+    setTrimSilence,
+    setTrim,
     outputName,
     tags,
     cover,
@@ -687,6 +726,19 @@ export function cleanTags(input: OutputTags): OutputTags {
     if (value) result[field] = value
   }
   return result
+}
+
+/** Zugeschnittene Länge eines Tracks; null, solange die Dauer unbekannt ist. */
+export function effectiveDuration(item: PlaylistItem): number | null {
+  if (typeof item.duration !== 'number') return null
+  const end = item.trimEnd ?? item.duration
+  return Math.max(0, end - (item.trimStart ?? 0))
+}
+
+/** Trim-Angabe für den Server; null = ganzer Track. */
+export function trimOf(item: PlaylistItem): TrackTrim | null {
+  if (item.trimStart === undefined && item.trimEnd === undefined) return null
+  return { start: item.trimStart ?? 0, end: item.trimEnd ?? null }
 }
 
 /** Gespeicherter Übergang: unbekannt → keiner. */

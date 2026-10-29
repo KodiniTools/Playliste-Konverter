@@ -35,7 +35,7 @@
     "mono": "Mono (one channel, e.g. for speech)"
   },
   "mix": {
-    "title": "Transitions and volume",
+    "title": "Transitions and editing",
     "transition": "Between tracks",
     "none": "Direct",
     "gap": "Pause",
@@ -44,7 +44,18 @@
     "secondsValue": "{n} s",
     "loudnorm": "Even out track loudness",
     "loudnormHint": "Quiet and loud tracks end up equally loud (−16 LUFS).",
-    "reencodeHint": "Transitions and loudness matching need re-encoding, so the conversion takes a little longer."
+    "reencodeHint": "Transitions, loudness matching and trimming need re-encoding, so the conversion takes a little longer.",
+    "trimSilence": "Remove silence at start and end",
+    "trimSilenceHint": "Cuts silent parts at the edges of every track, e.g. before the intro."
+  },
+  "trim": {
+    "toggle": "Trim",
+    "start": "Start",
+    "end": "End",
+    "reset": "Use whole track",
+    "hint": "Time as m:ss, e.g. 0:15 or 3:02.5. Empty = start or end of the track.",
+    "invalid": "Invalid range: the end must be after the start and within the track.",
+    "badge": "trimmed {range}"
   },
   "output": {
     "title": "File name and tags",

@@ -576,3 +576,48 @@ test(
     assert.ok(Math.abs(loud - quiet) < 3, `mit Angleichung ${quiet} / ${loud}`)
   },
 )
+
+test(
+  'N9: Trimmen pro Track und Stille am Rand entfernen',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-trim-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const plain = [0, 1].map((i) =>
+      makeTrack(work, `p${i}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+
+    // Track 1: 0,5–1,5 s, Track 2 unverändert → 1 + 2 s (identische MP3s: trotzdem kein Copy)
+    const trimmed = await convertViaServer(srv.base, plain, 'mp3', 128, {
+      tracks: [{ start: 0.5, end: 1.5 }, null],
+    })
+    assert.equal(trimmed.status.status, 'done', JSON.stringify(trimmed.status))
+    const trimmedOut = await download(srv.base, trimmed.sessionId, path.join(work, 'trim.mp3'))
+    assert.ok(Math.abs(duration(trimmedOut) - 3) < 0.15, `Dauer ${duration(trimmedOut)}`)
+
+    // je 1 s Stille vor und nach dem Ton
+    const padded = [0, 1].map((i) =>
+      makeTrack(work, `s${i}.wav`, {
+        ext: 'wav',
+        freq: 500 + i * 300,
+        args: ['-af', 'adelay=1000|1000,apad=pad_dur=1'],
+      }),
+    )
+    const silence = await convertViaServer(srv.base, padded, 'mp3', 128, { trim_silence: true })
+    assert.equal(silence.status.status, 'done', JSON.stringify(silence.status))
+    const silenceOut = await download(srv.base, silence.sessionId, path.join(work, 'sil.mp3'))
+    assert.ok(Math.abs(duration(silenceOut) - 4) < 0.2, `Dauer ${duration(silenceOut)}`)
+    assert.deepEqual(
+      segmentFrequencies(silenceOut, 2).map((f) => Math.round(f / 100) * 100),
+      [500, 800],
+    )
+
+    const untouched = await convertViaServer(srv.base, padded, 'mp3', 128)
+    const untouchedOut = await download(srv.base, untouched.sessionId, path.join(work, 'raw.mp3'))
+    assert.ok(Math.abs(duration(untouchedOut) - 8) < 0.2, `Dauer ${duration(untouchedOut)}`)
+  },
+)

@@ -55,6 +55,7 @@ const {
   coverExtension,
 } = require('./metadata')
 const { sanitizeTransition } = require('./transitions')
+const { sanitizeTracks } = require('./trim')
 
 const app = express()
 app.use(express.json())
@@ -261,6 +262,9 @@ app.post('/api/convert', async (req, res) => {
     // Pause/Crossfade zwischen Tracks (N4) und Lautheitsangleichung (N5)
     session.transition = sanitizeTransition(body.transition, body.transition_seconds)
     session.loudnorm = body.loudnorm === true
+    // Trimmen pro Track und Stille am Rand (N9)
+    session.tracks = sanitizeTracks(body.tracks)
+    session.trimSilence = body.trim_silence === true
     session.error = null
     session.errorCode = null
     session.errorFile = null

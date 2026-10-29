@@ -22,6 +22,7 @@ const {
   probeAudio,
 } = require('./audio')
 const { PcmJoiner, outputDuration } = require('./transitions')
+const { detectSilenceEdges, segmentFor, segmentLength, trackIndex } = require('./trim')
 
 /** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
@@ -92,8 +93,11 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
 }
 
 /** Eine Datei in einheitliches PCM dekodieren und über den Joiner in den Encoder schreiben. */
-async function decodeInto(session, inputFile, sampleRate, joiner) {
-  const dec = spawn(FFMPEG, buildDecoderArgs(inputFile, sampleRate, { loudnorm: session.loudnorm }))
+async function decodeInto(session, inputFile, segment, sampleRate, joiner) {
+  const dec = spawn(
+    FFMPEG,
+    buildDecoderArgs(inputFile, sampleRate, { loudnorm: session.loudnorm, ...segment }),
+  )
   session.decoder = dec
   let stderrTail = ''
   dec.stderr.on('data', (d) => (stderrTail = (stderrTail + d.toString()).slice(-2000)))
@@ -110,7 +114,7 @@ async function decodeInto(session, inputFile, sampleRate, joiner) {
  * Kanalzahlen) und nacheinander in EINEN Encoder streamen. Kein Zwischenspeicher
  * auf der Platte, keine Grenze bei der Anzahl der Dateien.
  */
-async function runReencode(session, inputFiles, probes, fmt, outputFile) {
+async function runReencode(session, inputFiles, probes, segments, fmt, outputFile) {
   const sampleRate = pickSampleRate(
     session.format,
     probes.map((p) => p.sampleRate),
@@ -139,9 +143,9 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   const joiner = new PcmJoiner(encoder.stdin, { sampleRate, transition: session.transition })
 
   let failure = null
-  for (const file of inputFiles) {
+  for (const [i, file] of inputFiles.entries()) {
     if (session.cancelled || encoder.exitCode !== null) break
-    const result = await decodeInto(session, file, sampleRate, joiner)
+    const result = await decodeInto(session, file, segments[i], sampleRate, joiner)
     if (!result.ok && !session.cancelled) {
       failure = {
         ok: false,
@@ -180,6 +184,26 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
 }
 
 /**
+ * Abschnitt je Track: manuelles Trimmen aus der App und auf Wunsch die Stille
+ * am Rand (N9). Die Trim-Angaben sind nach Upload-Reihenfolge indiziert.
+ */
+async function trackSegments(session, inputFiles, probes) {
+  const segments = []
+  for (const [i, file] of inputFiles.entries()) {
+    const trim = session.tracks?.[trackIndex(file)] ?? null
+    let edges = null
+    if (session.trimSilence && !session.cancelled) {
+      edges = await detectSilenceEdges(FFMPEG, file, probes[i].duration, (proc) => {
+        session.decoder = proc
+      })
+      session.decoder = null
+    }
+    segments.push(segmentFor(probes[i].duration, trim, edges))
+  }
+  return segments
+}
+
+/**
  * Fehlgeschlagene Konvertierung ins pm2-Log schreiben (inkl. ffmpeg-stderr-Ende),
  * damit sich Nutzerberichte nachvollziehen lassen.
  */
@@ -210,8 +234,9 @@ async function runConversion(session) {
 
     const probes = []
     for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
+    const segments = await trackSegments(session, inputFiles, probes)
     session.totalDuration = outputDuration(
-      probes.map((p) => p.duration),
+      probes.map((p, i) => segmentLength(p.duration, segments[i])),
       session.transition,
     )
     // Während der Analyse abgebrochen: nichts mehr starten
@@ -221,16 +246,17 @@ async function runConversion(session) {
     session.progress = Math.max(session.progress || 0, 1)
 
     // Mono gewünscht: Kopieren nur, wenn die Eingaben schon Mono sind.
-    // Übergänge (N4) und Lautheit (N5) brauchen immer die Neukodierung.
+    // Übergänge (N4), Lautheit (N5) und Trimmen (N9) brauchen immer die Neukodierung.
     const streamCopy =
       canStreamCopy(probes, fmt.streamCopyCodec) &&
       (session.channels !== 1 || probes.every((p) => p.channels === 1)) &&
       session.transition.type === 'none' &&
-      !session.loudnorm
+      !session.loudnorm &&
+      segments.every((seg) => seg.start === 0 && seg.duration === null)
     session.mode = streamCopy ? 'copy' : 'reencode'
     const result = streamCopy
       ? await runStreamCopy(session, dir, inputFiles, outputFile)
-      : await runReencode(session, inputFiles, probes, fmt, outputFile)
+      : await runReencode(session, inputFiles, probes, segments, fmt, outputFile)
 
     if (session.cancelled) return
     if (result.ok && fs.existsSync(outputFile)) {

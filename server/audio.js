@@ -58,16 +58,23 @@ const LOUDNORM_FILTER = 'loudnorm=I=-16:TP=-1.5:LRA=11'
 
 /**
  * ffmpeg-Argumente: eine Datei → einheitliches PCM auf stdout.
- * loudnorm gleicht die Lautheit jedes Tracks an (N5).
+ * loudnorm gleicht die Lautheit jedes Tracks an (N5); start/duration schneiden
+ * den Track zu (N9, duration null = bis zum Ende).
  */
-function buildDecoderArgs(inputFile, sampleRate, { loudnorm = false } = {}) {
+function buildDecoderArgs(
+  inputFile,
+  sampleRate,
+  { loudnorm = false, start = 0, duration = null } = {},
+) {
   return [
     '-hide_banner',
     '-nostdin',
     '-v',
     'error',
+    ...(start > 0 ? ['-ss', String(start)] : []),
     '-i',
     inputFile,
+    ...(duration !== null ? ['-t', String(duration)] : []),
     '-map',
     '0:a:0',
     '-vn',
