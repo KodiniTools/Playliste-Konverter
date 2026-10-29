@@ -12,6 +12,7 @@ import {
 import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
+import { logger } from '../utils/logger'
 
 export const useConverterStore = defineStore('converter', () => {
   const files = ref([])
@@ -262,14 +263,13 @@ export const useConverterStore = defineStore('converter', () => {
       await pollStatus()
     } catch (err) {
       if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
-        console.log('Operation cancelled by user')
+        logger.info('Vorgang vom Nutzer abgebrochen')
         toastStore.info('Vorgang abgebrochen')
         reset()
         return
       }
 
-      console.error('Convert error:', err)
-      console.error('Error details:', err.response?.data)
+      logger.error('Konvertierung fehlgeschlagen:', err, err.response?.data)
       status.value = 'error'
       errorMessage.value = uploadErrorMessage(err)
       toastStore.error(errorMessage.value)

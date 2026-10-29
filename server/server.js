@@ -61,9 +61,27 @@ const MIN_FREE_SPACE = parseBytes(process.env.MIN_FREE_SPACE, 20 * 1024 ** 3)
 const SESSION_MAX_AGE = 60 * 60 * 1000 // 1 Stunde
 
 const OUTPUT_FORMATS = {
-  webm: { extension: 'webm', mime: 'audio/webm', codec: 'libopus', maxBitrate: 256, streamCopyCodec: 'opus' },
-  mp3: { extension: 'mp3', mime: 'audio/mpeg', codec: 'libmp3lame', maxBitrate: 320, streamCopyCodec: 'mp3' },
-  ogg: { extension: 'ogg', mime: 'audio/ogg', codec: 'libvorbis', maxBitrate: 320, streamCopyCodec: 'vorbis' },
+  webm: {
+    extension: 'webm',
+    mime: 'audio/webm',
+    codec: 'libopus',
+    maxBitrate: 256,
+    streamCopyCodec: 'opus',
+  },
+  mp3: {
+    extension: 'mp3',
+    mime: 'audio/mpeg',
+    codec: 'libmp3lame',
+    maxBitrate: 320,
+    streamCopyCodec: 'mp3',
+  },
+  ogg: {
+    extension: 'ogg',
+    mime: 'audio/ogg',
+    codec: 'libvorbis',
+    maxBitrate: 320,
+    streamCopyCodec: 'vorbis',
+  },
 }
 const DEFAULT_FORMAT = 'mp3'
 const DEFAULT_BITRATE = 192
@@ -91,10 +109,6 @@ const sessions = new Map()
  */
 const cancelledIds = new Map()
 
-function getSession(sessionId) {
-  return sessions.get(sessionId)
-}
-
 // --- Concurrency-Limiter (max. gleichzeitige ffmpeg-Prozesse) --------------
 let running = 0
 const waiting = []
@@ -119,7 +133,7 @@ function releaseSlot() {
 
 /** Alle Input-Dateien einer Session in korrekter Reihenfolge (0000_, 0001_, …). */
 async function listInputFiles(dir) {
-  let entries = []
+  let entries
   try {
     entries = await fsp.readdir(dir)
   } catch {
@@ -149,7 +163,10 @@ function trackProgress(proc, session, onStderr) {
     const seconds = parseFfmpegTime(text)
     if (seconds === null) return
     if (session.totalDuration > 0) {
-      session.progress = Math.min(99, Math.max(1, Math.round((seconds / session.totalDuration) * 100)))
+      session.progress = Math.min(
+        99,
+        Math.max(1, Math.round((seconds / session.totalDuration) * 100)),
+      )
     } else {
       session.progress = Math.min(95, (session.progress || 0) + 1)
     }
@@ -180,7 +197,8 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
   const { code, error } = await waitForExit(proc)
   session.proc = null
   if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
-  if (code !== 0) return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+  if (code !== 0)
+    return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
   return { ok: true }
 }
 
@@ -202,7 +220,10 @@ async function decodeInto(session, inputFile, sampleRate, sink) {
  * auf der Platte, keine Grenze bei der Anzahl der Dateien.
  */
 async function runReencode(session, inputFiles, probes, fmt, outputFile) {
-  const sampleRate = pickSampleRate(session.format, probes.map((p) => p.sampleRate))
+  const sampleRate = pickSampleRate(
+    session.format,
+    probes.map((p) => p.sampleRate),
+  )
   const encoder = spawn(
     FFMPEG,
     buildEncoderArgs({ codec: fmt.codec, bitrate: session.bitrate, sampleRate, outputFile }),
@@ -236,7 +257,8 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   session.proc = null
   if (failure) return failure
   if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
-  if (code !== 0) return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+  if (code !== 0)
+    return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
   return { ok: true }
 }
 
@@ -421,7 +443,8 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     // Reihenfolge (order[]) und total_files auslesen.
     const orderRaw = req.body['order[]'] ?? req.body.order
     const orderList = Array.isArray(orderRaw) ? orderRaw : orderRaw !== undefined ? [orderRaw] : []
-    const chunkIndex = req.body.chunk_index !== undefined ? parseInt(req.body.chunk_index, 10) : null
+    const chunkIndex =
+      req.body.chunk_index !== undefined ? parseInt(req.body.chunk_index, 10) : null
 
     const stored = []
     for (let i = 0; i < files.length; i++) {

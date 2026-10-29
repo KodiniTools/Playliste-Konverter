@@ -7,6 +7,7 @@
   import { OUTPUT_FORMATS, MUSIC_PLAYER_SHARE_URL } from '../constants'
   import { replaceSharedFiles } from '../utils/sharedFileRepository'
   import StatusIcon from './StatusIcon.vue'
+  import { logger } from '../utils/logger'
 
   const store = useConverterStore()
   const toast = useToastStore()
@@ -82,7 +83,7 @@
         await writable.write(blob)
         await writable.close()
 
-        console.log('Datei erfolgreich gespeichert!')
+        logger.info('Datei gespeichert')
       } else if (outputBlob) {
         // Datei wurde bereits für den Musikplayer geladen – Session ist evtl. schon weg
         downloadCachedBlob(filename)
@@ -93,7 +94,7 @@
     } catch (err) {
       // Benutzer hat den Dialog abgebrochen oder Fehler aufgetreten
       if (err.name !== 'AbortError') {
-        console.error('Download-Fehler:', err)
+        logger.error('Download fehlgeschlagen:', err)
         // Fallback bei Fehler
         if (outputBlob) downloadCachedBlob(filename)
         else window.location.href = store.downloadUrl
@@ -128,7 +129,7 @@
         window.location.href = MUSIC_PLAYER_SHARE_URL
       }
     } catch (err) {
-      console.error('Weitergabe an den Musikplayer fehlgeschlagen:', err)
+      logger.error('Weitergabe an den Musikplayer fehlgeschlagen:', err)
       playerWindow?.close()
       toast.error(t('download.shareError'))
     } finally {
