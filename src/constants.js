@@ -17,6 +17,10 @@ export const SIZE_THRESHOLD_YELLOW = 2.5 * 1024 * 1024 * 1024 // 2.5 GB
 export const SIZE_THRESHOLD_ORANGE = 4 * 1024 * 1024 * 1024 // 4 GB
 
 // Unterstützte Ausgabeformate
+// Ultimativer Musikplayer (gleiche Domain) – liest die Playlist aus der
+// gemeinsamen IndexedDB, wenn er mit ?source=playlistkonverter geöffnet wird.
+export const MUSIC_PLAYER_SHARE_URL = '/ultimativer-musikplayer/app/?source=playlistkonverter'
+
 export const OUTPUT_FORMATS = {
   webm: {
     extension: 'webm',

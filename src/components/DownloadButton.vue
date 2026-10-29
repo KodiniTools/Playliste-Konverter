@@ -1,13 +1,57 @@
 <script setup>
-  import { computed } from 'vue'
+  import { computed, ref, onBeforeUnmount } from 'vue'
   import { useConverterStore } from '../stores/converter'
+  import { useToastStore } from '../stores/toast'
   import { useI18n } from 'vue-i18n'
   import { formatBytes } from '../utils/format'
-  import { OUTPUT_FORMATS } from '../constants'
+  import { OUTPUT_FORMATS, MUSIC_PLAYER_SHARE_URL } from '../constants'
+  import { replaceSharedFiles } from '../utils/sharedFileRepository'
   import StatusIcon from './StatusIcon.vue'
 
   const store = useConverterStore()
+  const toast = useToastStore()
   const { t } = useI18n()
+
+  // Der Server löscht die Session nach dem ersten vollständigen Download.
+  // Einmal geladen, wird die Datei deshalb hier zwischengespeichert, damit
+  // Download und Weitergabe an den Musikplayer beide (in beliebiger
+  // Reihenfolge) funktionieren.
+  let outputBlob = null
+  let outputBlobPromise = null
+  let objectUrl = null
+
+  function fetchOutputBlob() {
+    if (outputBlob) return Promise.resolve(outputBlob)
+    if (!outputBlobPromise) {
+      outputBlobPromise = fetch(store.downloadUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          return response.blob()
+        })
+        .then((blob) => {
+          outputBlob = blob
+          return blob
+        })
+        .finally(() => {
+          outputBlobPromise = null
+        })
+    }
+    return outputBlobPromise
+  }
+
+  function downloadCachedBlob(filename) {
+    if (!objectUrl) objectUrl = URL.createObjectURL(outputBlob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  onBeforeUnmount(() => {
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
+  })
 
   const currentFormat = computed(() => store.outputFormat || 'mp3')
   const formatConfig = computed(() => OUTPUT_FORMATS[currentFormat.value] || OUTPUT_FORMATS.mp3)
@@ -30,9 +74,8 @@
           ],
         })
 
-        // Lade die Datei vom Backend
-        const response = await fetch(store.downloadUrl)
-        const blob = await response.blob()
+        // Lade die Datei vom Backend (bzw. aus dem Zwischenspeicher)
+        const blob = await fetchOutputBlob()
 
         // Schreibe in die ausgewählte Datei
         const writable = await fileHandle.createWritable()
@@ -40,6 +83,9 @@
         await writable.close()
 
         console.log('Datei erfolgreich gespeichert!')
+      } else if (outputBlob) {
+        // Datei wurde bereits für den Musikplayer geladen – Session ist evtl. schon weg
+        downloadCachedBlob(filename)
       } else {
         // Fallback für ältere Browser
         window.location.href = store.downloadUrl
@@ -49,8 +95,44 @@
       if (err.name !== 'AbortError') {
         console.error('Download-Fehler:', err)
         // Fallback bei Fehler
-        window.location.href = store.downloadUrl
+        if (outputBlob) downloadCachedBlob(filename)
+        else window.location.href = store.downloadUrl
       }
+    }
+  }
+
+  const sharing = ref(false)
+
+  /**
+   * Übergibt die konvertierte Playlist über die gemeinsame IndexedDB an den
+   * Ultimativen Musikplayer und öffnet ihn in einem neuen Tab.
+   */
+  async function handleShareToPlayer() {
+    if (sharing.value) return
+    sharing.value = true
+
+    // Tab synchron im Klick öffnen, sonst blockiert der Popup-Blocker.
+    const playerWindow = window.open('about:blank', '_blank')
+
+    try {
+      const config = formatConfig.value
+      const blob = await fetchOutputBlob()
+      await replaceSharedFiles([
+        { blob, name: `playlist.${config.extension}`, mimeType: config.mimeType },
+      ])
+
+      if (playerWindow) {
+        playerWindow.opener = null
+        playerWindow.location.href = MUSIC_PLAYER_SHARE_URL
+      } else {
+        window.location.href = MUSIC_PLAYER_SHARE_URL
+      }
+    } catch (err) {
+      console.error('Weitergabe an den Musikplayer fehlgeschlagen:', err)
+      playerWindow?.close()
+      toast.error(t('download.shareError'))
+    } finally {
+      sharing.value = false
     }
   }
 </script>
@@ -76,6 +158,19 @@
     >
       {{ t('download.button', { format: currentFormat }) }}
     </button>
+
+    <div class="mt-3">
+      <button
+        type="button"
+        class="inline-flex h-control-lg items-center rounded-md border border-line bg-surface-1 px-6 text-md font-semibold text-ink transition-colors hover:bg-surface-2 disabled:cursor-wait disabled:opacity-60"
+        :disabled="sharing"
+        :aria-busy="sharing"
+        data-testid="share-to-player"
+        @click="handleShareToPlayer"
+      >
+        {{ sharing ? t('download.sharing') : t('download.shareToPlayer') }}
+      </button>
+    </div>
 
     <button
       type="button"
