@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import { UPLOAD_TIMEOUT, CONVERT_START_TIMEOUT, STATUS_POLL_TIMEOUT } from '../constants'
+import type { TransitionType } from '../constants'
 import { requestJson } from '../utils/http'
 
 /** Serverseitiger Konvertierungsstatus (GET /api/status/:id, SSE-Ereignis „status“). */
@@ -114,6 +115,11 @@ export interface ConversionOptions {
   /** Dateiname ohne Endung (Server bereinigt ihn erneut) */
   filename?: string
   tags?: OutputTags
+  /** Pause oder Crossfade zwischen den Tracks (N4) */
+  transition?: TransitionType
+  transition_seconds?: number
+  /** Lautheit der Tracks angleichen (N5) */
+  loudnorm?: boolean
 }
 
 /** Cover-Bild (JPEG/PNG) zur Session hochladen; nur für MP3 relevant (N6). */

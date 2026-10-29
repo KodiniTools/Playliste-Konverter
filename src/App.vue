@@ -7,6 +7,7 @@
   import FileList from './components/FileList.vue'
   import FormatSelector from './components/FormatSelector.vue'
   import OutputDetails from './components/OutputDetails.vue'
+  import MixOptions from './components/MixOptions.vue'
   import ConversionProgress from './components/ConversionProgress.vue'
   import DownloadButton from './components/DownloadButton.vue'
   import SizeWarning from './components/SizeWarning.vue'
@@ -141,6 +142,7 @@
 
         <!-- Format Selector -->
         <FormatSelector v-if="store.files.length > 0" />
+        <MixOptions v-if="store.files.length > 0" />
         <OutputDetails v-if="store.files.length > 0" />
 
         <!-- Size Warning / All Clear -->

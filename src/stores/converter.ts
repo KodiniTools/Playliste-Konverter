@@ -9,6 +9,11 @@ import {
   isAcceptedAudioFile,
   isAcceptedCover,
   QUALITY_PRESETS,
+  TRANSITION_TYPES,
+  MIN_TRANSITION_SECONDS,
+  MAX_TRANSITION_SECONDS,
+  DEFAULT_TRANSITION_SECONDS,
+  type TransitionType,
   type ChannelCount,
   type OutputFormatId,
   type QualityPreset,
@@ -60,6 +65,10 @@ export const useConverterStore = defineStore('converter', () => {
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
   const channels = ref<ChannelCount>(normalizeChannels(readPref('channels'))) // Standard: Stereo
+  // Übergang zwischen Tracks (N4) und Lautheitsangleichung (N5)
+  const transition = ref<TransitionType>(normalizeTransition(readPref('transition')))
+  const transitionSeconds = ref(normalizeTransitionSeconds(readPref('transitionSeconds')))
+  const loudnorm = ref(readPref('loudnorm') === '1')
 
   // Dateiname, Tags und Cover der Ausgabe (N6) – gelten nur für diese Playlist
   const outputName = ref('')
@@ -258,6 +267,21 @@ export const useConverterStore = defineStore('converter', () => {
     writePref('channels', channels.value)
   }
 
+  function setTransition(value: TransitionType) {
+    transition.value = normalizeTransition(value)
+    writePref('transition', transition.value)
+  }
+
+  function setTransitionSeconds(value: number) {
+    transitionSeconds.value = normalizeTransitionSeconds(value)
+    writePref('transitionSeconds', transitionSeconds.value)
+  }
+
+  function setLoudnorm(value: boolean) {
+    loudnorm.value = value
+    writePref('loudnorm', value ? '1' : '0')
+  }
+
   /** Preset anwenden: Format, Bitrate und Kanäle auf einmal (N11). */
   function applyPreset(id: QualityPreset['id']) {
     const preset = QUALITY_PRESETS.find((p) => p.id === id)
@@ -415,6 +439,9 @@ export const useConverterStore = defineStore('converter', () => {
           channels: channels.value,
           filename: sanitizeOutputName(outputName.value),
           tags: cleanTags(tags.value),
+          transition: transition.value,
+          transition_seconds: transitionSeconds.value,
+          loudnorm: loudnorm.value,
         },
         { signal: abortController.signal },
       )
@@ -617,6 +644,12 @@ export const useConverterStore = defineStore('converter', () => {
     setBitrate,
     channels,
     setChannels,
+    transition,
+    setTransition,
+    transitionSeconds,
+    setTransitionSeconds,
+    loudnorm,
+    setLoudnorm,
     outputName,
     tags,
     cover,
@@ -654,6 +687,21 @@ export function cleanTags(input: OutputTags): OutputTags {
     if (value) result[field] = value
   }
   return result
+}
+
+/** Gespeicherter Übergang: unbekannt → keiner. */
+export function normalizeTransition(value: unknown): TransitionType {
+  return (TRANSITION_TYPES as readonly unknown[]).includes(value)
+    ? (value as TransitionType)
+    : 'none'
+}
+
+/** Übergangsdauer auf halbe Sekunden zwischen 0,5 und 10 bringen (wie der Server). */
+export function normalizeTransitionSeconds(value: unknown): number {
+  const seconds = typeof value === 'number' ? value : parseFloat(String(value))
+  if (!Number.isFinite(seconds)) return DEFAULT_TRANSITION_SECONDS
+  const rounded = Math.round(seconds * 2) / 2
+  return Math.min(MAX_TRANSITION_SECONDS, Math.max(MIN_TRANSITION_SECONDS, rounded))
 }
 
 /** Gespeicherte Kanalzahl: nur 1 (Mono) gilt, alles andere → Stereo. */

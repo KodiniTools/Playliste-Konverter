@@ -136,6 +136,13 @@ export const QUALITY_PRESETS: readonly QualityPreset[] = [
   { id: 'archive', format: 'mp3', bitrate: 320, channels: 2 },
 ]
 
+/** Übergang zwischen den Tracks (N4); Grenzen wie server/transitions.js. */
+export type TransitionType = 'none' | 'gap' | 'crossfade'
+export const TRANSITION_TYPES: readonly TransitionType[] = ['none', 'gap', 'crossfade']
+export const MIN_TRANSITION_SECONDS = 0.5
+export const MAX_TRANSITION_SECONDS = 10
+export const DEFAULT_TRANSITION_SECONDS = 2
+
 // Akzeptierte Eingaben. Entscheidend ist wie beim Server (server/app.js) die
 // Dateiendung, unabhängig von Groß-/Kleinschreibung; Browser melden den
 // MIME-Typ uneinheitlich (audio/x-wav, audio/wave) oder gar nicht.

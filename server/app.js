@@ -54,6 +54,7 @@ const {
   contentDisposition,
   coverExtension,
 } = require('./metadata')
+const { sanitizeTransition } = require('./transitions')
 
 const app = express()
 app.use(express.json())
@@ -257,6 +258,9 @@ app.post('/api/convert', async (req, res) => {
     session.outputName = sanitizeOutputName(body.filename)
     // Kanäle: 1 = Mono (Presets „Sprache“, N11), sonst Stereo
     session.channels = parseInt(body.channels, 10) === 1 ? 1 : 2
+    // Pause/Crossfade zwischen Tracks (N4) und Lautheitsangleichung (N5)
+    session.transition = sanitizeTransition(body.transition, body.transition_seconds)
+    session.loudnorm = body.loudnorm === true
     session.error = null
     session.errorCode = null
     session.errorFile = null

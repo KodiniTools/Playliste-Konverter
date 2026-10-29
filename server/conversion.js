@@ -21,6 +21,7 @@ const {
   displayName,
   probeAudio,
 } = require('./audio')
+const { PcmJoiner, outputDuration } = require('./transitions')
 
 /** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
@@ -90,14 +91,16 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
   return { ok: true }
 }
 
-/** Eine Datei in einheitliches PCM dekodieren und in den Encoder schreiben. */
-async function decodeInto(session, inputFile, sampleRate, sink) {
-  const dec = spawn(FFMPEG, buildDecoderArgs(inputFile, sampleRate))
+/** Eine Datei in einheitliches PCM dekodieren und über den Joiner in den Encoder schreiben. */
+async function decodeInto(session, inputFile, sampleRate, joiner) {
+  const dec = spawn(FFMPEG, buildDecoderArgs(inputFile, sampleRate, { loudnorm: session.loudnorm }))
   session.decoder = dec
   let stderrTail = ''
   dec.stderr.on('data', (d) => (stderrTail = (stderrTail + d.toString()).slice(-2000)))
-  dec.stdout.pipe(sink, { end: false })
-  const { code, error } = await waitForExit(dec)
+  const [{ code, error }] = await Promise.all([
+    waitForExit(dec),
+    joiner.addTrack(dec.stdout).catch(() => {}),
+  ])
   session.decoder = null
   return { ok: !error && code === 0, stderr: stderrTail }
 }
@@ -132,11 +135,13 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   // das Ergebnis kommt über den Exit-Code des Encoders.
   encoder.stdin.on('error', () => {})
   const encoderExit = waitForExit(encoder)
+  // Pause oder Crossfade zwischen den Tracks (N4)
+  const joiner = new PcmJoiner(encoder.stdin, { sampleRate, transition: session.transition })
 
   let failure = null
   for (const file of inputFiles) {
     if (session.cancelled || encoder.exitCode !== null) break
-    const result = await decodeInto(session, file, sampleRate, encoder.stdin)
+    const result = await decodeInto(session, file, sampleRate, joiner)
     if (!result.ok && !session.cancelled) {
       failure = {
         ok: false,
@@ -150,7 +155,10 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   }
 
   if (failure) encoder.kill('SIGKILL')
-  else encoder.stdin.end()
+  else {
+    await joiner.finish()
+    encoder.stdin.end()
+  }
 
   const { code, error } = await encoderExit
   session.proc = null
@@ -186,6 +194,7 @@ function logFailure(session, message, details) {
 }
 
 async function runConversion(session) {
+  session.transition ??= { type: 'none', seconds: 0 }
   try {
     const dir = sessionDirPath(session.id)
     const inputFiles = await listInputFiles(dir)
@@ -201,17 +210,23 @@ async function runConversion(session) {
 
     const probes = []
     for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
-    session.totalDuration = probes.reduce((sum, p) => sum + p.duration, 0)
+    session.totalDuration = outputDuration(
+      probes.map((p) => p.duration),
+      session.transition,
+    )
     // Während der Analyse abgebrochen: nichts mehr starten
     if (session.cancelled) return
 
     session.status = 'converting'
     session.progress = Math.max(session.progress || 0, 1)
 
-    // Mono gewünscht: Kopieren nur, wenn die Eingaben schon Mono sind
+    // Mono gewünscht: Kopieren nur, wenn die Eingaben schon Mono sind.
+    // Übergänge (N4) und Lautheit (N5) brauchen immer die Neukodierung.
     const streamCopy =
       canStreamCopy(probes, fmt.streamCopyCodec) &&
-      (session.channels !== 1 || probes.every((p) => p.channels === 1))
+      (session.channels !== 1 || probes.every((p) => p.channels === 1)) &&
+      session.transition.type === 'none' &&
+      !session.loudnorm
     session.mode = streamCopy ? 'copy' : 'reencode'
     const result = streamCopy
       ? await runStreamCopy(session, dir, inputFiles, outputFile)

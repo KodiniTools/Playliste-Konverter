@@ -492,3 +492,87 @@ test(
     assert.equal(status.error_file, 'kaputt.wav')
   },
 )
+
+/** Mittlere Lautstärke (dB) eines Ausschnitts. */
+function meanVolume(file, start, length) {
+  const r = spawnSync('ffmpeg', [
+    '-v',
+    'info',
+    '-ss',
+    String(start),
+    '-t',
+    String(length),
+    '-i',
+    file,
+    '-af',
+    'volumedetect',
+    '-f',
+    'null',
+    '-',
+  ])
+  const m = r.stderr.toString().match(/mean_volume: (-?[\d.]+|-inf) dB/)
+  return m && m[1] !== '-inf' ? parseFloat(m[1]) : -Infinity
+}
+
+test(
+  'N4: Pause und Crossfade zwischen Tracks (auch bei identischen MP3s)',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-trans-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = [0, 1].map((i) =>
+      makeTrack(work, `t${i}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+
+    const gap = await convertViaServer(srv.base, files, 'mp3', 128, {
+      transition: 'gap',
+      transition_seconds: 1,
+    })
+    assert.equal(gap.status.status, 'done', JSON.stringify(gap.status))
+    const gapOut = await download(srv.base, gap.sessionId, path.join(work, 'gap.mp3'))
+    assert.ok(Math.abs(duration(gapOut) - 5) < 0.15, `Dauer ${duration(gapOut)}`)
+    assert.ok(meanVolume(gapOut, 2.2, 0.6) < -60, 'Pause ist still')
+    assert.ok(meanVolume(gapOut, 3.3, 1) > -30, 'zweiter Track nach der Pause')
+
+    const fade = await convertViaServer(srv.base, files, 'mp3', 128, {
+      transition: 'crossfade',
+      transition_seconds: 1,
+    })
+    const fadeOut = await download(srv.base, fade.sessionId, path.join(work, 'fade.mp3'))
+    assert.ok(Math.abs(duration(fadeOut) - 3) < 0.15, `Dauer ${duration(fadeOut)}`)
+    // In der Überblendung ist durchgehend Signal, kein Loch
+    for (const start of [1.1, 1.4, 1.7]) assert.ok(meanVolume(fadeOut, start, 0.2) > -30)
+  },
+)
+
+test(
+  'N5: Lautheitsangleichung gleicht leise und laute Tracks an',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-loud-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = [
+      makeTrack(work, 'quiet.wav', { ext: 'wav', freq: 500, args: ['-af', 'volume=-30dB'] }),
+      makeTrack(work, 'loud.wav', { ext: 'wav', freq: 800, args: ['-af', 'volume=-3dB'] }),
+    ]
+    const levels = async (loudnorm) => {
+      const res = await convertViaServer(srv.base, files, 'mp3', 192, { loudnorm })
+      assert.equal(res.status.status, 'done', JSON.stringify(res.status))
+      const out = await download(srv.base, res.sessionId, path.join(work, `l${loudnorm}.mp3`))
+      return [meanVolume(out, 0.5, 1), meanVolume(out, SECONDS + 0.5, 1)]
+    }
+
+    const [quietRaw, loudRaw] = await levels(false)
+    assert.ok(loudRaw - quietRaw > 20, `ohne Angleichung ${quietRaw} / ${loudRaw}`)
+    const [quiet, loud] = await levels(true)
+    assert.ok(Math.abs(loud - quiet) < 3, `mit Angleichung ${quiet} / ${loud}`)
+  },
+)

@@ -53,8 +53,14 @@ function canStreamCopy(probes, expectedCodec) {
   )
 }
 
-/** ffmpeg-Argumente: eine Datei → einheitliches PCM auf stdout. */
-function buildDecoderArgs(inputFile, sampleRate) {
+// Lautheitsangleichung (N5): einpassig auf -16 LUFS, Spitzen max. -1,5 dBTP
+const LOUDNORM_FILTER = 'loudnorm=I=-16:TP=-1.5:LRA=11'
+
+/**
+ * ffmpeg-Argumente: eine Datei → einheitliches PCM auf stdout.
+ * loudnorm gleicht die Lautheit jedes Tracks an (N5).
+ */
+function buildDecoderArgs(inputFile, sampleRate, { loudnorm = false } = {}) {
   return [
     '-hide_banner',
     '-nostdin',
@@ -65,6 +71,7 @@ function buildDecoderArgs(inputFile, sampleRate) {
     '-map',
     '0:a:0',
     '-vn',
+    ...(loudnorm ? ['-af', LOUDNORM_FILTER] : []),
     '-f',
     PCM_FORMAT,
     '-ac',
@@ -203,6 +210,7 @@ module.exports = {
   pickSampleRate,
   canStreamCopy,
   buildDecoderArgs,
+  LOUDNORM_FILTER,
   buildEncoderArgs,
   buildCopyArgs,
   parseFfmpegTime,

@@ -34,6 +34,18 @@
     "archiveHint": "MP3 · 320 kbps · stereo",
     "mono": "Mono (one channel, e.g. for speech)"
   },
+  "mix": {
+    "title": "Transitions and volume",
+    "transition": "Between tracks",
+    "none": "Direct",
+    "gap": "Pause",
+    "crossfade": "Crossfade",
+    "seconds": "Duration",
+    "secondsValue": "{n} s",
+    "loudnorm": "Even out track loudness",
+    "loudnormHint": "Quiet and loud tracks end up equally loud (−16 LUFS).",
+    "reencodeHint": "Transitions and loudness matching need re-encoding, so the conversion takes a little longer."
+  },
   "output": {
     "title": "File name and tags",
     "optional": "(optional)",
