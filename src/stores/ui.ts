@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { normalizeLocale } from '../i18n'
+import { readSharedPref } from '../utils/storage'
 
 export type ThemeName = 'dark' | 'light'
 
@@ -10,15 +12,11 @@ export const useUIStore = defineStore('ui', () => {
   // zum Playlist Generator, html.dark bleibt als Altbestand für externe Skripte.
 
   const theme = ref(normalizeTheme(readInitialTheme()))
-  const locale = ref(localStorage.getItem('locale') || 'de')
+  const locale = ref(normalizeLocale(readSharedPref('locale')))
 
   // nav.html bzw. das Pre-Paint-Skript in app.html hat data-theme womöglich schon gesetzt
   function readInitialTheme() {
-    return (
-      document.documentElement.getAttribute('data-theme') ||
-      localStorage.getItem('theme') ||
-      'light'
-    )
+    return document.documentElement.getAttribute('data-theme') || readSharedPref('theme') || 'light'
   }
 
   function applyTheme(newTheme: ThemeName) {
@@ -89,8 +87,10 @@ export const useUIStore = defineStore('ui', () => {
 
   // nav.html dispatcht 'locale-changed' mit { detail: { locale: 'de'|'en' } }
   function onLocaleChanged(event: Event) {
-    const newLang = (event as CustomEvent<{ locale?: string } | null>).detail?.locale
-    if (newLang && newLang !== locale.value) {
+    const rawLang = (event as CustomEvent<{ locale?: string } | null>).detail?.locale
+    if (!rawLang) return
+    const newLang = normalizeLocale(rawLang)
+    if (newLang !== locale.value) {
       _suppressDispatch = true
       locale.value = newLang
     }

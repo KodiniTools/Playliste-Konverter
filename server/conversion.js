@@ -71,9 +71,19 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
   trackProgress(proc, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
   const { code, error } = await waitForExit(proc)
   session.proc = null
-  if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
+  if (error)
+    return {
+      ok: false,
+      error: 'FFmpeg konnte nicht gestartet werden: ' + error.message,
+      errorCode: 'FFMPEG_FAILED',
+    }
   if (code !== 0)
-    return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+    return {
+      ok: false,
+      error: 'FFmpeg-Fehler (Code ' + code + ')',
+      errorCode: 'FFMPEG_FAILED',
+      stderr: stderrTail,
+    }
   return { ok: true }
 }
 
@@ -119,6 +129,8 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
       failure = {
         ok: false,
         error: `„${displayName(file)}“ konnte nicht gelesen werden.`,
+        errorCode: 'FILE_UNREADABLE',
+        errorFile: displayName(file),
         stderr: result.stderr,
       }
       break
@@ -131,9 +143,19 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
   const { code, error } = await encoderExit
   session.proc = null
   if (failure) return failure
-  if (error) return { ok: false, error: 'FFmpeg konnte nicht gestartet werden: ' + error.message }
+  if (error)
+    return {
+      ok: false,
+      error: 'FFmpeg konnte nicht gestartet werden: ' + error.message,
+      errorCode: 'FFMPEG_FAILED',
+    }
   if (code !== 0)
-    return { ok: false, error: 'FFmpeg-Fehler (Code ' + code + ')', stderr: stderrTail }
+    return {
+      ok: false,
+      error: 'FFmpeg-Fehler (Code ' + code + ')',
+      errorCode: 'FFMPEG_FAILED',
+      stderr: stderrTail,
+    }
   return { ok: true }
 }
 
@@ -158,6 +180,7 @@ async function runConversion(session) {
     if (inputFiles.length === 0) {
       session.status = 'error'
       session.error = 'Keine Dateien zum Konvertieren'
+      session.errorCode = 'NO_FILES'
       return
     }
 
@@ -188,11 +211,14 @@ async function runConversion(session) {
     } else {
       session.status = 'error'
       session.error = result.error || 'Ausgabedatei fehlt'
+      session.errorCode = result.errorCode || 'FFMPEG_FAILED'
+      session.errorFile = result.errorFile || null
       logFailure(session, session.error, result.stderr)
     }
   } catch (err) {
     session.status = 'error'
     session.error = 'Interner Fehler: ' + err.message
+    session.errorCode = 'INTERNAL'
     logFailure(session, session.error, err.stack)
   } finally {
     session.proc = null

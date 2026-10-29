@@ -45,7 +45,15 @@
     "remove": "Remove"
   },
   "toast": {
-    "close": "Close"
+    "close": "Close",
+    "filesAdded": "{n} file added | {n} files added",
+    "filesSkipped": "{n} file skipped (MP3/WAV only) | {n} files skipped (MP3/WAV only)",
+    "fileRemoved": "“{name}” removed",
+    "filesRemoved": "{n} file removed | {n} files removed",
+    "cancelling": "Cancelling …",
+    "cancelled": "Cancelled",
+    "done": "Conversion complete!",
+    "connectionLost": "Lost connection to the server"
   },
   "preview": {
     "play": "Play track",
@@ -88,7 +96,16 @@
     "playlistTooLarge": "The server rejected the upload: the playlist is larger than {max}. Please remove some files.",
     "fileTooLarge": "The server rejected the upload: a file is larger than {max}.",
     "serverStorage": "The server is low on free storage right now. Please try again in a few minutes.",
-    "rateLimited": "Too many requests in a short time. Please wait a moment and try again."
+    "rateLimited": "Too many requests in a short time. Please wait a moment and try again.",
+    "noFiles": "No files selected.",
+    "uploadFailed": "The upload failed. Please try again.",
+    "conversionFailed": "The conversion failed. Please try again.",
+    "fileUnreadable": "“{name}” could not be read. Please remove or replace the file.",
+    "statusFailed": "The conversion status could not be retrieved.",
+    "network": "No connection to the server. Please check your internet connection.",
+    "sessionExpired": "The session has expired. Please start the conversion again.",
+    "alreadyConverting": "This playlist is already being converted.",
+    "internal": "Internal server error. Please try again later."
   },
   "sizeWarning": {
     "title": "Playlist too large!",

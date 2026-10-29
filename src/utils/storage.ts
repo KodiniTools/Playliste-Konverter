@@ -25,6 +25,19 @@ export function readPref(name: string): string | null {
 }
 
 /**
+ * Mit der SSI-Navigation geteilten, ungepräfixten Wert lesen (theme, locale).
+ * Gesperrter Speicher liefert null; der Aufrufer prüft den Wert, weil andere
+ * Tools der Domain ihn ebenfalls schreiben.
+ */
+export function readSharedPref(name: string): string | null {
+  try {
+    return localStorage.getItem(name)
+  } catch {
+    return null
+  }
+}
+
+/**
  * Eigenen Wert schreiben (Fehler wie voller oder gesperrter Speicher werden ignoriert).
  */
 export function writePref(name: string, value: string | number): void {

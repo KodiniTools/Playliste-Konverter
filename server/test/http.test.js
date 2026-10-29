@@ -30,7 +30,9 @@ test('convert ohne Body: 400 statt 500', async (t) => {
 
   const res = await fetch(`${srv.base}/api/convert`, { method: 'POST' })
   assert.equal(res.status, 400)
-  assert.equal((await res.json()).error, 'Ungültige Session-ID')
+  const body = await res.json()
+  assert.equal(body.error, 'Ungültige Session-ID')
+  assert.equal(body.code, 'INVALID_SESSION')
 })
 
 test('upload ohne Dateien: 400 statt 500', async (t) => {
@@ -39,6 +41,7 @@ test('upload ohne Dateien: 400 statt 500', async (t) => {
 
   const res = await fetch(`${srv.base}/api/upload`, { method: 'POST', body: new FormData() })
   assert.equal(res.status, 400)
+  assert.equal((await res.json()).code, 'NO_FILES')
 })
 
 test('Belegter Port: Prozess beendet sich mit Fehler', async (t) => {

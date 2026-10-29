@@ -8,7 +8,12 @@ export interface ConversionStatus {
   status: 'uploading' | 'queued' | 'converting' | 'done' | 'error'
   progress: number
   file_size?: number
+  /** Technische Meldung (deutsch, für Logs) */
   error?: string
+  /** Fehlercode, z. B. FILE_UNREADABLE, FFMPEG_FAILED, NO_FILES, INTERNAL */
+  error_code?: string
+  /** Name der Datei bei FILE_UNREADABLE */
+  error_file?: string
   queue_position?: number
 }
 

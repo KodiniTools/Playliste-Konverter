@@ -6,7 +6,8 @@
  * API (hinter nginx unter /playlistkonverter/api/ gemountet):
  *   POST /api/upload         – eine Datei pro Request (files[]), Session-basiert
  *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate)
- *   GET  /api/status/:id     – { status, progress, file_size?, error?, queue_position? }
+ *   GET  /api/status/:id     – { status, progress, file_size?, error?, error_code?, error_file?,
+ *                               queue_position? }
  *   GET  /api/events/:id     – dieselben Daten als Server-Sent Events, bis done/error
  *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
  *   POST /api/cancel/:id     – bricht ab: ffmpeg beenden, Slot und Dateien freigeben
@@ -93,7 +94,7 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
   try {
     const files = req.files || []
     if (files.length === 0) {
-      return res.status(400).json({ error: 'Keine Dateien hochgeladen' })
+      return res.status(400).json({ error: 'Keine Dateien hochgeladen', code: 'NO_FILES' })
     }
 
     // Session bestimmen oder neu anlegen.
@@ -102,7 +103,7 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     let sessionId = body.session_id
     if (sessionId !== undefined && !isValidSessionId(sessionId)) {
       await cleanupTmpUploads(files)
-      return res.status(400).json({ error: 'Ungültige Session-ID' })
+      return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
     }
     if (sessionId && cancelledIds.has(sessionId)) {
       await cleanupTmpUploads(files)
@@ -178,7 +179,7 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
     }
 
     if (stored.length === 0) {
-      return res.status(400).json({ error: 'Keine gültigen Audio-Dateien' })
+      return res.status(400).json({ error: 'Keine gültigen Audio-Dateien', code: 'NO_FILES' })
     }
 
     return res.json({
@@ -188,7 +189,9 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
       chunk_index: chunkIndex,
     })
   } catch (err) {
-    return res.status(500).json({ error: 'Upload fehlgeschlagen: ' + err.message })
+    return res
+      .status(500)
+      .json({ error: 'Upload fehlgeschlagen: ' + err.message, code: 'INTERNAL' })
   }
 })
 
@@ -198,17 +201,19 @@ app.post('/api/convert', async (req, res) => {
     const body = req.body ?? {}
     const sessionId = body.session_id || ''
     if (!isValidSessionId(sessionId)) {
-      return res.status(400).json({ error: 'Ungültige Session-ID' })
+      return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
     }
 
     const session = sessions.get(sessionId)
     const dir = sessionDirPath(sessionId)
     if (!session || !fs.existsSync(dir)) {
-      return res.status(404).json({ error: 'Session nicht gefunden' })
+      return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
     }
 
     if (session.status === 'converting' || session.status === 'queued') {
-      return res.status(409).json({ error: 'Konvertierung läuft bereits' })
+      return res
+        .status(409)
+        .json({ error: 'Konvertierung läuft bereits', code: 'ALREADY_CONVERTING' })
     }
 
     // Format validieren.
@@ -223,12 +228,14 @@ app.post('/api/convert', async (req, res) => {
 
     const inputFiles = await listInputFiles(dir)
     if (inputFiles.length === 0) {
-      return res.status(400).json({ error: 'Keine Dateien zum Konvertieren' })
+      return res.status(400).json({ error: 'Keine Dateien zum Konvertieren', code: 'NO_FILES' })
     }
 
     session.format = format
     session.bitrate = bitrate
     session.error = null
+    session.errorCode = null
+    session.errorFile = null
     session.fileSize = null
 
     enqueueJob(session)
@@ -241,7 +248,9 @@ app.post('/api/convert', async (req, res) => {
       queue_position: queuePosition(sessionId),
     })
   } catch (err) {
-    return res.status(500).json({ error: 'Konvertierung fehlgeschlagen: ' + err.message })
+    return res
+      .status(500)
+      .json({ error: 'Konvertierung fehlgeschlagen: ' + err.message, code: 'INTERNAL' })
   }
 })
 
@@ -253,6 +262,8 @@ function statusPayload(session) {
     progress: session.progress || 0,
     error: session.error || null,
   }
+  if (session.errorCode) payload.error_code = session.errorCode
+  if (session.errorFile) payload.error_file = session.errorFile
   if (session.fileSize != null) payload.file_size = session.fileSize
   const queuePos = queuePosition(session.id)
   if (queuePos > 0) payload.queue_position = queuePos
@@ -262,11 +273,11 @@ function statusPayload(session) {
 app.get('/api/status/:id', (req, res) => {
   const sessionId = req.params.id
   if (!isValidSessionId(sessionId)) {
-    return res.status(400).json({ error: 'Ungültige Session-ID' })
+    return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
   }
   const session = sessions.get(sessionId)
   if (!session) {
-    return res.status(404).json({ error: 'Session nicht gefunden' })
+    return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
   }
   return res.json(statusPayload(session))
 })
@@ -283,10 +294,10 @@ const HEARTBEAT_INTERVAL = 15_000 // ms, hält Proxys die Verbindung offen
 app.get('/api/events/:id', (req, res) => {
   const sessionId = req.params.id
   if (!isValidSessionId(sessionId)) {
-    return res.status(400).json({ error: 'Ungültige Session-ID' })
+    return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
   }
   if (!sessions.has(sessionId)) {
-    return res.status(404).json({ error: 'Session nicht gefunden' })
+    return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
   }
 
   res.set({
@@ -370,7 +381,7 @@ app.get('/api/download/:id', (req, res) => {
 app.post('/api/cancel/:id', async (req, res) => {
   const sessionId = req.params.id
   if (!isValidSessionId(sessionId)) {
-    return res.status(400).json({ error: 'Ungültige Session-ID' })
+    return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
   }
   // Nur bekannte Sessions merken, damit beliebige IDs die Liste nicht füllen
   if (sessions.has(sessionId)) cancelledIds.set(sessionId, Date.now())

@@ -109,9 +109,15 @@ describe('Status per SSE', () => {
 
   it('Server-Fehler aus dem Stream wird angezeigt', async () => {
     const store = await startConverting()
-    FakeEventSource.instances[0].emit('status', { status: 'error', error: 'FFmpeg-Fehler' })
+    FakeEventSource.instances[0].emit('status', {
+      status: 'error',
+      error: '„b.wav“ konnte nicht gelesen werden.',
+      error_code: 'FILE_UNREADABLE',
+      error_file: 'b.wav',
+    })
     expect(store.status).toBe('error')
-    expect(store.errorMessage).toBe('FFmpeg-Fehler')
+    expect(store.errorMessage).toBe(i18n.global.t('error.fileUnreadable', { name: 'b.wav' }))
+    expect(store.errorMessage).toContain('„b.wav“')
   })
 
   it('"gone" (Session auf dem Server weg) beendet mit Fehler', async () => {
