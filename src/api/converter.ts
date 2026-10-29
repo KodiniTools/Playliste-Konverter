@@ -98,12 +98,34 @@ export async function uploadFiles(
 /**
  * Startet die Konvertierung einer hochgeladenen Session.
  */
+/** Titel, Künstler und Album der Ausgabe (N6); leere Felder werden weggelassen. */
+export interface OutputTags {
+  title?: string
+  artist?: string
+  album?: string
+}
+
 /** Einstellungen der Konvertierung (POST /api/convert). */
 export interface ConversionOptions {
   format: string
   bitrate: number
   /** 1 = Mono, 2 = Stereo */
   channels: 1 | 2
+  /** Dateiname ohne Endung (Server bereinigt ihn erneut) */
+  filename?: string
+  tags?: OutputTags
+}
+
+/** Cover-Bild (JPEG/PNG) zur Session hochladen; nur für MP3 relevant (N6). */
+export function uploadCover(sessionId: string, cover: File, { signal }: { signal: AbortSignal }) {
+  const form = new FormData()
+  form.append('cover', cover)
+  return requestJson<{ success?: boolean }>(`${API_BASE_URL}/cover/${sessionId}`, {
+    method: 'POST',
+    body: form,
+    timeout: CONVERT_START_TIMEOUT,
+    signal,
+  })
 }
 
 export function startConversion(

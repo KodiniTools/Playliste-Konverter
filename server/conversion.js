@@ -65,7 +65,10 @@ function waitForExit(proc) {
 /** Stream-Copy: alle Eingaben identisch kodiert → concat-Demuxer ohne Neukodierung. */
 async function runStreamCopy(session, dir, inputFiles, outputFile) {
   const concatPath = await writeConcatFile(dir, inputFiles)
-  const proc = spawn(FFMPEG, buildCopyArgs({ concatPath, outputFile }))
+  const proc = spawn(
+    FFMPEG,
+    buildCopyArgs({ concatPath, outputFile, tags: session.tags, coverPath: session.coverPath }),
+  )
   session.proc = proc
   let stderrTail = ''
   trackProgress(proc, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
@@ -117,6 +120,9 @@ async function runReencode(session, inputFiles, probes, fmt, outputFile) {
       sampleRate,
       outputFile,
       outputChannels: session.channels === 1 ? 1 : 2,
+      tags: session.tags,
+      // Cover trägt nur MP3 (ID3); bei WebM/OGG bleibt es weg
+      coverPath: fmt.codec === 'libmp3lame' ? session.coverPath : null,
     }),
   )
   session.proc = encoder

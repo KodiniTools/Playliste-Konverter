@@ -58,7 +58,7 @@ describe('Presets im Store', () => {
     await store.convert()
     expect(api.startConversion).toHaveBeenCalledWith(
       's1',
-      { format: 'mp3', bitrate: 64, channels: 1 },
+      { format: 'mp3', bitrate: 64, channels: 1, filename: 'playlist', tags: {} },
       expect.anything(),
     )
     store.reset()

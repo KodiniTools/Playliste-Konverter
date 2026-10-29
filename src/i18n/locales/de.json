@@ -34,6 +34,22 @@
     "archiveHint": "MP3 · 320 kbps · Stereo",
     "mono": "Mono (ein Kanal, z. B. für Sprache)"
   },
+  "output": {
+    "title": "Dateiname und Tags",
+    "optional": "(optional)",
+    "fileName": "Dateiname",
+    "fileNameHint": "Download als: {name}",
+    "tagTitle": "Titel",
+    "tagArtist": "Künstler",
+    "tagAlbum": "Album",
+    "cover": "Cover",
+    "coverSelect": "Bild wählen",
+    "coverChange": "Bild ändern",
+    "coverRemove": "Entfernen",
+    "coverPreview": "Vorschau des Covers",
+    "coverHint": "JPEG oder PNG bis 5 MB, wird in MP3-Dateien eingebettet.",
+    "coverMp3Only": "Das Cover wird nur bei MP3 eingebettet; für WebM/OGG bleibt es weg."
+  },
   "uploader": {
     "dropText": "Audio-Dateien hier ablegen (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "oder",
@@ -106,11 +122,14 @@
     "title": "Konvertierung abgeschlossen!",
     "subtitle": "Deine Playlist ist bereit zum Download",
     "fileSize": "Dateigröße",
-    "button": "playlist.{format} herunterladen",
+    "button": "„{name}“ herunterladen",
     "newConversion": "Neue Konvertierung starten",
     "shareToPlayer": "An Ultimativen Musikplayer weitergeben",
+    "shareToNormalizer": "Im Audio-Normalisierer öffnen",
     "sharing": "Wird übergeben …",
-    "shareError": "Weitergabe an den Musikplayer fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren."
+    "shareError": "Weitergabe an den {tool} fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren.",
+    "toolPlayer": "Musikplayer",
+    "toolNormalizer": "Audio-Normalisierer"
   },
   "button": {
     "convert": "Track(s) konvertieren"
@@ -129,7 +148,8 @@
     "network": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen.",
     "sessionExpired": "Die Sitzung ist abgelaufen. Bitte die Konvertierung neu starten.",
     "alreadyConverting": "Diese Playlist wird bereits konvertiert.",
-    "internal": "Interner Serverfehler. Bitte später erneut versuchen."
+    "internal": "Interner Serverfehler. Bitte später erneut versuchen.",
+    "invalidCover": "Das Cover muss ein JPEG- oder PNG-Bild bis 5 MB sein."
   },
   "sizeWarning": {
     "title": "Playlist zu groß!",

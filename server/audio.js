@@ -14,6 +14,7 @@
  */
 
 const { spawn } = require('child_process')
+const { buildMetadataArgs, buildCoverArgs } = require('./metadata')
 
 const PCM_FORMAT = 'f32le'
 const CHANNELS = 2
@@ -76,9 +77,19 @@ function buildDecoderArgs(inputFile, sampleRate) {
 
 /**
  * ffmpeg-Argumente: PCM von stdin → Ausgabedatei im Zielformat.
- * outputChannels 1 mischt das Stereo-PCM zu Mono herunter (N11).
+ * outputChannels 1 mischt das Stereo-PCM zu Mono herunter (N11); tags und
+ * coverPath (nur MP3) schreiben Titel/Künstler/Album und das Cover (N6).
  */
-function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile, outputChannels = CHANNELS }) {
+function buildEncoderArgs({
+  codec,
+  bitrate,
+  sampleRate,
+  outputFile,
+  outputChannels = CHANNELS,
+  tags,
+  coverPath,
+}) {
+  const cover = buildCoverArgs(coverPath)
   return [
     '-hide_banner',
     '-f',
@@ -89,12 +100,16 @@ function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile, outputChanne
     String(CHANNELS),
     '-i',
     'pipe:0',
+    ...cover.input,
+    ...(coverPath ? ['-map', '0:a'] : []),
+    ...cover.output,
     '-ac',
     String(outputChannels),
     '-c:a',
     codec,
     '-b:a',
     `${bitrate}k`,
+    ...buildMetadataArgs(tags),
     '-threads',
     '0',
     '-y',
@@ -102,8 +117,12 @@ function buildEncoderArgs({ codec, bitrate, sampleRate, outputFile, outputChanne
   ]
 }
 
-/** ffmpeg-Argumente für Stream-Copy über den concat-Demuxer (nur Audio). */
-function buildCopyArgs({ concatPath, outputFile }) {
+/**
+ * ffmpeg-Argumente für Stream-Copy über den concat-Demuxer (nur Audio).
+ * Der Demuxer übernimmt keine Tags der Eingaben; eigene Tags und Cover kommen dazu (N6).
+ */
+function buildCopyArgs({ concatPath, outputFile, tags, coverPath }) {
+  const cover = buildCoverArgs(coverPath)
   return [
     '-hide_banner',
     '-nostdin',
@@ -113,10 +132,13 @@ function buildCopyArgs({ concatPath, outputFile }) {
     '0',
     '-i',
     concatPath,
+    ...cover.input,
     '-map',
     '0:a',
+    ...cover.output,
     '-c:a',
     'copy',
+    ...buildMetadataArgs(tags),
     '-y',
     outputFile,
   ]

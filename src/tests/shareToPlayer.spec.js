@@ -1,5 +1,6 @@
 /**
- * Weitergabe der konvertierten Playlist an den Ultimativen Musikplayer.
+ * Weitergabe der konvertierten Playlist an den Ultimativen Musikplayer und
+ * den Audio-Normalisierer (N8).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
@@ -8,7 +9,7 @@ import i18n from '../i18n'
 import DownloadButton from '../components/DownloadButton.vue'
 import { useConverterStore } from '../stores/converter'
 import { useToastStore } from '../stores/toast'
-import { MUSIC_PLAYER_SHARE_URL } from '../constants'
+import { MUSIC_PLAYER_SHARE_URL, NORMALIZER_SHARE_URL } from '../constants'
 import { replaceSharedFiles } from '../utils/sharedFileRepository'
 
 vi.mock('../utils/sharedFileRepository', () => ({
@@ -95,7 +96,10 @@ describe('DownloadButton – An Musikplayer weitergeben', () => {
     expect(replaceSharedFiles).not.toHaveBeenCalled()
     expect(playerWindow.close).toHaveBeenCalled()
     const toast = useToastStore()
-    expect(toast.toasts.at(-1)).toMatchObject({ type: 'error' })
+    expect(toast.toasts.at(-1)).toMatchObject({
+      type: 'error',
+      message: expect.stringContaining('an den Musikplayer'),
+    })
     expect(wrapper.get('[data-testid="share-to-player"]').attributes('disabled')).toBeUndefined()
   })
 
@@ -119,5 +123,42 @@ describe('DownloadButton – An Musikplayer weitergeben', () => {
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: original })
     }
+  })
+})
+
+describe('DownloadButton – Im Audio-Normalisierer öffnen (N8)', () => {
+  it('übergibt die Playlist mit gewähltem Namen und öffnet den Normalisierer', async () => {
+    useConverterStore().outputName = 'Sommer Mix'
+    const wrapper = mountButton()
+    const btn = wrapper.get('[data-testid="share-to-normalizer"]')
+    expect(btn.text()).toBe('Im Audio-Normalisierer öffnen')
+    await btn.trigger('click')
+    await flushPromises()
+
+    const [records] = replaceSharedFiles.mock.calls[0]
+    expect(records[0].name).toBe('Sommer Mix.mp3')
+    expect(playerWindow.location.href).toBe(NORMALIZER_SHARE_URL)
+    expect(NORMALIZER_SHARE_URL).toContain('source=playlistkonverter')
+  })
+
+  it('sperrt beide Buttons während einer Übergabe', async () => {
+    let release
+    replaceSharedFiles.mockImplementation(() => new Promise((r) => (release = r)))
+    const wrapper = mountButton()
+    await wrapper.get('[data-testid="share-to-normalizer"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="share-to-player"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="share-to-normalizer"]').text()).toBe('Wird übergeben …')
+    release()
+    await flushPromises()
+    expect(wrapper.get('[data-testid="share-to-player"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('nennt den Normalisierer in der Fehlermeldung', async () => {
+    replaceSharedFiles.mockImplementation(() => Promise.reject(new Error('quota')))
+    const wrapper = mountButton()
+    await wrapper.get('[data-testid="share-to-normalizer"]').trigger('click')
+    await flushPromises()
+    expect(useToastStore().toasts.at(-1).message).toContain('an den Audio-Normalisierer')
   })
 })

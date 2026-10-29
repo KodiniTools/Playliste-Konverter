@@ -5,12 +5,14 @@
  *
  * API (hinter nginx unter /playlistkonverter/api/ gemountet):
  *   POST /api/upload         – eine Datei pro Request (files[]), Session-basiert
- *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate, channels?)
+ *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate,
+ *                               channels?, tags? {title, artist, album}, filename?)
  *   GET  /api/status/:id     – { status, progress, file_size?, error?, error_code?, error_file?,
  *                               queue_position? }
  *   GET  /api/events/:id     – dieselben Daten als Server-Sent Events, bis done/error
  *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
  *   POST /api/cancel/:id     – bricht ab: ffmpeg beenden, Slot und Dateien freigeben
+ *   POST /api/cover/:id      – Cover-Bild (JPEG/PNG) für die MP3-Ausgabe (N6)
  *   GET  /health             – Health-Check für pm2/nginx
  */
 const express = require('express')
@@ -45,6 +47,13 @@ const {
 const { enqueueJob, queuePosition } = require('./queue')
 const { removeSession } = require('./lifecycle')
 const { healthReport } = require('./health')
+const {
+  MAX_COVER_SIZE,
+  sanitizeTags,
+  sanitizeOutputName,
+  contentDisposition,
+  coverExtension,
+} = require('./metadata')
 
 const app = express()
 app.use(express.json())
@@ -57,6 +66,15 @@ const upload = multer({
   }),
   limits: { fileSize: MAX_FILE_SIZE, files: MAX_FILES },
 })
+
+// Cover-Bild (N6): ein Bild pro Request, eigenes kleines Limit
+const coverUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, TEMP_DIR),
+    filename: (req, file, cb) => cb(null, 'cv_' + crypto.randomBytes(12).toString('hex')),
+  }),
+  limits: { fileSize: MAX_COVER_SIZE, files: 1 },
+}).single('cover')
 
 app.get('/health', async (req, res) => {
   res.json(await healthReport())
@@ -234,6 +252,9 @@ app.post('/api/convert', async (req, res) => {
 
     session.format = format
     session.bitrate = bitrate
+    // Tags und Dateiname der Ausgabe (N6), bereinigt
+    session.tags = sanitizeTags(body.tags)
+    session.outputName = sanitizeOutputName(body.filename)
     // Kanäle: 1 = Mono (Presets „Sprache“, N11), sonst Stereo
     session.channels = parseInt(body.channels, 10) === 1 ? 1 : 2
     session.error = null
@@ -340,6 +361,51 @@ app.get('/api/events/:id', (req, res) => {
   tick()
 })
 
+// --- Cover (N6) -------------------------------------------------------------
+/**
+ * Cover-Bild (JPEG/PNG, max. 5 MB) zur Session speichern; wird bei MP3 als
+ * ID3-Bild eingebettet. Muss vor /api/convert kommen.
+ */
+app.post('/api/cover/:id', (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
+  }
+  coverUpload(req, res, async (err) => {
+    const file = req.file
+    try {
+      if (err) {
+        const tooLarge = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+        return res
+          .status(tooLarge ? 413 : 400)
+          .json({ error: 'Cover abgelehnt', code: tooLarge ? 'COVER_TOO_LARGE' : 'INVALID_COVER' })
+      }
+      const session = sessions.get(sessionId)
+      if (!session || !fs.existsSync(sessionDirPath(sessionId))) {
+        return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
+      }
+      if (session.status === 'converting' || session.status === 'queued') {
+        return res
+          .status(409)
+          .json({ error: 'Konvertierung läuft bereits', code: 'ALREADY_CONVERTING' })
+      }
+      const ext = file && coverExtension(file.originalname)
+      if (!ext) {
+        return res.status(400).json({ error: 'Nur JPEG oder PNG', code: 'INVALID_COVER' })
+      }
+      const target = path.join(sessionDirPath(sessionId), `cover.${ext}`)
+      await fsp.rename(file.path, target)
+      session.coverPath = target
+      return res.json({ success: true })
+    } catch (e) {
+      return res.status(500).json({ error: 'Cover fehlgeschlagen: ' + e.message, code: 'INTERNAL' })
+    } finally {
+      // Abgelehnte oder nicht verschobene Uploads entfernen
+      if (file) await safeUnlink(file.path)
+    }
+  })
+})
+
 // --- Download -------------------------------------------------------------
 app.get('/api/download/:id', (req, res) => {
   const sessionId = req.params.id
@@ -359,7 +425,10 @@ app.get('/api/download/:id', (req, res) => {
   }
 
   res.setHeader('Content-Type', fmt.mime)
-  res.setHeader('Content-Disposition', `attachment; filename="playlist.${fmt.extension}"`)
+  res.setHeader(
+    'Content-Disposition',
+    contentDisposition(`${session.outputName || 'playlist'}.${fmt.extension}`),
+  )
   res.setHeader('Content-Length', fs.statSync(outputFile).size)
 
   const stream = fs.createReadStream(outputFile)
