@@ -5,7 +5,7 @@
  *
  * API (hinter nginx unter /playlistkonverter/api/ gemountet):
  *   POST /api/upload         – eine Datei pro Request (files[]), Session-basiert
- *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate)
+ *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate, channels?)
  *   GET  /api/status/:id     – { status, progress, file_size?, error?, error_code?, error_file?,
  *                               queue_position? }
  *   GET  /api/events/:id     – dieselben Daten als Server-Sent Events, bis done/error
@@ -234,6 +234,8 @@ app.post('/api/convert', async (req, res) => {
 
     session.format = format
     session.bitrate = bitrate
+    // Kanäle: 1 = Mono (Presets „Sprache“, N11), sonst Stereo
+    session.channels = parseInt(body.channels, 10) === 1 ? 1 : 2
     session.error = null
     session.errorCode = null
     session.errorFile = null

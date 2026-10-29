@@ -63,6 +63,16 @@ test('Encoder liest dasselbe PCM von stdin und schreibt das Zielformat', () => {
   assert.equal(args.at(-1), '/tmp/o.mp3')
 })
 
+test('Encoder: Stereo als Standard, Mono auf Wunsch (N11)', () => {
+  const base = { codec: 'libmp3lame', bitrate: 64, sampleRate: 44100, outputFile: '/tmp/o.mp3' }
+  assert.ok(buildEncoderArgs(base).join(' ').includes('pipe:0 -ac 2 -c:a libmp3lame'))
+  assert.ok(
+    buildEncoderArgs({ ...base, outputChannels: 1 })
+      .join(' ')
+      .includes('pipe:0 -ac 1 -c:a libmp3lame'),
+  )
+})
+
 test('Stream-Copy mappt nur Audio (keine Cover-Bilder)', () => {
   const args = buildCopyArgs({ concatPath: '/tmp/c.txt', outputFile: '/tmp/o.mp3' })
   assert.ok(args.join(' ').includes('-f concat -safe 0 -i /tmp/c.txt -map 0:a -c:a copy'))

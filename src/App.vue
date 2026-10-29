@@ -14,6 +14,7 @@
   import StatusIcon from './components/StatusIcon.vue'
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
   import { logger } from './utils/logger'
+  import { isSharedSource } from './constants'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
@@ -31,7 +32,7 @@
     { immediate: true },
   )
 
-  // --- source=audionormalizer receiver ---
+  // --- Empfang geteilter Dateien (?source=audionormalizer|audiokonverter, N8) ---
   type BannerType = 'success' | 'error' | 'warning' | 'info'
   const sharedBanner = ref<{ type: BannerType; message: string } | null>(null)
 
@@ -60,7 +61,7 @@
 
       sharedBanner.value = {
         type: 'info',
-        message: t('sharedFiles.loading', { count: records.length }),
+        message: t('sharedFiles.loading', records.length),
       }
 
       const files = records.map(
@@ -71,7 +72,7 @@
 
       sharedBanner.value = {
         type: 'success',
-        message: t('sharedFiles.loaded', { count: files.length }),
+        message: t('sharedFiles.loaded', files.length),
       }
     } catch (err) {
       logger.error('Geteilte Dateien konnten nicht geladen werden:', err)
@@ -85,7 +86,7 @@
 
   onMounted(() => {
     const source = new URLSearchParams(window.location.search).get('source')
-    if (source === 'audionormalizer') loadSharedFiles()
+    if (isSharedSource(source)) loadSharedFiles()
   })
 </script>
 

@@ -145,7 +145,8 @@ describe('FormatSelector', () => {
     expect(combos).toHaveLength(2)
     expect(wrapper.text()).toContain('Ausgabeformat')
     expect(wrapper.text()).toContain('Audioqualität')
-    expect(wrapper.findAll('[aria-pressed]')).toHaveLength(0)
+    // Format und Qualität sind Dropdowns; Umschalt-Buttons gibt es nur für die Presets (N11)
+    expect(wrapper.findAll('[aria-pressed]:not([data-preset])')).toHaveLength(0)
   })
 
   it('Formatwechsel begrenzt die Bitrate und kürzt die Qualitätsliste', async () => {

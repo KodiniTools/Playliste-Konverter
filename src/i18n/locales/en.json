@@ -24,6 +24,16 @@
     "title": "Audio Quality",
     "hint": "Higher bitrate = better quality, larger file"
   },
+  "preset": {
+    "title": "Preset",
+    "speech": "Speech",
+    "speechHint": "MP3 · 64 kbps · mono",
+    "music": "Music",
+    "musicHint": "MP3 · 192 kbps · stereo",
+    "archive": "Archive",
+    "archiveHint": "MP3 · 320 kbps · stereo",
+    "mono": "Mono (one channel, e.g. for speech)"
+  },
   "uploader": {
     "dropText": "Drop audio files here (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "or",
@@ -141,8 +151,8 @@
     "message": "Your playlist is very large. Upload and conversion may take a while. Please be patient."
   },
   "sharedFiles": {
-    "loading": "Loading {count} normalised file(s) …",
-    "loaded": "{count} normalised file(s) loaded successfully.",
+    "loading": "Loading {n} shared file … | Loading {n} shared files …",
+    "loaded": "{n} shared file added. | {n} shared files added.",
     "empty": "No shared files found.",
     "error": "Error loading shared files."
   }

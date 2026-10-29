@@ -98,15 +98,22 @@ export async function uploadFiles(
 /**
  * Startet die Konvertierung einer hochgeladenen Session.
  */
+/** Einstellungen der Konvertierung (POST /api/convert). */
+export interface ConversionOptions {
+  format: string
+  bitrate: number
+  /** 1 = Mono, 2 = Stereo */
+  channels: 1 | 2
+}
+
 export function startConversion(
   sessionId: string,
-  format: string,
-  bitrate: number,
+  options: ConversionOptions,
   { signal }: { signal: AbortSignal },
 ) {
   return requestJson<{ success?: boolean; queue_position?: number }>(`${API_BASE_URL}/convert`, {
     method: 'POST',
-    body: { session_id: sessionId, format, bitrate },
+    body: { session_id: sessionId, ...options },
     timeout: CONVERT_START_TIMEOUT,
     signal,
   })

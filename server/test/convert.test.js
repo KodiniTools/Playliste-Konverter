@@ -112,7 +112,7 @@ async function startServer(tempDir) {
 }
 
 /** Wie die App: eine Datei pro Request, dann convert, Status pollen, download. */
-async function convertViaServer(base, files, format = 'mp3', bitrate = 192) {
+async function convertViaServer(base, files, format = 'mp3', bitrate = 192, extra = {}) {
   let sessionId
   for (let i = 0; i < files.length; i++) {
     const form = new FormData()
@@ -127,7 +127,7 @@ async function convertViaServer(base, files, format = 'mp3', bitrate = 192) {
   const conv = await fetch(`${base}/api/convert`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, format, bitrate }),
+    body: JSON.stringify({ session_id: sessionId, format, bitrate, ...extra }),
   })
   assert.equal(conv.status, 200)
   let status
@@ -280,6 +280,50 @@ test(
       segmentFrequencies(out, 2).map((f) => Math.round(f / 100) * 100),
       [500, 900],
     )
+  },
+)
+
+function channels(file) {
+  const r = spawnSync('ffprobe', [
+    '-v',
+    'error',
+    '-select_streams',
+    'a:0',
+    '-show_entries',
+    'stream=channels',
+    '-of',
+    'csv=p=0',
+    file,
+  ])
+  return parseInt(r.stdout.toString(), 10)
+}
+
+test(
+  'N11: Mono-Ausgabe auf Wunsch, auch bei identischen Stereo-MP3s (kein Stream-Copy)',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-mono-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+
+    const files = [0, 1].map((i) =>
+      makeTrack(work, `s${i}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+    const mono = await convertViaServer(srv.base, files, 'mp3', 64, { channels: 1 })
+    assert.equal(mono.status.status, 'done', JSON.stringify(mono.status))
+    const monoOut = await download(srv.base, mono.sessionId, path.join(work, 'mono.mp3'))
+    assert.equal(channels(monoOut), 1)
+    assert.deepEqual(
+      segmentFrequencies(monoOut, 2).map((f) => Math.round(f / 100) * 100),
+      [500, 800],
+    )
+
+    const stereo = await convertViaServer(srv.base, files, 'mp3', 192)
+    const stereoOut = await download(srv.base, stereo.sessionId, path.join(work, 'stereo.mp3'))
+    assert.equal(channels(stereoOut), 2)
   },
 )
 
