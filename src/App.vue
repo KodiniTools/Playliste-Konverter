@@ -13,6 +13,7 @@
   import StickyPlayer from './components/StickyPlayer.vue'
   import StatusIcon from './components/StatusIcon.vue'
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
+  import { logger } from './utils/logger'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
@@ -74,7 +75,7 @@
         message: t('sharedFiles.loaded', { count: files.length }),
       }
     } catch (err) {
-      console.error('[Playliste-Konverter] Error loading shared files:', err)
+      logger.error('Geteilte Dateien konnten nicht geladen werden:', err)
       sharedBanner.value = { type: 'error', message: t('sharedFiles.error') }
     }
 

@@ -23,6 +23,16 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    // Node-Konvertierungsdienst (CommonJS)
+    files: ['server/**/*.js', 'server/**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'server/node_modules/**', 'server/temp/**'],
   },
 ]
