@@ -91,6 +91,30 @@ export function fetchStatus(sessionId, { signal }) {
 }
 
 /**
+ * Status-Updates per Server-Sent Events abonnieren (GET /api/events/:id).
+ * Gibt null zurück, wenn der Browser kein EventSource kennt – dann pollt der
+ * Aufrufer. Verbindungsfehler melden sich über onError; der Aufrufer schließt
+ * und fällt auf Polling zurück (kein automatisches Reconnect).
+ * @param {string} sessionId
+ * @param {{ onStatus: function, onGone: function, onError: function }} handlers
+ * @returns {(() => void) | null} Funktion zum Schließen
+ */
+export function subscribeStatus(sessionId, { onStatus, onGone, onError }) {
+  if (typeof EventSource === 'undefined') return null
+  const source = new EventSource(`${API_BASE_URL}/events/${sessionId}`)
+  source.addEventListener('status', (event) => {
+    try {
+      onStatus(JSON.parse(event.data))
+    } catch (err) {
+      onError(err)
+    }
+  })
+  source.addEventListener('gone', () => onGone())
+  source.onerror = (err) => onError(err)
+  return () => source.close()
+}
+
+/**
  * Bittet den Server, eine Session abzubrechen: laufendes ffmpeg beenden, Slot und
  * Dateien freigeben. Funktioniert auch beim Schließen des Tabs (sendBeacon, sonst
  * fetch mit keepalive). Fehler werden ignoriert – der Server räumt spätestens

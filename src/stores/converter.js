@@ -8,6 +8,7 @@ import {
   fetchStatus,
   getDownloadUrl,
   cancelSession,
+  subscribeStatus,
 } from '../api/converter'
 import { formatBytes } from '../utils/format'
 import i18n from '../i18n'
@@ -27,7 +28,8 @@ export const useConverterStore = defineStore('converter', () => {
 
   // Für Abbrechen-Funktion
   let abortController = null
-  let pollingInterval = null
+  let pollingTimer = null
+  let closeEvents = null
   let smoothProgressInterval = null
   const isCancelling = ref(false)
 
@@ -35,6 +37,8 @@ export const useConverterStore = defineStore('converter', () => {
   const displayProgress = ref(0)
   const lastBackendProgress = ref(0)
   const isIndeterminate = ref(false)
+  // Position in der Server-Warteschlange (0 = nicht wartend)
+  const queuePosition = ref(0)
 
   // Für Zeitberechnung
   const uploadStartTime = ref(null)
@@ -172,9 +176,13 @@ export const useConverterStore = defineStore('converter', () => {
   })
 
   function stopIntervals() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      pollingInterval = null
+    if (pollingTimer) {
+      clearTimeout(pollingTimer)
+      pollingTimer = null
+    }
+    if (closeEvents) {
+      closeEvents()
+      closeEvents = null
     }
     if (smoothProgressInterval) {
       clearInterval(smoothProgressInterval)
@@ -188,7 +196,10 @@ export const useConverterStore = defineStore('converter', () => {
     smoothProgressInterval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000
       const timeBased = 95 * (1 - Math.exp(-elapsed / 30))
-      const target = Math.max(lastBackendProgress.value, timeBased)
+      // Echter Server-Fortschritt hat Vorrang; die Zeitschätzung überbrückt nur
+      // die Analysephase (Fortschritt ≤ 1). In der Warteschlange steht der Balken.
+      let target = lastBackendProgress.value > 1 ? lastBackendProgress.value : timeBased
+      if (queuePosition.value > 0) target = 0
 
       if (displayProgress.value < target) {
         const diff = target - displayProgress.value
@@ -276,52 +287,88 @@ export const useConverterStore = defineStore('converter', () => {
     }
   }
 
-  async function pollStatus() {
+  /**
+   * Status vom Server übernehmen (aus SSE oder Polling).
+   * @returns {boolean} true, wenn der Vorgang beendet ist (done/error)
+   */
+  function applyStatus(data) {
     const toastStore = useToastStore()
+    lastBackendProgress.value = data.progress || 0
+    queuePosition.value = data.status === 'queued' ? data.queue_position || 0 : 0
 
-    displayProgress.value = 0
-    lastBackendProgress.value = 0
-    isIndeterminate.value = false
+    if (data.status === 'done') {
+      stopIntervals()
+      displayProgress.value = 100
+      isIndeterminate.value = false
+      status.value = 'done'
+      downloadUrl.value = getDownloadUrl(sessionId.value)
+      outputFileSize.value = data.file_size || null
+      toastStore.success('Konvertierung abgeschlossen!')
+      return true
+    }
+    if (data.status === 'error') {
+      stopIntervals()
+      status.value = 'error'
+      errorMessage.value = data.error
+      toastStore.error(data.error || 'Konvertierung fehlgeschlagen')
+      return true
+    }
+    return false
+  }
 
-    startProgressSimulation()
+  function failConnection() {
+    const toastStore = useToastStore()
+    stopIntervals()
+    status.value = 'error'
+    errorMessage.value = 'Statusabfrage fehlgeschlagen'
+    toastStore.error('Verbindung zum Server verloren')
+  }
 
-    pollingInterval = setInterval(async () => {
-      if (isCancelling.value) {
-        stopIntervals()
-        return
-      }
-
+  /** Fallback: Status pollen; die nächste Abfrage startet erst nach der Antwort. */
+  function startPolling() {
+    const pollOnce = async () => {
+      pollingTimer = null
+      if (isCancelling.value || status.value !== 'converting') return
       try {
         const res = await fetchStatus(sessionId.value, { signal: abortController?.signal })
-
-        lastBackendProgress.value = res.data.progress
-
-        if (res.data.status === 'done') {
-          stopIntervals()
-          displayProgress.value = 100
-          isIndeterminate.value = false
-          status.value = 'done'
-          downloadUrl.value = getDownloadUrl(sessionId.value)
-          outputFileSize.value = res.data.file_size || null
-          toastStore.success('Konvertierung abgeschlossen!')
-        } else if (res.data.status === 'error') {
-          stopIntervals()
-          status.value = 'error'
-          errorMessage.value = res.data.error
-          toastStore.error(res.data.error || 'Konvertierung fehlgeschlagen')
-        }
+        if (isCancelling.value || status.value !== 'converting') return
+        if (!applyStatus(res.data)) pollingTimer = setTimeout(pollOnce, 1000)
       } catch (err) {
         if (err.name === 'CanceledError' || err.name === 'AbortError' || isCancelling.value) {
           stopIntervals()
           return
         }
-
-        stopIntervals()
-        status.value = 'error'
-        errorMessage.value = 'Statusabfrage fehlgeschlagen'
-        toastStore.error('Verbindung zum Server verloren')
+        failConnection()
       }
-    }, 1000)
+    }
+    pollingTimer = setTimeout(pollOnce, 1000)
+  }
+
+  async function pollStatus() {
+    displayProgress.value = 0
+    lastBackendProgress.value = 0
+    isIndeterminate.value = false
+    queuePosition.value = 0
+
+    startProgressSimulation()
+
+    // Bevorzugt Server-Sent Events; bei Verbindungsproblemen auf Polling umschalten
+    closeEvents = subscribeStatus(sessionId.value, {
+      onStatus: (data) => {
+        if (!isCancelling.value && status.value === 'converting') applyStatus(data)
+      },
+      onGone: () => {
+        if (!isCancelling.value && status.value === 'converting') failConnection()
+      },
+      onError: () => {
+        if (closeEvents) {
+          closeEvents()
+          closeEvents = null
+        }
+        if (!isCancelling.value && status.value === 'converting' && !pollingTimer) startPolling()
+      },
+    })
+    if (!closeEvents) startPolling()
   }
 
   function cancel() {
@@ -357,6 +404,7 @@ export const useConverterStore = defineStore('converter', () => {
     displayProgress.value = 0
     lastBackendProgress.value = 0
     isIndeterminate.value = false
+    queuePosition.value = 0
     status.value = 'idle'
     sessionId.value = null
     downloadUrl.value = null
@@ -393,6 +441,7 @@ export const useConverterStore = defineStore('converter', () => {
     availableBitratesForFormat,
     isCancelling,
     isIndeterminate,
+    queuePosition,
     formattedUploadSpeed,
     formattedTimeRemaining,
     addFiles,

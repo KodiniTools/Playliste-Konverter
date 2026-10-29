@@ -9,7 +9,11 @@
 <template>
   <section class="rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
     <h3 class="mb-3 text-lg font-semibold text-ink sm:mb-4">
-      {{ store.status === 'uploading' ? t('conversion.uploading') : t('conversion.converting') }}
+      <template v-if="store.status === 'uploading'">{{ t('conversion.uploading') }}</template>
+      <template v-else-if="store.queuePosition > 0">
+        {{ t('conversion.queued', { position: store.queuePosition }) }}
+      </template>
+      <template v-else>{{ t('conversion.converting') }}</template>
     </h3>
 
     <div class="mb-2 flex items-center justify-between gap-2">

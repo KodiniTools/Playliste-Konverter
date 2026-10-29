@@ -64,6 +64,7 @@
   "conversion": {
     "uploading": "Uploading files...",
     "converting": "Converting...",
+    "queued": "Waiting in queue – position {position}",
     "progress": "Progress",
     "remaining": "Remaining",
     "cancel": "Cancel",

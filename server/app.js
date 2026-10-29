@@ -7,6 +7,7 @@
  *   POST /api/upload         – eine Datei pro Request (files[]), Session-basiert
  *   POST /api/convert        – startet die Konvertierung (session_id, format, bitrate)
  *   GET  /api/status/:id     – { status, progress, file_size?, error?, queue_position? }
+ *   GET  /api/events/:id     – dieselben Daten als Server-Sent Events, bis done/error
  *   GET  /api/download/:id   – liefert die fertige Datei und räumt die Session auf
  *   POST /api/cancel/:id     – bricht ab: ffmpeg beenden, Slot und Dateien freigeben
  *   GET  /health             – Health-Check für pm2/nginx
@@ -245,6 +246,19 @@ app.post('/api/convert', async (req, res) => {
 })
 
 // --- Status ---------------------------------------------------------------
+/** Status einer Session, wie ihn /status und /events ausliefern. */
+function statusPayload(session) {
+  const payload = {
+    status: session.status,
+    progress: session.progress || 0,
+    error: session.error || null,
+  }
+  if (session.fileSize != null) payload.file_size = session.fileSize
+  const queuePos = queuePosition(session.id)
+  if (queuePos > 0) payload.queue_position = queuePos
+  return payload
+}
+
 app.get('/api/status/:id', (req, res) => {
   const sessionId = req.params.id
   if (!isValidSessionId(sessionId)) {
@@ -254,16 +268,62 @@ app.get('/api/status/:id', (req, res) => {
   if (!session) {
     return res.status(404).json({ error: 'Session nicht gefunden' })
   }
+  return res.json(statusPayload(session))
+})
 
-  const response = {
-    status: session.status,
-    progress: session.progress || 0,
-    error: session.error || null,
+// --- Events (Server-Sent Events) -------------------------------------------
+const EVENT_INTERVAL = 500 // ms zwischen Zustandsprüfungen
+const HEARTBEAT_INTERVAL = 15_000 // ms, hält Proxys die Verbindung offen
+
+/**
+ * Schickt bei jeder Änderung ein "status"-Event (gleiche Daten wie /status).
+ * Endet nach done/error; verschwindet die Session (Abbruch), kommt ein
+ * "gone"-Event. Der Client fällt bei Verbindungsfehlern auf Polling zurück.
+ */
+app.get('/api/events/:id', (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID' })
   }
-  if (session.fileSize != null) response.file_size = session.fileSize
-  const queuePos = queuePosition(sessionId)
-  if (queuePos > 0) response.queue_position = queuePos
-  return res.json(response)
+  if (!sessions.has(sessionId)) {
+    return res.status(404).json({ error: 'Session nicht gefunden' })
+  }
+
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    // nginx: Antwort nicht puffern, Events sofort weitergeben
+    'X-Accel-Buffering': 'no',
+  })
+  res.flushHeaders()
+
+  let last = ''
+  const finish = () => {
+    clearInterval(ticker)
+    clearInterval(heartbeat)
+    res.end()
+  }
+  const tick = () => {
+    const session = sessions.get(sessionId)
+    if (!session) {
+      res.write('event: gone\ndata: {}\n\n')
+      return finish()
+    }
+    const data = JSON.stringify(statusPayload(session))
+    if (data !== last) {
+      last = data
+      res.write(`event: status\ndata: ${data}\n\n`)
+    }
+    if (session.status === 'done' || session.status === 'error') finish()
+  }
+  const ticker = setInterval(tick, EVENT_INTERVAL)
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), HEARTBEAT_INTERVAL)
+  req.on('close', () => {
+    clearInterval(ticker)
+    clearInterval(heartbeat)
+  })
+  tick()
 })
 
 // --- Download -------------------------------------------------------------

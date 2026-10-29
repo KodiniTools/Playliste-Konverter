@@ -395,6 +395,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 | `/api/convert` | POST | Konvertierung starten |
 | `/api/status/{session_id}` | GET | Fortschritt abfragen |
 | `/api/download/{session_id}` | GET | Konvertierte Datei herunterladen |
+| `/api/events/{session_id}` | GET | Status als Server-Sent Events (Polling nur noch als Fallback) |
 | `/api/cancel/{session_id}` | POST | Abbrechen: ffmpeg beenden, Dateien und Slot freigeben (auch beim Schließen des Tabs per `sendBeacon`) |
 
 ### Upload-Ablauf
@@ -407,7 +408,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 ### Konvertierungs-Ablauf
 
 - Bis zu 3 Konvertierungen parallel (`MAX_CONCURRENT`), weitere warten in einer In-Memory-Queue
-- Status-Polling alle 1 Sekunde
+- Status per Server-Sent Events, Fallback: Polling (nächste Abfrage erst nach der Antwort)
 - Fortschritt wird aus FFmpeg-Log berechnet
 
 ---
