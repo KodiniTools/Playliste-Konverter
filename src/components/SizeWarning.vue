@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { computed } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useI18n } from 'vue-i18n'
@@ -34,7 +34,7 @@
     if (store.files.length === 0) return null
     if (store.isOverSizeLimit) {
       return {
-        icon: 'error',
+        icon: 'error' as const,
         role: 'alert',
         edgeClass: 'border-l-danger',
         titleKey: 'sizeWarning.title',
@@ -44,7 +44,7 @@
     }
     if (isOrangeWarning.value) {
       return {
-        icon: 'pending',
+        icon: 'pending' as const,
         role: 'status',
         edgeClass: 'border-l-warning',
         titleKey: 'sizeOrangeWarning.title',
@@ -54,7 +54,7 @@
     }
     if (isYellowWarning.value) {
       return {
-        icon: 'info',
+        icon: 'info' as const,
         role: 'status',
         edgeClass: 'border-l-info',
         titleKey: 'sizeYellowWarning.title',
@@ -63,7 +63,7 @@
       }
     }
     return {
-      icon: 'success',
+      icon: 'success' as const,
       role: 'status',
       edgeClass: 'border-l-success',
       titleKey: 'sizeOk.title',

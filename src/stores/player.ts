@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { useConverterStore } from './converter'
+import { useConverterStore, type PlaylistItem } from './converter'
 import { useToastStore } from './toast'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
+import { errorName } from '../utils/errors'
 
 /**
  * Zentraler Audio-Player-Store.
@@ -24,7 +25,7 @@ export const usePlayerStore = defineStore('player', () => {
   const toast = useToastStore()
 
   // Der aktuell geladene/ausgewählte Track (ID) und Wiedergabe-Status
-  const currentId = ref(null)
+  const currentId = ref<number | null>(null)
   const isPlaying = ref(false)
   const progress = ref(0) // aktuelle Position in Sekunden
   const duration = ref(0) // Gesamtlänge in Sekunden
@@ -34,8 +35,8 @@ export const usePlayerStore = defineStore('player', () => {
   const volume = ref(normalizeVolume(readPref('playerVolume')))
 
   // Nicht-reaktives Audio-Element (einmal erzeugt) + Object-URL-Cache
-  let audioElement = null
-  const audioObjectUrls = new Map()
+  let audioElement: HTMLAudioElement | null = null
+  const audioObjectUrls = new Map<number, string>()
 
   // Zählt Ladevorgänge hoch; Fehler älterer Ladevorgänge werden ignoriert
   let loadToken = 0
@@ -47,11 +48,13 @@ export const usePlayerStore = defineStore('player', () => {
 
   const hasTrack = computed(() => currentTrack.value !== null)
 
-  function getAudioUrl(item) {
-    if (!audioObjectUrls.has(item.id)) {
-      audioObjectUrls.set(item.id, URL.createObjectURL(item.file))
+  function getAudioUrl(item: PlaylistItem): string {
+    let url = audioObjectUrls.get(item.id)
+    if (url === undefined) {
+      url = URL.createObjectURL(item.file)
+      audioObjectUrls.set(item.id, url)
     }
-    return audioObjectUrls.get(item.id)
+    return url
   }
 
   function hasSource() {
@@ -69,7 +72,7 @@ export const usePlayerStore = defineStore('player', () => {
     )
   }
 
-  function reportError(token, key, params) {
+  function reportError(token: number, key: string, params: Record<string, unknown> = {}) {
     if (reportedErrorToken === token) return
     reportedErrorToken = token
     toast.error(i18n.global.t(key, params))
@@ -109,18 +112,19 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /** play() starten und ein abgelehntes Promise sauber behandeln. */
-  function startPlayback(token) {
+  function startPlayback(token: number) {
     const audio = audioElement
+    if (!audio) return
     const trackName = currentTrack.value?.name ?? ''
     isPlaying.value = true // sofortiges Feedback; Events/Promise korrigieren
 
-    const onRejected = (err) => {
+    const onRejected = (err: unknown) => {
       // Ein neuerer Track hat übernommen oder src/pause hat play() abgelöst
-      if (token !== loadToken || err?.name === 'AbortError') return
+      if (token !== loadToken || errorName(err) === 'AbortError') return
       // Wiedergabe ist gescheitert: Element anhalten, damit Zustand und Anzeige stimmen
       if (!audio.paused) audio.pause()
       isPlaying.value = false
-      if (err?.name === 'NotAllowedError') {
+      if (errorName(err) === 'NotAllowedError') {
         reportError(token, 'player.playBlocked')
       } else {
         reportError(token, 'player.playError', { name: trackName })
@@ -140,7 +144,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /** Lädt einen Track in das (einzige) Audio-Element und startet sofort. */
-  function load(item) {
+  function load(item: PlaylistItem) {
     const audio = getAudio()
     const token = ++loadToken
 
@@ -158,7 +162,7 @@ export const usePlayerStore = defineStore('player', () => {
    * - Ist er pausiert/ausgewählt: fortsetzen.
    * - Sonst (anderer Track, auch während einer Wiedergabe): sofort wechseln und abspielen.
    */
-  function toggle(item) {
+  function toggle(item: PlaylistItem) {
     if (currentId.value === item.id && hasSource()) {
       if (isPlaying.value) {
         pause()
@@ -174,7 +178,8 @@ export const usePlayerStore = defineStore('player', () => {
   function togglePlayPause() {
     if (!currentTrack.value) {
       // Nichts geladen: ersten Track der Playlist starten
-      if (converter.files.length > 0) load(converter.files[0])
+      const first = converter.files[0]
+      if (first) load(first)
       return
     }
     if (!hasSource()) {
@@ -214,14 +219,14 @@ export const usePlayerStore = defineStore('player', () => {
     duration.value = 0
   }
 
-  function seek(time) {
+  function seek(time: number) {
     if (audioElement && Number.isFinite(time)) {
       audioElement.currentTime = time
       progress.value = time
     }
   }
 
-  function setVolume(value) {
+  function setVolume(value: number) {
     const safe = normalizeVolume(value, volume.value)
     volume.value = safe
     writePref('playerVolume', safe)
@@ -231,16 +236,18 @@ export const usePlayerStore = defineStore('player', () => {
   /** Wechselt zum nächsten Track. Gibt false zurück, wenn keiner folgt. */
   function next() {
     const idx = currentIndex.value
-    if (idx === -1 || idx >= converter.files.length - 1) return false
-    load(converter.files[idx + 1])
+    const following = idx === -1 ? undefined : converter.files[idx + 1]
+    if (!following) return false
+    load(following)
     return true
   }
 
   /** Wechselt zum vorherigen Track. Gibt false zurück, wenn keiner davor liegt. */
   function previous() {
     const idx = currentIndex.value
-    if (idx <= 0) return false
-    load(converter.files[idx - 1])
+    const preceding = idx <= 0 ? undefined : converter.files[idx - 1]
+    if (!preceding) return false
+    load(preceding)
     return true
   }
 
@@ -292,7 +299,7 @@ export const DEFAULT_VOLUME = 0.7
  * Lautstärke auf den gültigen Bereich 0-1 bringen. Ungültige oder fremde Werte
  * (z. B. 80 aus einem anderen Tool) → Fallback; 0 (stumm) bleibt erhalten.
  */
-export function normalizeVolume(value, fallback = DEFAULT_VOLUME) {
-  const n = typeof value === 'number' ? value : parseFloat(value)
+export function normalizeVolume(value: unknown, fallback = DEFAULT_VOLUME): number {
+  const n = typeof value === 'number' ? value : parseFloat(String(value))
   return Number.isFinite(n) && n >= 0 && n <= 1 ? n : fallback
 }

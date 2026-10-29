@@ -1,19 +1,15 @@
-<script setup>
+<script setup lang="ts">
   import { computed } from 'vue'
 
   /**
    * Status-Glyphe (Outline, 24er Viewbox, Strich 2) in der Statusfarbe der Tokens.
    * Ersetzt die früheren Unicode-Zeichen (✓ ✕ ⚠ ℹ) in Toasts, Banner und Warnungen.
    */
-  const props = defineProps({
-    type: {
-      type: String,
-      default: 'info',
-      validator: (value) => ['success', 'error', 'warning', 'info', 'pending'].includes(value),
-    },
-  })
+  type StatusIconType = 'success' | 'error' | 'warning' | 'info' | 'pending'
 
-  const PATHS = {
+  const props = withDefaults(defineProps<{ type?: StatusIconType }>(), { type: 'info' })
+
+  const PATHS: Record<StatusIconType, string> = {
     success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
     error:
       'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
@@ -22,7 +18,7 @@
     info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   }
 
-  const COLORS = {
+  const COLORS: Record<StatusIconType, string> = {
     success: 'text-success',
     error: 'text-danger',
     warning: 'text-warning',

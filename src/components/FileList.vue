@@ -1,5 +1,5 @@
-<script setup>
-  import { useConverterStore } from '../stores/converter'
+<script setup lang="ts">
+  import { useConverterStore, type PlaylistItem } from '../stores/converter'
   import { usePlayerStore } from '../stores/player'
   import { useI18n } from 'vue-i18n'
   import { formatBytes } from '../utils/format'
@@ -8,13 +8,13 @@
   const player = usePlayerStore()
   const { t } = useI18n()
 
-  let draggedIndex = null
+  let draggedIndex: number | null = null
 
-  function onDragStart(e, index) {
+  function onDragStart(_e: DragEvent, index: number) {
     draggedIndex = index
   }
 
-  function onDragOver(e, index) {
+  function onDragOver(e: DragEvent, index: number) {
     e.preventDefault()
     if (draggedIndex !== null && draggedIndex !== index) {
       store.moveFile(draggedIndex, index)
@@ -26,11 +26,11 @@
     draggedIndex = null
   }
 
-  function isActive(item) {
+  function isActive(item: PlaylistItem) {
     return player.currentId === item.id
   }
 
-  function handleRemoveFile(id) {
+  function handleRemoveFile(id: number) {
     // Wiedergabe/URL-Cleanup übernimmt der Player-Store per Watcher
     store.removeFile(id)
   }

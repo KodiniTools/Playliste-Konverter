@@ -1,6 +1,6 @@
 /**
  * Texte versprechen nur, was der Code durchsetzt: keine Dateianzahl (es gibt
- * keine), das Gesamtlimit aus constants.js.
+ * keine), das Gesamtlimit aus constants.ts.
  */
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'

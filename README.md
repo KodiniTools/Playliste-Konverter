@@ -17,9 +17,9 @@ oder OGG/Vorbis), live unter <https://kodinitools.com/playlistkonverter/>.
 
 ### Frontend
 
-- Vue 3 (Composition API, `<script setup>`), Pinia, vue-i18n
+- Vue 3 (Composition API, `<script setup lang="ts">`), TypeScript (strict), Pinia, vue-i18n
 - Tailwind CSS 4 auf den KodiniTools-Tokens v2 (`--ds-*`, siehe `src/design-system/README.md`)
-- Axios, Vite, Vitest + Vue Test Utils, ESLint + Prettier
+- fetch (Axios nur für den Upload-Fortschritt), Vite, Vitest + Vue Test Utils, ESLint + Prettier
 
 ### Server (`server/`)
 
@@ -41,6 +41,7 @@ npm test               # App-Tests (Vitest)
 npm run test:server    # Server-Tests (node --test)
 npm run build
 npm run lint
+npm run typecheck      # vue-tsc
 npm run format:check
 ```
 
@@ -58,7 +59,7 @@ Playliste-Konverter/
 ├── index.html, faq.html, funktion.html   # Statische Seiten (Landing, FAQ, Anleitung)
 ├── app.html                              # Einstieg der Vue-App
 ├── src/
-│   ├── api/converter.js                  # Upload, Convert, Status, Download-URL
+│   ├── api/converter.ts                  # Upload, Convert, Status, Download-URL
 │   ├── components/                       # Vue-Komponenten
 │   ├── stores/                           # converter, player, toast, ui (Pinia)
 │   ├── design-system/                    # Tokens v2 (CSS/JSON/JS)
@@ -89,7 +90,7 @@ Einmalige Einrichtung, Einzelschritte, Variablen und Diagnose: [`DEPLOY.md`](DEP
 
 | Limit                   | Wert   | Durchgesetzt in                                 |
 | ----------------------- | ------ | ----------------------------------------------- |
-| Größe pro Playlist      | 5 GB   | App (`src/constants.js`) und Server (413)       |
+| Größe pro Playlist      | 5 GB   | App (`src/constants.ts`) und Server (413)       |
 | Größe pro Datei         | 500 MB | Server (413)                                    |
 | Freie Platzreserve      | 20 GB  | Server (507 bei Unterschreitung)                |
 | Parallele Konvertierung | 3      | Server (weitere Jobs warten in der Queue)       |

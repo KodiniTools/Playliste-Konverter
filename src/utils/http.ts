@@ -4,13 +4,11 @@
  * damit uploadErrorMessage() beide Quellen gleich behandelt.
  */
 
-/** HTTP-Fehler mit Antwort (Status ≥ 400). */
+/** HTTP-Fehler mit Antwort (Status ≥ 400); `data` ist der JSON-Body oder Text der Antwort. */
 export class HttpError extends Error {
-  /**
-   * @param {number} status
-   * @param {unknown} data  JSON-Body oder Text der Antwort
-   */
-  constructor(status, data) {
+  readonly response: { status: number; data: unknown }
+
+  constructor(status: number, data: unknown) {
     super(`Request failed with status code ${status}`)
     this.name = 'HttpError'
     this.response = { status, data }
@@ -20,16 +18,17 @@ export class HttpError extends Error {
 /**
  * Signal, das bei Abbruch von außen ODER nach `ms` auslöst. Abbruch von außen
  * behält den Grund (AbortError), der Timeout meldet sich als TimeoutError.
- * @param {AbortSignal | undefined} signal
- * @param {number} ms
  */
-export function withTimeout(signal, ms) {
+export function withTimeout(
+  signal: AbortSignal | undefined,
+  ms: number,
+): { signal: AbortSignal; cleanup: () => void } {
   const controller = new AbortController()
   const timer = setTimeout(
     () => controller.abort(new DOMException('Zeitüberschreitung', 'TimeoutError')),
     ms,
   )
-  const onAbort = () => controller.abort(signal.reason)
+  const onAbort = () => controller.abort(signal?.reason)
   if (signal) {
     if (signal.aborted) onAbort()
     else signal.addEventListener('abort', onAbort, { once: true })
@@ -41,13 +40,21 @@ export function withTimeout(signal, ms) {
   return { signal: controller.signal, cleanup }
 }
 
+export interface RequestJsonOptions {
+  method?: string
+  body?: unknown
+  timeout: number
+  signal?: AbortSignal
+}
+
 /**
- * JSON-Anfrage. Liefert `{ data }` wie axios.
- * @param {string} url
- * @param {{ method?: string, body?: unknown, timeout: number, signal?: AbortSignal }} options
- * @returns {Promise<{ data: any }>}
+ * JSON-Anfrage. Liefert `{ data }` wie axios. Der Typparameter beschreibt die
+ * erwartete Antwort; geprüft wird sie nicht.
  */
-export async function requestJson(url, { method = 'GET', body, timeout, signal }) {
+export async function requestJson<T = unknown>(
+  url: string,
+  { method = 'GET', body, timeout, signal }: RequestJsonOptions,
+): Promise<{ data: T }> {
   const { signal: combined, cleanup } = withTimeout(signal, timeout)
   try {
     const res = await fetch(url, {
@@ -57,14 +64,14 @@ export async function requestJson(url, { method = 'GET', body, timeout, signal }
       body: body === undefined ? undefined : JSON.stringify(body),
     })
     const text = await res.text()
-    let data = text
+    let data: unknown = text
     try {
       data = text ? JSON.parse(text) : null
     } catch {
       // kein JSON (z. B. nginx-Fehlerseite) – Text bleibt erhalten
     }
     if (!res.ok) throw new HttpError(res.status, data)
-    return { data }
+    return { data: data as T }
   } finally {
     cleanup()
   }

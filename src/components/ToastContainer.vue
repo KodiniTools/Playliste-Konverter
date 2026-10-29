@@ -1,20 +1,20 @@
-<script setup>
+<script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import { useToastStore } from '../stores/toast'
+  import { useToastStore, type ToastType } from '../stores/toast'
   import StatusIcon from './StatusIcon.vue'
 
   const toastStore = useToastStore()
   const { t } = useI18n()
 
   // Status als 3-px-Kante links plus Icon und Text, nie als Flächenfüllung
-  const EDGE_CLASSES = {
+  const EDGE_CLASSES: Record<ToastType, string> = {
     success: 'border-l-success',
     error: 'border-l-danger',
     warning: 'border-l-warning',
     info: 'border-l-info',
   }
 
-  function edgeClass(type) {
+  function edgeClass(type: ToastType) {
     return EDGE_CLASSES[type] ?? EDGE_CLASSES.info
   }
 </script>

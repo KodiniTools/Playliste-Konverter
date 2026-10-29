@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useConverterStore } from '../stores/converter'
@@ -25,12 +25,12 @@
 
   const outputFormat = computed({
     get: () => store.outputFormat,
-    set: (value) => store.setOutputFormat(value),
+    set: (value: string | number) => store.setOutputFormat(String(value)),
   })
 
   const bitrate = computed({
     get: () => store.bitrate,
-    set: (value) => store.setBitrate(value),
+    set: (value: string | number) => store.setBitrate(Number(value)),
   })
 </script>
 

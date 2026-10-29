@@ -66,7 +66,7 @@ Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
 **Limits:**
 - Maximale Dateigröße pro Datei: 500 MB (Server, `server/server.js`)
 - Anzahl Dateien: nicht begrenzt (nur Gesamtgröße zählt)
-- Maximale Gesamtgröße: 5 GB (`MAX_PLAYLIST_SIZE` in `src/constants.js`)
+- Maximale Gesamtgröße: 5 GB (`MAX_PLAYLIST_SIZE` in `src/constants.ts`)
 
 > **Hinweis:** Nach dem Hochladen erscheint eine Bestätigung: "X Dateien hinzugefügt"
 
@@ -298,14 +298,15 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 │   │   ├── SettingsSwitcher.vue  # Theme/Sprache-Umschalter
 │   │   └── ToastContainer.vue    # Benachrichtigungen
 │   ├── stores/                   # Pinia State Management
-│   │   ├── converter.js          # Haupt-Konvertierungslogik
-│   │   ├── ui.js                 # Theme & Locale mit LocalStorage
-│   │   └── toast.js              # Toast-Benachrichtigungen
+│   │   ├── converter.ts          # Haupt-Konvertierungslogik
+│   │   ├── ui.ts                 # Theme & Locale mit LocalStorage
+│   │   └── toast.ts              # Toast-Benachrichtigungen
 │   ├── i18n/                     # Internationalisierung
-│   │   └── index.js              # DE/EN Übersetzungen
+│   │   ├── index.ts              # vue-i18n-Setup
+│   │   └── locales/              # DE/EN-Übersetzungen (JSON)
 │   ├── App.vue                   # Root-Komponente
-│   ├── main.js                   # App-Initialisierung
-│   ├── config.js                 # API Base URL
+│   ├── main.ts                   # App-Initialisierung
+│   ├── config.ts                 # API Base URL
 │   └── style.css                 # Globale Styles
 │
 ├── server/                       # Node-Konvertierungsdienst

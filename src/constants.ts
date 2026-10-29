@@ -21,6 +21,14 @@ export const SIZE_THRESHOLD_ORANGE = 4 * 1024 * 1024 * 1024 // 4 GB
 // gemeinsamen IndexedDB, wenn er mit ?source=playlistkonverter geöffnet wird.
 export const MUSIC_PLAYER_SHARE_URL = '/ultimativer-musikplayer/app/?source=playlistkonverter'
 
+export interface OutputFormatConfig {
+  extension: string
+  label: string
+  description: string
+  maxBitrate: number
+  mimeType: string
+}
+
 export const OUTPUT_FORMATS = {
   webm: {
     extension: 'webm',
@@ -43,10 +51,23 @@ export const OUTPUT_FORMATS = {
     maxBitrate: 320,
     mimeType: 'audio/ogg',
   },
+} satisfies Record<string, OutputFormatConfig>
+
+export type OutputFormatId = keyof typeof OUTPUT_FORMATS
+
+/** Prüft, ob ein (z. B. gespeicherter) Wert ein bekanntes Ausgabeformat ist. */
+export function isOutputFormat(value: unknown): value is OutputFormatId {
+  return typeof value === 'string' && Object.hasOwn(OUTPUT_FORMATS, value)
 }
 
 // Verfügbare Bitraten
-export const AVAILABLE_BITRATES = [
+export interface BitrateOption {
+  value: number
+  label: string
+  description: string
+}
+
+export const AVAILABLE_BITRATES: readonly BitrateOption[] = [
   { value: 64, label: '64 kbps', description: 'Niedrig' },
   { value: 128, label: '128 kbps', description: 'Standard' },
   { value: 192, label: '192 kbps', description: 'Hoch' },

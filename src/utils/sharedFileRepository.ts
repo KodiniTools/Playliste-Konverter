@@ -12,11 +12,20 @@ const DB_NAME = 'kodinitools-shared-files'
 const STORE_NAME = 'audio-files'
 const DB_VERSION = 1
 
-function openDB() {
+/** Eintrag im gemeinsamen Store (Schema der KodiniTools-Apps). */
+export interface SharedFileRecord {
+  id?: number
+  blob: Blob
+  name: string
+  mimeType: string
+  createdAt: number
+}
+
+function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result
+    request.onupgradeneeded = () => {
+      const db = request.result
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
       }
@@ -26,12 +35,12 @@ function openDB() {
   })
 }
 
-export async function getSharedFiles() {
+export async function getSharedFiles(): Promise<SharedFileRecord[]> {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, 'readonly')
-  const request = tx.objectStore(STORE_NAME).getAll()
+  const request = tx.objectStore(STORE_NAME).getAll() as IDBRequest<SharedFileRecord[]>
 
-  return new Promise((resolve, reject) => {
+  return new Promise<SharedFileRecord[]>((resolve, reject) => {
     request.onsuccess = () => {
       db.close()
       resolve(request.result)
@@ -43,12 +52,12 @@ export async function getSharedFiles() {
   })
 }
 
-export async function clearSharedFiles() {
+export async function clearSharedFiles(): Promise<void> {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, 'readwrite')
   tx.objectStore(STORE_NAME).clear()
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => {
       db.close()
       resolve()
@@ -63,9 +72,10 @@ export async function clearSharedFiles() {
 /**
  * Replace the store's contents with the given files in one transaction,
  * so the receiving tool only picks up what was handed over just now.
- * @param {{ blob: Blob, name: string, mimeType?: string }[]} records
  */
-export async function replaceSharedFiles(records) {
+export async function replaceSharedFiles(
+  records: { blob: Blob; name: string; mimeType?: string }[],
+): Promise<void> {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, 'readwrite')
   const store = tx.objectStore(STORE_NAME)
@@ -74,7 +84,7 @@ export async function replaceSharedFiles(records) {
     store.add({ blob, name, mimeType: mimeType || blob.type, createdAt: Date.now() })
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => {
       db.close()
       resolve()

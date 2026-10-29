@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { computed, ref, onBeforeUnmount } from 'vue'
   import { useConverterStore } from '../stores/converter'
   import { useToastStore } from '../stores/toast'
@@ -6,6 +6,7 @@
   import { formatBytes } from '../utils/format'
   import { OUTPUT_FORMATS, MUSIC_PLAYER_SHARE_URL } from '../constants'
   import { replaceSharedFiles } from '../utils/sharedFileRepository'
+  import { errorName } from '../utils/errors'
   import StatusIcon from './StatusIcon.vue'
   import { logger } from '../utils/logger'
 
@@ -17,14 +18,19 @@
   // Einmal geladen, wird die Datei deshalb hier zwischengespeichert, damit
   // Download und Weitergabe an den Musikplayer beide (in beliebiger
   // Reihenfolge) funktionieren.
-  let outputBlob = null
-  let outputBlobPromise = null
-  let objectUrl = null
+  let outputBlob: Blob | null = null
+  let outputBlobPromise: Promise<Blob> | null = null
+  let objectUrl: string | null = null
 
-  function fetchOutputBlob() {
+  /** Download-URL der fertigen Datei (die Komponente erscheint erst im Status done). */
+  function downloadUrl(): string {
+    return store.downloadUrl ?? ''
+  }
+
+  function fetchOutputBlob(): Promise<Blob> {
     if (outputBlob) return Promise.resolve(outputBlob)
     if (!outputBlobPromise) {
-      outputBlobPromise = fetch(store.downloadUrl)
+      outputBlobPromise = fetch(downloadUrl())
         .then((response) => {
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
           return response.blob()
@@ -40,8 +46,8 @@
     return outputBlobPromise
   }
 
-  function downloadCachedBlob(filename) {
-    if (!objectUrl) objectUrl = URL.createObjectURL(outputBlob)
+  function downloadCachedBlob(blob: Blob, filename: string) {
+    if (!objectUrl) objectUrl = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = objectUrl
     link.download = filename
@@ -55,7 +61,7 @@
   })
 
   const currentFormat = computed(() => store.outputFormat || 'mp3')
-  const formatConfig = computed(() => OUTPUT_FORMATS[currentFormat.value] || OUTPUT_FORMATS.mp3)
+  const formatConfig = computed(() => OUTPUT_FORMATS[currentFormat.value] ?? OUTPUT_FORMATS.mp3)
 
   async function handleDownload() {
     const config = formatConfig.value
@@ -63,7 +69,7 @@
 
     try {
       // Prüfe ob File System Access API verfügbar ist
-      if ('showSaveFilePicker' in window) {
+      if (window.showSaveFilePicker) {
         // Moderne Browser: Zeige "Speichern unter"-Dialog
         const fileHandle = await window.showSaveFilePicker({
           suggestedName: filename,
@@ -86,18 +92,18 @@
         logger.info('Datei gespeichert')
       } else if (outputBlob) {
         // Datei wurde bereits für den Musikplayer geladen – Session ist evtl. schon weg
-        downloadCachedBlob(filename)
+        downloadCachedBlob(outputBlob, filename)
       } else {
         // Fallback für ältere Browser
-        window.location.href = store.downloadUrl
+        window.location.href = downloadUrl()
       }
     } catch (err) {
       // Benutzer hat den Dialog abgebrochen oder Fehler aufgetreten
-      if (err.name !== 'AbortError') {
+      if (errorName(err) !== 'AbortError') {
         logger.error('Download fehlgeschlagen:', err)
         // Fallback bei Fehler
-        if (outputBlob) downloadCachedBlob(filename)
-        else window.location.href = store.downloadUrl
+        if (outputBlob) downloadCachedBlob(outputBlob, filename)
+        else window.location.href = downloadUrl()
       }
     }
   }

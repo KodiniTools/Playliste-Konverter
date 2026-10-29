@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
   import { useConverterStore } from './stores/converter'
   import { useUIStore } from './stores/ui'
@@ -32,17 +32,16 @@
   )
 
   // --- source=audionormalizer receiver ---
-  const sharedBanner = ref(null)
+  type BannerType = 'success' | 'error' | 'warning' | 'info'
+  const sharedBanner = ref<{ type: BannerType; message: string } | null>(null)
 
-  const BANNER_EDGE_CLASSES = {
+  const BANNER_EDGE_CLASSES: Record<BannerType, string> = {
     success: 'border-l-success',
     error: 'border-l-danger',
     warning: 'border-l-warning',
     info: 'border-l-info',
   }
-  const bannerEdgeClass = computed(
-    () => BANNER_EDGE_CLASSES[sharedBanner.value?.type] ?? BANNER_EDGE_CLASSES.info,
-  )
+  const bannerEdgeClass = computed(() => BANNER_EDGE_CLASSES[sharedBanner.value?.type ?? 'info'])
   let sharedHandled = false
 
   async function loadSharedFiles() {

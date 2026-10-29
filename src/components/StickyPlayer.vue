@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
   import { computed } from 'vue'
   import { usePlayerStore } from '../stores/player'
   import { useConverterStore } from '../stores/converter'
@@ -24,12 +24,12 @@
     return `${player.currentIndex + 1} / ${converter.files.length}`
   })
 
-  function onSeek(e) {
-    player.seek(parseFloat(e.target.value))
+  function onSeek(e: Event) {
+    player.seek(parseFloat((e.target as HTMLInputElement).value))
   }
 
-  function onVolume(e) {
-    player.setVolume(parseFloat(e.target.value))
+  function onVolume(e: Event) {
+    player.setVolume(parseFloat((e.target as HTMLInputElement).value))
   }
 </script>
 
