@@ -15,11 +15,13 @@
   const { t } = useI18n()
 
   // Der Server löscht die Session nach dem ersten vollständigen Download.
-  // Einmal geladen, wird die Datei deshalb hier zwischengespeichert, damit
-  // Download und Weitergabe an den Musikplayer beide (in beliebiger
-  // Reihenfolge) funktionieren.
+  // Einmal geladen, wird die Datei deshalb hier vorgehalten, damit Download
+  // und Weitergabe an den Musikplayer beide (in beliebiger Reihenfolge)
+  // funktionieren. Nach dem Speichern per Dateidialog ist das die gespeicherte
+  // Datei auf der Festplatte (File), kein Puffer im Arbeitsspeicher.
   let outputBlob: Blob | null = null
   let outputBlobPromise: Promise<Blob> | null = null
+  let savingPromise: Promise<void> | null = null
   let objectUrl: string | null = null
 
   /** Download-URL der fertigen Datei (die Komponente erscheint erst im Status done). */
@@ -27,7 +29,14 @@
     return store.downloadUrl ?? ''
   }
 
-  function fetchOutputBlob(): Promise<Blob> {
+  /** Ausgabe für die Weitergabe; läuft gerade das Speichern, dessen Ergebnis nutzen. */
+  async function fetchOutputBlob(): Promise<Blob> {
+    if (savingPromise) await savingPromise.catch(() => {})
+    return loadOutputBlob()
+  }
+
+  /** Ausgabe als Blob (einmal geladen, danach aus dem Zwischenspeicher). */
+  function loadOutputBlob(): Promise<Blob> {
     if (outputBlob) return Promise.resolve(outputBlob)
     if (!outputBlobPromise) {
       outputBlobPromise = fetch(downloadUrl())
@@ -44,6 +53,30 @@
         })
     }
     return outputBlobPromise
+  }
+
+  /**
+   * Fertige Datei in die gewählte Datei schreiben. Ist sie noch nicht geladen,
+   * fließt sie direkt vom Server auf die Festplatte (F10: auch mehrere GB ohne
+   * kompletten Puffer im Arbeitsspeicher).
+   */
+  async function saveToHandle(fileHandle: FileSystemFileHandle) {
+    const writable = await fileHandle.createWritable()
+    try {
+      if (outputBlob || outputBlobPromise) {
+        await writable.write(await loadOutputBlob())
+        await writable.close()
+        return
+      }
+      const response = await fetch(downloadUrl())
+      if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`)
+      // pipeTo schließt die Datei bei Erfolg und bricht sie bei Fehlern ab
+      await response.body.pipeTo(writable)
+      outputBlob = await fileHandle.getFile()
+    } catch (err) {
+      await writable.abort().catch(() => {})
+      throw err
+    }
   }
 
   function downloadCachedBlob(blob: Blob, filename: string) {
@@ -81,13 +114,12 @@
           ],
         })
 
-        // Lade die Datei vom Backend (bzw. aus dem Zwischenspeicher)
-        const blob = await fetchOutputBlob()
-
-        // Schreibe in die ausgewählte Datei
-        const writable = await fileHandle.createWritable()
-        await writable.write(blob)
-        await writable.close()
+        savingPromise = saveToHandle(fileHandle)
+        try {
+          await savingPromise
+        } finally {
+          savingPromise = null
+        }
 
         logger.info('Datei gespeichert')
       } else if (outputBlob) {
