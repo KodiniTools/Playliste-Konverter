@@ -18,6 +18,7 @@
 - Zweisprachige Oberfläche (Deutsch/Englisch)
 - Dark Mode-Unterstützung
 - File System Access API für modernen Download-Dialog
+- Weitergabe der fertigen Playlist an den Ultimativen Musikplayer (gemeinsame IndexedDB, `?source=playlistkonverter`)
 - LocalStorage-Persistierung für Einstellungen
 
 ---

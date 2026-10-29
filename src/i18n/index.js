@@ -80,6 +80,10 @@ const messages = {
       newConversion: 'Neue Konvertierung starten',
       promptText: 'Bitte geben Sie den Dateinamen ein:',
       error: 'Download fehlgeschlagen. Bitte versuchen Sie es erneut.',
+      shareToPlayer: 'An Ultimativen Musikplayer weitergeben',
+      sharing: 'Wird übergeben …',
+      shareError:
+        'Weitergabe an den Musikplayer fehlgeschlagen. Bitte die Datei herunterladen oder neu konvertieren.',
     },
     button: {
       convert: 'Track(s) konvertieren',
@@ -201,6 +205,10 @@ const messages = {
       newConversion: 'Start new conversion',
       promptText: 'Please enter the filename:',
       error: 'Download failed. Please try again.',
+      shareToPlayer: 'Send to Ultimate Music Player',
+      sharing: 'Sending …',
+      shareError:
+        'Could not send the playlist to the music player. Please download the file or convert again.',
     },
     button: {
       convert: 'Convert track(s)',

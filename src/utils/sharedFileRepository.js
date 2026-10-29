@@ -4,6 +4,8 @@
  * Normalizer writes normalised audio blobs here; receiving tools
  * read from the same store when opened with ?source=audionormalizer.
  * Audiokonverter uses the same store with ?source=audiokonverter.
+ * The Playliste-Konverter writes its finished playlist here for the
+ * Ultimativer Musikplayer (?source=playlistkonverter).
  */
 
 const DB_NAME = 'kodinitools-shared-files'
@@ -52,6 +54,36 @@ export async function clearSharedFiles() {
       resolve()
     }
     tx.onerror = () => {
+      db.close()
+      reject(tx.error)
+    }
+  })
+}
+
+/**
+ * Replace the store's contents with the given files in one transaction,
+ * so the receiving tool only picks up what was handed over just now.
+ * @param {{ blob: Blob, name: string, mimeType?: string }[]} records
+ */
+export async function replaceSharedFiles(records) {
+  const db = await openDB()
+  const tx = db.transaction(STORE_NAME, 'readwrite')
+  const store = tx.objectStore(STORE_NAME)
+  store.clear()
+  for (const { blob, name, mimeType } of records) {
+    store.add({ blob, name, mimeType: mimeType || blob.type, createdAt: Date.now() })
+  }
+
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+    tx.onerror = () => {
+      db.close()
+      reject(tx.error)
+    }
+    tx.onabort = () => {
       db.close()
       reject(tx.error)
     }
