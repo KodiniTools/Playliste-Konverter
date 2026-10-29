@@ -30,15 +30,15 @@ SSI-Navigation `data-theme` direkt, übernimmt der Store das per `MutationObserv
 
 ## Einbindung
 
-- **App (`app.html`):** `src/style.css` importiert `tailwindcss/base`, dann `styles/foundation.css`,
-  dann `tailwindcss/components` und `tailwindcss/utilities`. So steht die Body-Regel wie im
-  Collage Maker nach dem Preflight.
+- **App (`app.html`):** `src/style.css` (Tailwind 4) importiert Theme und Preflight, dann
+  `styles/foundation.css` ohne Cascade-Layer, dann die Utilities. So steht die Body-Regel wie im
+  Collage Maker nach dem Preflight, und die Partial-Regeln schlagen das CSS der SSI-Partials.
 - **Infoseiten (`index.html`, `faq.html`, `funktion.html`):** laden `src/landing/landing.css`
   (Grundlage + Seitenstyles, ohne Tailwind) und haben dasselbe Pre-Paint-Skript sowie dieselbe
   Theme-Synchronisierung wie die App. Der Seiteninhalt liegt jeweils in
   `<main id="app" class="landing">`; die aktuelle Unterseite trägt `aria-current="page"`.
-- Tailwind scannt nur `app.html` und `src/**/*.{vue,js}` ohne Testdateien, damit Klassen-Strings
-  aus Tests keine Utilities erzeugen.
+- Tailwind scannt nur `app.html` und `src/**/*.{vue,js}` ohne Testdateien (`@source` in
+  `src/style.css`), damit Klassen-Strings aus Tests keine Utilities erzeugen.
 
 ## SSI-Partials
 
@@ -51,7 +51,8 @@ Cookie-Banner unverändert und immer oben (`z-index: 10000`).
 ## Tailwind-Brücke
 
 Tailwind bleibt als Utility-Schicht für Layout. Farben, Radien, Schatten und Dauern kommen aus den
-Tokens (`tailwind.config.js`), es gibt keine `dark:`-Varianten mehr:
+Tokens (`@theme` in `src/style.css`; die Standard-Skalen von Tailwind sind dort auf `initial`
+gesetzt), es gibt keine `dark:`-Varianten mehr:
 
 | Rolle                        | Klasse                                                                                                          | Variable                                  |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |

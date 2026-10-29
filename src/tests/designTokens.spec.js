@@ -19,7 +19,8 @@ import { MAX_PLAYLIST_SIZE, SIZE_THRESHOLD_ORANGE, SIZE_THRESHOLD_YELLOW } from 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ROOT_DIR = join(SRC_DIR, '..')
 const foundationCss = readFileSync(join(SRC_DIR, 'styles', 'foundation.css'), 'utf8')
-const tailwindConfig = readFileSync(join(ROOT_DIR, 'tailwind.config.js'), 'utf8')
+const styleCss = readFileSync(join(SRC_DIR, 'style.css'), 'utf8')
+const tailwindTheme = styleCss.match(/@theme \{[\s\S]*?\n\}/)?.[0] ?? ''
 
 function collectFiles(dir, extension, out = []) {
   for (const entry of readdirSync(dir)) {
@@ -123,15 +124,31 @@ describe('Typografie-Brücke', () => {
   it.each(['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'])(
     'text-%s kommt aus dem gleichnamigen Token',
     (step) => {
-      expect(tailwindConfig).toMatch(new RegExp(`'?${step}'?: \\['var\\(--ds-text-${step}\\)'`))
+      expect(tailwindTheme).toContain(`--text-${step}: var(--ds-text-${step});`)
+      expect(tailwindTheme).toMatch(new RegExp(`--text-${step}--line-height: var\\(--ds-leading`))
     },
   )
 
   it('bindet Schriftfamilie, Gewichte, Zeilenhöhen und Tracking an Tokens', () => {
-    expect(tailwindConfig).toContain("sans: 'var(--ds-font-sans)'")
-    expect(tailwindConfig).toContain("semibold: 'var(--ds-weight-semibold)'")
-    expect(tailwindConfig).toContain("tight: 'var(--ds-leading-tight)'")
-    expect(tailwindConfig).toContain("tight: 'var(--ds-tracking-tight)'")
+    expect(tailwindTheme).toContain('--font-sans: var(--ds-font-sans);')
+    expect(tailwindTheme).toContain('--font-weight-semibold: var(--ds-weight-semibold);')
+    expect(tailwindTheme).toContain('--leading-tight: var(--ds-leading-tight);')
+    expect(tailwindTheme).toContain('--tracking-tight: var(--ds-tracking-tight);')
+  })
+
+  it('setzt die Standard-Skalen von Tailwind zurück (nur Token-Werte)', () => {
+    for (const namespace of [
+      'color',
+      'radius',
+      'shadow',
+      'text',
+      'font',
+      'font-weight',
+      'leading',
+      'tracking',
+    ]) {
+      expect(tailwindTheme).toContain(`--${namespace}-*: initial;`)
+    }
   })
 
   it('setzt die Grundgröße des Body wie der Collage Maker auf --ds-text-lg', () => {

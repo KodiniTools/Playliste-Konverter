@@ -261,11 +261,11 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 | Technologie | Version | Zweck |
 |-------------|---------|-------|
 | Vue 3 | Composition API | JavaScript-Framework |
-| Pinia | 2.3.0 | State Management |
-| Vite | 5.4.0 | Build-Tool & Dev-Server |
-| Tailwind CSS | 3.4.0 | Utility-First CSS |
-| Vue-i18n | 9.14.0 | Internationalisierung |
-| Axios | 1.13.0 | HTTP-Client |
+| Pinia | 3 | State Management |
+| Vite | 8 | Build-Tool & Dev-Server |
+| Tailwind CSS | 4 (`@tailwindcss/vite`) | Utility-First CSS, Theme in `src/style.css` |
+| Vue-i18n | 11 | Internationalisierung (vorkompiliert) |
+| Axios | 1.21 | Upload mit Fortschritt (sonst `fetch`) |
 
 ### Backend
 
@@ -317,8 +317,6 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 │
 ├── package.json                  # Node-Abhängigkeiten
 ├── vite.config.js                # Vite-Konfiguration
-├── tailwind.config.js            # Tailwind-Theme
-├── postcss.config.js             # PostCSS-Konfiguration
 └── README.md                     # Projekt-Dokumentation
 ```
 
@@ -469,14 +467,10 @@ Der Node-Dienst (`server/server.js`) prüft:
 - `MAX_PLAYLIST_SIZE` 5G, `MIN_FREE_SPACE` 20G
 - Weitere Variablen: `server/README.md`
 
-### `tailwind.config.js`
+### Tailwind-Theme (`src/style.css`)
 
-Benutzerdefinierte Farbpalette:
-- **Accent**: `#F2E28E` (Goldgelb)
-- **Secondary**: `#A28680` (Gedämpftes Braun)
-- **Muted**: `#5E5F69` (Dunkelgrau)
-- **Neutral**: `#AEAFB7` (Hellgrau)
-- **Dark**: `#0C0C10` (Fast Schwarz)
+Tailwind 4 ohne eigene Konfigurationsdatei. Der `@theme`-Block bildet Farben, Radien, Schatten,
+Typografie und Dauern nur auf die Design-Tokens `--ds-*` ab (Rollen: `src/design-system/README.md`).
 
 ---
 
