@@ -327,6 +327,132 @@ test(
   },
 )
 
+function probeJson(file) {
+  const r = spawnSync('ffprobe', [
+    '-v',
+    'error',
+    '-show_entries',
+    'format_tags:stream=codec_type,codec_name:stream_disposition=attached_pic',
+    '-of',
+    'json',
+    file,
+  ])
+  return JSON.parse(r.stdout.toString())
+}
+
+for (const [label, inputs] of [
+  ['Neukodierung', ['wav', 'mp3']],
+  ['Stream-Copy', ['mp3', 'mp3']],
+]) {
+  test(
+    `N6: Dateiname, Tags und Cover (${label})`,
+    { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+    async (t) => {
+      const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-tags-'))
+      const srv = await startServer(path.join(work, 'temp'))
+      t.after(() => {
+        srv.stop()
+        fs.rmSync(work, { recursive: true, force: true })
+      })
+
+      const files = inputs.map((ext, i) =>
+        // Tags der Eingaben dürfen nicht in der Playlist landen
+        makeTrack(work, `t${i}.${ext}`, {
+          ext,
+          freq: 500 + i * 300,
+          args: ['-metadata', 'genre=Vom ersten Track'],
+        }),
+      )
+      const cover = path.join(work, 'cover.png')
+      ffmpeg(['-f', 'lavfi', '-i', 'color=c=red:s=64x64', '-frames:v', '1', cover])
+
+      // Session anlegen: Dateien hochladen, Cover nachreichen, dann konvertieren
+      let sessionId
+      for (let i = 0; i < files.length; i++) {
+        const form = new FormData()
+        form.append('files[]', new Blob([fs.readFileSync(files[i])]), path.basename(files[i]))
+        form.append('order[]', String(i))
+        if (sessionId) form.append('session_id', sessionId)
+        sessionId = (
+          await (await fetch(`${srv.base}/api/upload`, { method: 'POST', body: form })).json()
+        ).session_id
+      }
+      const coverForm = new FormData()
+      coverForm.append('cover', new Blob([fs.readFileSync(cover)]), 'Cover.PNG')
+      const coverRes = await fetch(`${srv.base}/api/cover/${sessionId}`, {
+        method: 'POST',
+        body: coverForm,
+      })
+      assert.equal(coverRes.status, 200)
+
+      const conv = await fetch(`${srv.base}/api/convert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          format: 'mp3',
+          bitrate: 192,
+          filename: 'Sommer Mix – 2026',
+          tags: { title: 'Sommer Mix', artist: 'Kodini', album: 'Mixe' },
+        }),
+      })
+      assert.equal(conv.status, 200)
+      let status
+      for (let i = 0; i < 300; i++) {
+        status = await (await fetch(`${srv.base}/api/status/${sessionId}`)).json()
+        if (status.status === 'done' || status.status === 'error') break
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      assert.equal(status.status, 'done', JSON.stringify(status))
+
+      const res = await fetch(`${srv.base}/api/download/${sessionId}`)
+      assert.match(
+        res.headers.get('content-disposition'),
+        /filename\*=UTF-8''Sommer%20Mix%20%E2%80%93%202026\.mp3/,
+      )
+      const out = path.join(work, 'out.mp3')
+      fs.writeFileSync(out, Buffer.from(await res.arrayBuffer()))
+
+      const info = probeJson(out)
+      assert.deepEqual(
+        {
+          title: info.format.tags.title,
+          artist: info.format.tags.artist,
+          album: info.format.tags.album,
+        },
+        { title: 'Sommer Mix', artist: 'Kodini', album: 'Mixe' },
+      )
+      assert.equal(info.format.tags.genre, undefined)
+      const video = info.streams.find((s) => s.codec_type === 'video')
+      assert.ok(video, 'Cover fehlt')
+      assert.equal(video.disposition.attached_pic, 1)
+      assert.ok(Math.abs(duration(out) - 2 * SECONDS) < 0.5)
+    },
+  )
+}
+
+test('N6: Cover nur als JPEG/PNG', { skip: !HAS_FFMPEG && 'ffmpeg fehlt' }, async (t) => {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-cv-'))
+  const srv = await startServer(path.join(work, 'temp'))
+  t.after(() => {
+    srv.stop()
+    fs.rmSync(work, { recursive: true, force: true })
+  })
+  const track = makeTrack(work, 'a.mp3', { ext: 'mp3', freq: 500 })
+  const form = new FormData()
+  form.append('files[]', new Blob([fs.readFileSync(track)]), 'a.mp3')
+  const { session_id: sessionId } = await (
+    await fetch(`${srv.base}/api/upload`, { method: 'POST', body: form })
+  ).json()
+  const bad = new FormData()
+  bad.append('cover', new Blob(['GIF89a']), 'bild.gif')
+  const res = await fetch(`${srv.base}/api/cover/${sessionId}`, { method: 'POST', body: bad })
+  assert.equal(res.status, 400)
+  assert.equal((await res.json()).code, 'INVALID_COVER')
+  const leftovers = fs.readdirSync(path.join(work, 'temp')).filter((f) => f.startsWith('cv_'))
+  assert.deepEqual(leftovers, [])
+})
+
 test('WebM (Opus) aus gemischten Eingaben', { skip: !HAS_FFMPEG && 'ffmpeg fehlt' }, async (t) => {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-webm-'))
   const srv = await startServer(path.join(work, 'temp'))

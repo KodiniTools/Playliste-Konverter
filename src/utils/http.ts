@@ -49,7 +49,8 @@ export interface RequestJsonOptions {
 
 /**
  * JSON-Anfrage. Liefert `{ data }` wie axios. Der Typparameter beschreibt die
- * erwartete Antwort; geprüft wird sie nicht.
+ * erwartete Antwort; geprüft wird sie nicht. Ein FormData-Body wird als
+ * multipart gesendet (Browser setzt den Content-Type), alles andere als JSON.
  */
 export async function requestJson<T = unknown>(
   url: string,
@@ -57,11 +58,12 @@ export async function requestJson<T = unknown>(
 ): Promise<{ data: T }> {
   const { signal: combined, cleanup } = withTimeout(signal, timeout)
   try {
+    const isForm = body instanceof FormData
     const res = await fetch(url, {
       method,
       signal: combined,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined || isForm ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     })
     const text = await res.text()
     let data: unknown = text

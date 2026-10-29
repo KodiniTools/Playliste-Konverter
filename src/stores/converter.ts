@@ -7,6 +7,7 @@ import {
   AVAILABLE_BITRATES,
   isOutputFormat,
   isAcceptedAudioFile,
+  isAcceptedCover,
   QUALITY_PRESETS,
   type ChannelCount,
   type OutputFormatId,
@@ -19,7 +20,9 @@ import {
   getDownloadUrl,
   cancelSession,
   subscribeStatus,
+  uploadCover,
   type ConversionStatus,
+  type OutputTags,
 } from '../api/converter'
 import { formatBytes } from '../utils/format'
 import { probeDuration } from '../utils/audioDuration'
@@ -57,6 +60,11 @@ export const useConverterStore = defineStore('converter', () => {
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
   const channels = ref<ChannelCount>(normalizeChannels(readPref('channels'))) // Standard: Stereo
+
+  // Dateiname, Tags und Cover der Ausgabe (N6) – gelten nur für diese Playlist
+  const outputName = ref('')
+  const tags = ref<Required<OutputTags>>({ title: '', artist: '', album: '' })
+  const cover = ref<File | null>(null)
 
   // Fortlaufende Track-IDs: eindeutig auch bei mehreren Hinzufügungen in derselben Millisekunde
   let nextTrackId = 1
@@ -270,6 +278,21 @@ export const useConverterStore = defineStore('converter', () => {
       )?.id ?? null,
   )
 
+  /** Cover setzen (JPEG/PNG bis 5 MB) oder mit null entfernen; false bei ungültiger Datei. */
+  function setCover(file: File | null): boolean {
+    if (file && !isAcceptedCover(file)) {
+      useToastStore().error(t('error.invalidCover'))
+      return false
+    }
+    cover.value = file
+    return true
+  }
+
+  /** Name der fertigen Datei, z. B. „Sommer Mix.mp3“ (wie der Server ihn bereinigt). */
+  const outputFileName = computed(
+    () => `${sanitizeOutputName(outputName.value)}.${currentFormatConfig.value.extension}`,
+  )
+
   const currentFormatConfig = computed(() => {
     return OUTPUT_FORMATS[outputFormat.value] || OUTPUT_FORMATS.mp3
   })
@@ -379,9 +402,20 @@ export const useConverterStore = defineStore('converter', () => {
       estimatedTimeRemaining.value = null // Reset für Konvertierung
       uploadSpeed.value = 0
 
+      // Cover trägt nur MP3 (ID3); bei WebM/OGG wird es nicht hochgeladen
+      if (cover.value && outputFormat.value === 'mp3') {
+        await uploadCover(id, cover.value, { signal: abortController.signal })
+      }
+
       await startConversion(
         id,
-        { format: outputFormat.value, bitrate: bitrate.value, channels: channels.value },
+        {
+          format: outputFormat.value,
+          bitrate: bitrate.value,
+          channels: channels.value,
+          filename: sanitizeOutputName(outputName.value),
+          tags: cleanTags(tags.value),
+        },
         { signal: abortController.signal },
       )
 
@@ -544,6 +578,9 @@ export const useConverterStore = defineStore('converter', () => {
   function reset() {
     resetJob()
     files.value = []
+    outputName.value = ''
+    tags.value = { title: '', artist: '', album: '' }
+    cover.value = null
   }
 
   return {
@@ -580,6 +617,11 @@ export const useConverterStore = defineStore('converter', () => {
     setBitrate,
     channels,
     setChannels,
+    outputName,
+    tags,
+    cover,
+    setCover,
+    outputFileName,
     applyPreset,
     activePreset,
     convert,
@@ -588,6 +630,31 @@ export const useConverterStore = defineStore('converter', () => {
     reset,
   }
 })
+
+/**
+ * Dateiname ohne Endung wie server/metadata.js: keine Pfad-/Sonderzeichen,
+ * höchstens 100 Zeichen, leer → „playlist“.
+ */
+export function sanitizeOutputName(input: string): string {
+  const clean = input
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/[/\\:*?"<>|]/g, '_')
+    .replace(/^[\s.]+|[\s.]+$/g, '')
+    .slice(0, 100)
+    .trim()
+  return clean || 'playlist'
+}
+
+/** Nur ausgefüllte Tags, getrimmt. */
+export function cleanTags(input: OutputTags): OutputTags {
+  const result: OutputTags = {}
+  for (const field of ['title', 'artist', 'album'] as const) {
+    const value = input[field]?.trim()
+    if (value) result[field] = value
+  }
+  return result
+}
 
 /** Gespeicherte Kanalzahl: nur 1 (Mono) gilt, alles andere → Stereo. */
 export function normalizeChannels(value: unknown): ChannelCount {
@@ -659,6 +726,9 @@ export function uploadErrorMessage(err: unknown): string {
       return t('error.sessionExpired')
     case 'SESSION_CANCELLED':
       return t('toast.cancelled')
+    case 'INVALID_COVER':
+    case 'COVER_TOO_LARGE':
+      return t('error.invalidCover')
     case 'ALREADY_CONVERTING':
       return t('error.alreadyConverting')
     case 'INTERNAL':

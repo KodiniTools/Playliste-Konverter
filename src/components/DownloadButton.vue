@@ -98,7 +98,7 @@
 
   async function handleDownload() {
     const config = formatConfig.value
-    const filename = `playlist.${config.extension}`
+    const filename = store.outputFileName
 
     try {
       // Prüfe ob File System Access API verfügbar ist
@@ -156,9 +156,7 @@
     try {
       const config = formatConfig.value
       const blob = await fetchOutputBlob()
-      await replaceSharedFiles([
-        { blob, name: `playlist.${config.extension}`, mimeType: config.mimeType },
-      ])
+      await replaceSharedFiles([{ blob, name: store.outputFileName, mimeType: config.mimeType }])
 
       if (playerWindow) {
         playerWindow.opener = null
@@ -195,7 +193,7 @@
       class="inline-flex h-control-lg items-center rounded-md bg-accent px-6 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
       @click="handleDownload"
     >
-      {{ t('download.button', { format: currentFormat }) }}
+      {{ t('download.button', { name: store.outputFileName }) }}
     </button>
 
     <div class="mt-3">

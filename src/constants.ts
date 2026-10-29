@@ -85,6 +85,14 @@ export const AVAILABLE_BITRATES: readonly BitrateOption[] = [
   { value: 320, label: '320 kbps', description: 'Maximum' },
 ]
 
+/** Cover-Bild (N6): JPEG oder PNG bis 5 MB, wie der Server es annimmt. */
+export const MAX_COVER_SIZE = 5 * 1024 ** 2
+export const COVER_ACCEPT = 'image/jpeg,image/png,.jpg,.jpeg,.png'
+
+export function isAcceptedCover(file: { name: string; size: number }): boolean {
+  return /\.(jpe?g|png)$/i.test(file.name) && file.size <= MAX_COVER_SIZE
+}
+
 /** Kanäle der Ausgabe: 2 = Stereo (Standard), 1 = Mono. */
 export type ChannelCount = 1 | 2
 

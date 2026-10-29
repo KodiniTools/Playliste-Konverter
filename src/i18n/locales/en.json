@@ -34,6 +34,22 @@
     "archiveHint": "MP3 · 320 kbps · stereo",
     "mono": "Mono (one channel, e.g. for speech)"
   },
+  "output": {
+    "title": "File name and tags",
+    "optional": "(optional)",
+    "fileName": "File name",
+    "fileNameHint": "Downloads as: {name}",
+    "tagTitle": "Title",
+    "tagArtist": "Artist",
+    "tagAlbum": "Album",
+    "cover": "Cover",
+    "coverSelect": "Choose image",
+    "coverChange": "Change image",
+    "coverRemove": "Remove",
+    "coverPreview": "Cover preview",
+    "coverHint": "JPEG or PNG up to 5 MB, embedded in MP3 files.",
+    "coverMp3Only": "The cover is only embedded in MP3; it is left out for WebM/OGG."
+  },
   "uploader": {
     "dropText": "Drop audio files here (MP3, WAV, FLAC, M4A, OGG, OPUS)",
     "orText": "or",
@@ -106,7 +122,7 @@
     "title": "Conversion completed!",
     "subtitle": "Your playlist is ready for download",
     "fileSize": "File size",
-    "button": "Download playlist.{format}",
+    "button": "Download “{name}”",
     "newConversion": "Start new conversion",
     "shareToPlayer": "Send to Ultimate Music Player",
     "sharing": "Sending …",
@@ -129,7 +145,8 @@
     "network": "No connection to the server. Please check your internet connection.",
     "sessionExpired": "The session has expired. Please start the conversion again.",
     "alreadyConverting": "This playlist is already being converted.",
-    "internal": "Internal server error. Please try again later."
+    "internal": "Internal server error. Please try again later.",
+    "invalidCover": "The cover must be a JPEG or PNG image up to 5 MB."
   },
   "sizeWarning": {
     "title": "Playlist too large!",

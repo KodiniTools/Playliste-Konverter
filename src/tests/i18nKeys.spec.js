@@ -57,7 +57,7 @@ describe('vue-i18n (Composition-Modus)', () => {
     const { t, locale } = i18n.global
     const previous = locale.value
     locale.value = 'en'
-    expect(t('download.button', { format: 'mp3' })).toBe('Download playlist.mp3')
+    expect(t('download.button', { name: 'Mix.mp3' })).toBe('Download “Mix.mp3”')
     locale.value = previous
   })
 
