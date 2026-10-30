@@ -10,6 +10,7 @@
   import MixOptions from './components/MixOptions.vue'
   import ConversionProgress from './components/ConversionProgress.vue'
   import DownloadButton from './components/DownloadButton.vue'
+  import PlaylistImage from './components/PlaylistImage.vue'
   import SizeWarning from './components/SizeWarning.vue'
   import ToastContainer from './components/ToastContainer.vue'
   import StickyPlayer from './components/StickyPlayer.vue'
@@ -177,7 +178,10 @@
 
       <ConversionProgress v-else-if="store.status !== 'done'" />
 
-      <DownloadButton v-else />
+      <div v-else class="space-y-6">
+        <DownloadButton />
+        <PlaylistImage />
+      </div>
 
       <div
         v-if="store.errorMessage"
