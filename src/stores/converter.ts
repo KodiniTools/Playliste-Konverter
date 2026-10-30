@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToastStore } from './toast'
 import {
   MAX_PLAYLIST_SIZE,
@@ -9,6 +9,11 @@ import {
   isAcceptedAudioFile,
   isAcceptedCover,
   QUALITY_PRESETS,
+  TRANSITION_TYPES,
+  MIN_TRANSITION_SECONDS,
+  MAX_TRANSITION_SECONDS,
+  DEFAULT_TRANSITION_SECONDS,
+  type TransitionType,
   type ChannelCount,
   type OutputFormatId,
   type QualityPreset,
@@ -21,6 +26,10 @@ import {
   cancelSession,
   subscribeStatus,
   uploadCover,
+  type TrackTrim,
+  type Chapter,
+  type UploadRetryInfo,
+  fetchReceived,
   type ConversionStatus,
   type OutputTags,
 } from '../api/converter'
@@ -30,7 +39,7 @@ import { duplicateKey, sortItems, type SortMode } from '../utils/playlistOrder'
 import i18n from '../i18n'
 import { readPref, writePref } from '../utils/storage'
 import { logger } from '../utils/logger'
-import { isAbortError, isNetworkError } from '../utils/errors'
+import { httpStatusOf, isAbortError, isNetworkError, isRetryableUploadError } from '../utils/errors'
 
 /** Ein Track der Playlist. */
 export interface PlaylistItem {
@@ -40,6 +49,9 @@ export interface PlaylistItem {
   size: number
   /** Dauer in Sekunden; undefined = wird noch ermittelt, null = unbekannt */
   duration?: number | null
+  /** Zugeschnittener Bereich in Sekunden (N9); fehlt = Anfang bzw. Ende des Tracks */
+  trimStart?: number
+  trimEnd?: number
 }
 
 export type ConverterStatus = 'idle' | 'uploading' | 'converting' | 'done' | 'error'
@@ -57,9 +69,16 @@ export const useConverterStore = defineStore('converter', () => {
   const downloadUrl = ref<string | null>(null)
   const errorMessage = ref<string | null>(null)
   const outputFileSize = ref<number | null>(null) // Größe der konvertierten Datei
+  const chapters = ref<Chapter[]>([]) // Kapitel der fertigen Playlist (N2)
   const outputFormat = ref<OutputFormatId>(normalizeFormat(readPref('outputFormat'))) // Standard: MP3
   const bitrate = ref(normalizeBitrate(parseInt(readPref('bitrate') ?? '', 10), outputFormat.value)) // Standard: 192 kbps
   const channels = ref<ChannelCount>(normalizeChannels(readPref('channels'))) // Standard: Stereo
+  // Übergang zwischen Tracks (N4) und Lautheitsangleichung (N5)
+  const transition = ref<TransitionType>(normalizeTransition(readPref('transition')))
+  const transitionSeconds = ref(normalizeTransitionSeconds(readPref('transitionSeconds')))
+  const loudnorm = ref(readPref('loudnorm') === '1')
+  // Stille am Anfang und Ende jedes Tracks entfernen (N9)
+  const trimSilence = ref(readPref('trimSilence') === '1')
 
   // Dateiname, Tags und Cover der Ausgabe (N6) – gelten nur für diese Playlist
   const outputName = ref('')
@@ -87,6 +106,10 @@ export const useConverterStore = defineStore('converter', () => {
   const uploadStartTime = ref<number | null>(null)
   const uploadSpeed = ref(0) // Bytes pro Sekunde
   const estimatedTimeRemaining = ref<number | null>(null) // in Sekunden
+  // Abgebrochener Upload, der sich fortsetzen lässt, und laufender Wiederholversuch (N10)
+  const resumeSessionId = ref<string | null>(null)
+  const uploadRetry = ref<UploadRetryInfo | null>(null)
+  const canResume = computed(() => status.value === 'error' && resumeSessionId.value !== null)
 
   const totalProgress = computed(() => {
     if (status.value === 'uploading') return uploadProgress.value * 0.3
@@ -125,9 +148,16 @@ export const useConverterStore = defineStore('converter', () => {
   })
 
   /** Gesamtdauer der Tracks, deren Dauer bekannt ist (Sekunden). */
-  const totalDuration = computed(() =>
-    files.value.reduce((sum, f) => sum + (typeof f.duration === 'number' ? f.duration : 0), 0),
-  )
+  /** Länge der fertigen Playlist: zugeschnittene Tracks plus Pausen bzw. minus Überblendungen. */
+  const totalDuration = computed(() => {
+    const tracks = files.value.reduce((sum, f) => sum + (effectiveDuration(f) ?? 0), 0)
+    const joins = Math.max(0, files.value.length - 1)
+    if (transition.value === 'gap') return tracks + joins * transitionSeconds.value
+    if (transition.value === 'crossfade') {
+      return Math.max(0, tracks - joins * transitionSeconds.value)
+    }
+    return tracks
+  })
 
   /** Noch nicht alle Dauern ermittelt. */
   const durationsPending = computed(() => files.value.some((f) => f.duration === undefined))
@@ -258,6 +288,42 @@ export const useConverterStore = defineStore('converter', () => {
     writePref('channels', channels.value)
   }
 
+  function setTransition(value: TransitionType) {
+    transition.value = normalizeTransition(value)
+    writePref('transition', transition.value)
+  }
+
+  function setTransitionSeconds(value: number) {
+    transitionSeconds.value = normalizeTransitionSeconds(value)
+    writePref('transitionSeconds', transitionSeconds.value)
+  }
+
+  function setLoudnorm(value: boolean) {
+    loudnorm.value = value
+    writePref('loudnorm', value ? '1' : '0')
+  }
+
+  function setTrimSilence(value: boolean) {
+    trimSilence.value = value
+    writePref('trimSilence', value ? '1' : '0')
+  }
+
+  /**
+   * Track zuschneiden (N9). null = Anfang bzw. Ende des Tracks. Ungültige
+   * Bereiche (Ende vor Start, hinter der bekannten Dauer) → false.
+   */
+  function setTrim(id: number, start: number | null, end: number | null): boolean {
+    const item = files.value.find((f) => f.id === id)
+    if (!item) return false
+    const from = start ?? 0
+    const length = typeof item.duration === 'number' ? item.duration : null
+    if (from < 0 || (length !== null && from >= length)) return false
+    if (end !== null && (end <= from || (length !== null && end > length + 0.05))) return false
+    item.trimStart = from > 0 ? from : undefined
+    item.trimEnd = end !== null && (length === null || end < length) ? end : undefined
+    return true
+  }
+
   /** Preset anwenden: Format, Bitrate und Kanäle auf einmal (N11). */
   function applyPreset(id: QualityPreset['id']) {
     const preset = QUALITY_PRESETS.find((p) => p.id === id)
@@ -346,13 +412,42 @@ export const useConverterStore = defineStore('converter', () => {
     }, 100)
   }
 
-  async function convert() {
+  function convert() {
+    return runJob(null)
+  }
+
+  /**
+   * Abgebrochenen Upload fortsetzen (N10): fragt den Server, welche Dateien
+   * schon da sind, und lädt nur den Rest hoch.
+   */
+  async function resumeUpload() {
+    const id = resumeSessionId.value
+    if (!id) return
+    let received: Set<number>
+    try {
+      received = await fetchReceived(id)
+    } catch (err) {
+      const gone = [404, 410].includes(httpStatusOf(err) ?? 0)
+      // Nicht mehr da: nur noch ein Neustart hilft
+      if (gone) resumeSessionId.value = null
+      errorMessage.value = gone ? t('error.resumeExpired') : uploadErrorMessage(err)
+      useToastStore().error(errorMessage.value)
+      return
+    }
+    await runJob({ sessionId: id, skip: received })
+  }
+
+  /** Upload, Start und Statusverfolgung; resume setzt eine bestehende Session fort. */
+  async function runJob(resume: { sessionId: string; skip: Set<number> } | null) {
     if (files.value.length === 0) {
       errorMessage.value = t('error.noFiles')
       return
     }
 
     const toastStore = useToastStore()
+    let uploaded = false
+    resumeSessionId.value = null
+    uploadRetry.value = null
 
     try {
       status.value = 'uploading'
@@ -375,8 +470,19 @@ export const useConverterStore = defineStore('converter', () => {
         formData.append('order[]', String(idx))
       })
 
+      if (resume) sessionId.value = resume.sessionId
+      const skippedBytes = files.value.reduce(
+        (sum, item, idx) => sum + (resume?.skip.has(idx) ? item.size : 0),
+        0,
+      )
       const uploadRes = await uploadFiles(formData, {
         signal: abortController.signal,
+        sessionId: resume?.sessionId ?? null,
+        skip: resume?.skip,
+        // Verbindung weg: dieselbe Datei mit Backoff erneut senden
+        onRetry: (info) => {
+          uploadRetry.value = info
+        },
         // Früh merken, damit Abbrechen während des Uploads die Server-Session freigibt
         onSessionId: (id) => {
           sessionId.value = id
@@ -386,7 +492,8 @@ export const useConverterStore = defineStore('converter', () => {
 
           const elapsedTime = (Date.now() - (uploadStartTime.value ?? Date.now())) / 1000
           if (elapsedTime > 0.5) {
-            uploadSpeed.value = e.loaded / elapsedTime
+            // Beim Fortsetzen zählen nur die jetzt gesendeten Bytes für die Geschwindigkeit
+            uploadSpeed.value = Math.max(0, e.loaded - skippedBytes) / elapsedTime
             const remainingBytes = e.total - e.loaded
             estimatedTimeRemaining.value = remainingBytes / uploadSpeed.value
           }
@@ -396,6 +503,8 @@ export const useConverterStore = defineStore('converter', () => {
       const id = uploadRes.data.session_id
       if (!id) throw new Error('Keine Session-ID vom Server erhalten')
       sessionId.value = id
+      uploaded = true
+      uploadRetry.value = null
 
       // Start conversion
       status.value = 'converting'
@@ -415,6 +524,12 @@ export const useConverterStore = defineStore('converter', () => {
           channels: channels.value,
           filename: sanitizeOutputName(outputName.value),
           tags: cleanTags(tags.value),
+          transition: transition.value,
+          transition_seconds: transitionSeconds.value,
+          loudnorm: loudnorm.value,
+          tracks: files.value.map(trimOf),
+          trim_silence: trimSilence.value,
+          titles: files.value.map((f) => f.name),
         },
         { signal: abortController.signal },
       )
@@ -430,8 +545,12 @@ export const useConverterStore = defineStore('converter', () => {
       }
 
       logger.error('Konvertierung fehlgeschlagen:', err, responseOf(err)?.data)
+      uploadRetry.value = null
+      // Upload trotz Wiederholungen abgebrochen: angekommene Dateien bleiben auf dem Server
+      const resumable = !uploaded && sessionId.value !== null && isRetryableUploadError(err)
+      resumeSessionId.value = resumable ? sessionId.value : null
       status.value = 'error'
-      errorMessage.value = uploadErrorMessage(err)
+      errorMessage.value = resumable ? t('error.uploadInterrupted') : uploadErrorMessage(err)
       toastStore.error(errorMessage.value)
     }
   }
@@ -452,6 +571,7 @@ export const useConverterStore = defineStore('converter', () => {
       status.value = 'done'
       downloadUrl.value = getDownloadUrl(id)
       outputFileSize.value = data.file_size || null
+      chapters.value = Array.isArray(data.chapters) ? data.chapters : []
       toastStore.success(t('toast.done'))
       return true
     }
@@ -549,8 +669,22 @@ export const useConverterStore = defineStore('converter', () => {
     if (!event.persisted) releaseServerSession()
   })
 
+  /** Fortsetzbaren Upload verwerfen und seine Dateien auf dem Server freigeben. */
+  function discardResume() {
+    if (resumeSessionId.value) cancelSession(resumeSessionId.value)
+    resumeSessionId.value = null
+  }
+
+  // Andere Playlist (Dateien oder Reihenfolge geändert): Fortsetzen passt nicht mehr
+  watch(
+    () => files.value.map((f) => f.id).join(','),
+    () => discardResume(),
+  )
+
   /** Vorgang (Upload, Konvertierung, Fehler, Ergebnis) zurücksetzen; die Playlist bleibt. */
   function resetJob() {
+    discardResume()
+    uploadRetry.value = null
     uploadProgress.value = 0
     displayProgress.value = 0
     lastBackendProgress.value = 0
@@ -561,6 +695,7 @@ export const useConverterStore = defineStore('converter', () => {
     downloadUrl.value = null
     errorMessage.value = null
     outputFileSize.value = null
+    chapters.value = []
     isCancelling.value = false
     uploadStartTime.value = null
     uploadSpeed.value = 0
@@ -594,6 +729,10 @@ export const useConverterStore = defineStore('converter', () => {
     downloadUrl,
     errorMessage,
     outputFileSize,
+    chapters,
+    canResume,
+    uploadRetry,
+    resumeUpload,
     outputFormat,
     bitrate,
     currentFormatConfig,
@@ -617,6 +756,15 @@ export const useConverterStore = defineStore('converter', () => {
     setBitrate,
     channels,
     setChannels,
+    transition,
+    setTransition,
+    transitionSeconds,
+    setTransitionSeconds,
+    loudnorm,
+    setLoudnorm,
+    trimSilence,
+    setTrimSilence,
+    setTrim,
     outputName,
     tags,
     cover,
@@ -654,6 +802,34 @@ export function cleanTags(input: OutputTags): OutputTags {
     if (value) result[field] = value
   }
   return result
+}
+
+/** Zugeschnittene Länge eines Tracks; null, solange die Dauer unbekannt ist. */
+export function effectiveDuration(item: PlaylistItem): number | null {
+  if (typeof item.duration !== 'number') return null
+  const end = item.trimEnd ?? item.duration
+  return Math.max(0, end - (item.trimStart ?? 0))
+}
+
+/** Trim-Angabe für den Server; null = ganzer Track. */
+export function trimOf(item: PlaylistItem): TrackTrim | null {
+  if (item.trimStart === undefined && item.trimEnd === undefined) return null
+  return { start: item.trimStart ?? 0, end: item.trimEnd ?? null }
+}
+
+/** Gespeicherter Übergang: unbekannt → keiner. */
+export function normalizeTransition(value: unknown): TransitionType {
+  return (TRANSITION_TYPES as readonly unknown[]).includes(value)
+    ? (value as TransitionType)
+    : 'none'
+}
+
+/** Übergangsdauer auf halbe Sekunden zwischen 0,5 und 10 bringen (wie der Server). */
+export function normalizeTransitionSeconds(value: unknown): number {
+  const seconds = typeof value === 'number' ? value : parseFloat(String(value))
+  if (!Number.isFinite(seconds)) return DEFAULT_TRANSITION_SECONDS
+  const rounded = Math.round(seconds * 2) / 2
+  return Math.min(MAX_TRANSITION_SECONDS, Math.max(MIN_TRANSITION_SECONDS, rounded))
 }
 
 /** Gespeicherte Kanalzahl: nur 1 (Mono) gilt, alles andere → Stereo. */

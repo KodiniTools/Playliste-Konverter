@@ -15,6 +15,7 @@
 
 const { spawn } = require('child_process')
 const { buildMetadataArgs, buildCoverArgs } = require('./metadata')
+const { buildChapterArgs } = require('./chapters')
 
 const PCM_FORMAT = 'f32le'
 const CHANNELS = 2
@@ -53,18 +54,32 @@ function canStreamCopy(probes, expectedCodec) {
   )
 }
 
-/** ffmpeg-Argumente: eine Datei → einheitliches PCM auf stdout. */
-function buildDecoderArgs(inputFile, sampleRate) {
+// Lautheitsangleichung (N5): einpassig auf -16 LUFS, Spitzen max. -1,5 dBTP
+const LOUDNORM_FILTER = 'loudnorm=I=-16:TP=-1.5:LRA=11'
+
+/**
+ * ffmpeg-Argumente: eine Datei → einheitliches PCM auf stdout.
+ * loudnorm gleicht die Lautheit jedes Tracks an (N5); start/duration schneiden
+ * den Track zu (N9, duration null = bis zum Ende).
+ */
+function buildDecoderArgs(
+  inputFile,
+  sampleRate,
+  { loudnorm = false, start = 0, duration = null } = {},
+) {
   return [
     '-hide_banner',
     '-nostdin',
     '-v',
     'error',
+    ...(start > 0 ? ['-ss', String(start)] : []),
     '-i',
     inputFile,
+    ...(duration !== null ? ['-t', String(duration)] : []),
     '-map',
     '0:a:0',
     '-vn',
+    ...(loudnorm ? ['-af', LOUDNORM_FILTER] : []),
     '-f',
     PCM_FORMAT,
     '-ac',
@@ -78,7 +93,8 @@ function buildDecoderArgs(inputFile, sampleRate) {
 /**
  * ffmpeg-Argumente: PCM von stdin → Ausgabedatei im Zielformat.
  * outputChannels 1 mischt das Stereo-PCM zu Mono herunter (N11); tags und
- * coverPath (nur MP3) schreiben Titel/Künstler/Album und das Cover (N6).
+ * coverPath (nur MP3) schreiben Titel/Künstler/Album und das Cover (N6),
+ * chaptersPath die Kapitel (N2).
  */
 function buildEncoderArgs({
   codec,
@@ -88,8 +104,12 @@ function buildEncoderArgs({
   outputChannels = CHANNELS,
   tags,
   coverPath,
+  chaptersPath = null,
 }) {
   const cover = buildCoverArgs(coverPath)
+  const chapters = buildChapterArgs(chaptersPath, coverPath ? 2 : 1, {
+    vorbis: codec === 'libvorbis',
+  })
   return [
     '-hide_banner',
     '-f',
@@ -101,8 +121,10 @@ function buildEncoderArgs({
     '-i',
     'pipe:0',
     ...cover.input,
+    ...chapters.input,
     ...(coverPath ? ['-map', '0:a'] : []),
     ...cover.output,
+    ...chapters.output,
     '-ac',
     String(outputChannels),
     '-c:a',
@@ -119,10 +141,12 @@ function buildEncoderArgs({
 
 /**
  * ffmpeg-Argumente für Stream-Copy über den concat-Demuxer (nur Audio).
- * Der Demuxer übernimmt keine Tags der Eingaben; eigene Tags und Cover kommen dazu (N6).
+ * Der Demuxer übernimmt keine Tags der Eingaben; eigene Tags und Cover (N6)
+ * sowie die Kapitel (N2) kommen dazu.
  */
-function buildCopyArgs({ concatPath, outputFile, tags, coverPath }) {
+function buildCopyArgs({ concatPath, outputFile, tags, coverPath, chaptersPath = null }) {
   const cover = buildCoverArgs(coverPath)
+  const chapters = buildChapterArgs(chaptersPath, coverPath ? 2 : 1)
   return [
     '-hide_banner',
     '-nostdin',
@@ -133,9 +157,11 @@ function buildCopyArgs({ concatPath, outputFile, tags, coverPath }) {
     '-i',
     concatPath,
     ...cover.input,
+    ...chapters.input,
     '-map',
     '0:a',
     ...cover.output,
+    ...chapters.output,
     '-c:a',
     'copy',
     ...buildMetadataArgs(tags),
@@ -203,6 +229,7 @@ module.exports = {
   pickSampleRate,
   canStreamCopy,
   buildDecoderArgs,
+  LOUDNORM_FILTER,
   buildEncoderArgs,
   buildCopyArgs,
   parseFfmpegTime,

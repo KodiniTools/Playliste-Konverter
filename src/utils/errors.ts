@@ -25,3 +25,25 @@ export function isNetworkError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null || !('code' in err)) return false
   return typeof err.code === 'string' && NETWORK_ERROR_CODES.includes(err.code)
 }
+
+/** HTTP-Status eines axios-Fehlers oder HttpError (utils/http), sonst undefined. */
+export function httpStatusOf(err: unknown): number | undefined {
+  if (typeof err !== 'object' || err === null || !('response' in err)) return undefined
+  const response = err.response
+  if (typeof response !== 'object' || response === null || !('status' in response)) return undefined
+  return typeof response.status === 'number' ? response.status : undefined
+}
+
+// Vorübergehende Serverfehler: Zeitüberschreitung, Überlast, Neustart hinter nginx
+const RETRYABLE_STATUS = [408, 429, 500, 502, 503, 504]
+
+/**
+ * Lohnt ein neuer Versuch (N10)? Bei Verbindungsabbruch und vorübergehenden
+ * Serverfehlern ja; bei Ablehnungen wie 413 oder 410 und beim Abbrechen nicht.
+ */
+export function isRetryableUploadError(err: unknown): boolean {
+  if (isAbortError(err)) return false
+  if (isNetworkError(err)) return true
+  const status = httpStatusOf(err)
+  return status !== undefined && RETRYABLE_STATUS.includes(status)
+}

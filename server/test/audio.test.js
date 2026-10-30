@@ -6,6 +6,7 @@ const {
   pickSampleRate,
   canStreamCopy,
   buildDecoderArgs,
+  LOUDNORM_FILTER,
   buildEncoderArgs,
   buildCopyArgs,
   parseFfmpegTime,
@@ -49,6 +50,16 @@ test('Decoder normalisiert auf PCM Stereo mit fester Rate, nur erste Audiospur',
   assert.ok(args.includes('-vn'))
   assert.deepEqual(args.slice(args.indexOf('-map'), args.indexOf('-map') + 2), ['-map', '0:a:0'])
   assert.deepEqual(args.slice(-7), ['-f', 'f32le', '-ac', '2', '-ar', '44100', 'pipe:1'])
+})
+
+test('Decoder gleicht auf Wunsch die Lautheit an (N5)', () => {
+  assert.ok(!buildDecoderArgs('/tmp/a.wav', 44100).includes('-af'))
+  const args = buildDecoderArgs('/tmp/a.wav', 44100, { loudnorm: true })
+  assert.deepEqual(args.slice(args.indexOf('-af'), args.indexOf('-af') + 2), [
+    '-af',
+    LOUDNORM_FILTER,
+  ])
+  assert.ok(args.indexOf('-af') < args.indexOf('-f'))
 })
 
 test('Encoder liest dasselbe PCM von stdin und schreibt das Zielformat', () => {

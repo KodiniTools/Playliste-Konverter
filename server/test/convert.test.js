@@ -492,3 +492,183 @@ test(
     assert.equal(status.error_file, 'kaputt.wav')
   },
 )
+
+/** Mittlere Lautstärke (dB) eines Ausschnitts. */
+function meanVolume(file, start, length) {
+  const r = spawnSync('ffmpeg', [
+    '-v',
+    'info',
+    '-ss',
+    String(start),
+    '-t',
+    String(length),
+    '-i',
+    file,
+    '-af',
+    'volumedetect',
+    '-f',
+    'null',
+    '-',
+  ])
+  const m = r.stderr.toString().match(/mean_volume: (-?[\d.]+|-inf) dB/)
+  return m && m[1] !== '-inf' ? parseFloat(m[1]) : -Infinity
+}
+
+test(
+  'N4: Pause und Crossfade zwischen Tracks (auch bei identischen MP3s)',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-trans-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = [0, 1].map((i) =>
+      makeTrack(work, `t${i}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+
+    const gap = await convertViaServer(srv.base, files, 'mp3', 128, {
+      transition: 'gap',
+      transition_seconds: 1,
+    })
+    assert.equal(gap.status.status, 'done', JSON.stringify(gap.status))
+    const gapOut = await download(srv.base, gap.sessionId, path.join(work, 'gap.mp3'))
+    assert.ok(Math.abs(duration(gapOut) - 5) < 0.15, `Dauer ${duration(gapOut)}`)
+    assert.ok(meanVolume(gapOut, 2.2, 0.6) < -60, 'Pause ist still')
+    assert.ok(meanVolume(gapOut, 3.3, 1) > -30, 'zweiter Track nach der Pause')
+
+    const fade = await convertViaServer(srv.base, files, 'mp3', 128, {
+      transition: 'crossfade',
+      transition_seconds: 1,
+    })
+    const fadeOut = await download(srv.base, fade.sessionId, path.join(work, 'fade.mp3'))
+    assert.ok(Math.abs(duration(fadeOut) - 3) < 0.15, `Dauer ${duration(fadeOut)}`)
+    // In der Überblendung ist durchgehend Signal, kein Loch
+    for (const start of [1.1, 1.4, 1.7]) assert.ok(meanVolume(fadeOut, start, 0.2) > -30)
+  },
+)
+
+test(
+  'N5: Lautheitsangleichung gleicht leise und laute Tracks an',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-loud-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = [
+      makeTrack(work, 'quiet.wav', { ext: 'wav', freq: 500, args: ['-af', 'volume=-30dB'] }),
+      makeTrack(work, 'loud.wav', { ext: 'wav', freq: 800, args: ['-af', 'volume=-3dB'] }),
+    ]
+    const levels = async (loudnorm) => {
+      const res = await convertViaServer(srv.base, files, 'mp3', 192, { loudnorm })
+      assert.equal(res.status.status, 'done', JSON.stringify(res.status))
+      const out = await download(srv.base, res.sessionId, path.join(work, `l${loudnorm}.mp3`))
+      return [meanVolume(out, 0.5, 1), meanVolume(out, SECONDS + 0.5, 1)]
+    }
+
+    const [quietRaw, loudRaw] = await levels(false)
+    assert.ok(loudRaw - quietRaw > 20, `ohne Angleichung ${quietRaw} / ${loudRaw}`)
+    const [quiet, loud] = await levels(true)
+    assert.ok(Math.abs(loud - quiet) < 3, `mit Angleichung ${quiet} / ${loud}`)
+  },
+)
+
+test(
+  'N9: Trimmen pro Track und Stille am Rand entfernen',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-trim-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const plain = [0, 1].map((i) =>
+      makeTrack(work, `p${i}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+
+    // Track 1: 0,5–1,5 s, Track 2 unverändert → 1 + 2 s (identische MP3s: trotzdem kein Copy)
+    const trimmed = await convertViaServer(srv.base, plain, 'mp3', 128, {
+      tracks: [{ start: 0.5, end: 1.5 }, null],
+    })
+    assert.equal(trimmed.status.status, 'done', JSON.stringify(trimmed.status))
+    const trimmedOut = await download(srv.base, trimmed.sessionId, path.join(work, 'trim.mp3'))
+    assert.ok(Math.abs(duration(trimmedOut) - 3) < 0.15, `Dauer ${duration(trimmedOut)}`)
+
+    // je 1 s Stille vor und nach dem Ton
+    const padded = [0, 1].map((i) =>
+      makeTrack(work, `s${i}.wav`, {
+        ext: 'wav',
+        freq: 500 + i * 300,
+        args: ['-af', 'adelay=1000|1000,apad=pad_dur=1'],
+      }),
+    )
+    const silence = await convertViaServer(srv.base, padded, 'mp3', 128, { trim_silence: true })
+    assert.equal(silence.status.status, 'done', JSON.stringify(silence.status))
+    const silenceOut = await download(srv.base, silence.sessionId, path.join(work, 'sil.mp3'))
+    assert.ok(Math.abs(duration(silenceOut) - 4) < 0.2, `Dauer ${duration(silenceOut)}`)
+    assert.deepEqual(
+      segmentFrequencies(silenceOut, 2).map((f) => Math.round(f / 100) * 100),
+      [500, 800],
+    )
+
+    const untouched = await convertViaServer(srv.base, padded, 'mp3', 128)
+    const untouchedOut = await download(srv.base, untouched.sessionId, path.join(work, 'raw.mp3'))
+    assert.ok(Math.abs(duration(untouchedOut) - 8) < 0.2, `Dauer ${duration(untouchedOut)}`)
+  },
+)
+
+function probeChapters(file) {
+  const r = spawnSync('ffprobe', ['-v', 'error', '-show_chapters', '-of', 'json', file])
+  return JSON.parse(r.stdout.toString()).chapters.map((c) => ({
+    title: c.tags?.title,
+    start: Math.round(parseFloat(c.start_time) * 10) / 10,
+  }))
+}
+
+test(
+  'N2: Kapitel je Track in MP3, OGG und WebM, Kapitel im Status',
+  { skip: !HAS_FFMPEG && 'ffmpeg fehlt' },
+  async (t) => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'plk-chap-'))
+    const srv = await startServer(path.join(work, 'temp'))
+    t.after(() => {
+      srv.stop()
+      fs.rmSync(work, { recursive: true, force: true })
+    })
+    const files = ['Intro', 'Song; Teil 2'].map((name, i) =>
+      makeTrack(work, `${name}.mp3`, { ext: 'mp3', freq: 500 + i * 300 }),
+    )
+    const expected = [
+      { title: 'Intro', start: 0 },
+      { title: 'Song; Teil 2', start: 2 },
+    ]
+
+    // Der Upload speichert bereinigte Namen; die Titel kommen wie aus der App
+    const titles = ['Intro.mp3', 'Song; Teil 2.mp3']
+    // identische MP3s → Stream-Copy-Pfad
+    const copy = await convertViaServer(srv.base, files, 'mp3', 192, { titles })
+    assert.equal(copy.status.status, 'done', JSON.stringify(copy.status))
+    assert.deepEqual(
+      copy.status.chapters.map((c) => c.title),
+      ['Intro', 'Song; Teil 2'],
+    )
+    const copyOut = await download(srv.base, copy.sessionId, path.join(work, 'copy.mp3'))
+    assert.deepEqual(probeChapters(copyOut), expected)
+
+    for (const format of ['mp3', 'ogg', 'webm']) {
+      const res = await convertViaServer(srv.base, files, format, 128, {
+        transition: 'gap',
+        transition_seconds: 1,
+        titles,
+      })
+      assert.equal(res.status.status, 'done', JSON.stringify(res.status))
+      const out = await download(srv.base, res.sessionId, path.join(work, `c.${format}`))
+      assert.deepEqual(probeChapters(out), [expected[0], { ...expected[1], start: 3 }], format)
+    }
+  },
+)

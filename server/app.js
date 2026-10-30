@@ -54,6 +54,9 @@ const {
   contentDisposition,
   coverExtension,
 } = require('./metadata')
+const { sanitizeTransition } = require('./transitions')
+const { sanitizeTracks } = require('./trim')
+const { sanitizeTitles } = require('./chapters')
 
 const app = express()
 app.use(express.json())
@@ -132,12 +135,26 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
       sessionId = crypto.randomBytes(16).toString('hex')
     }
 
-    // Gesamtgröße der Sitzung prüfen, bevor etwas in den Sitzungsordner wandert.
+    // Reihenfolge (order[]) und chunk_index auslesen.
+    const orderRaw = body['order[]'] ?? body.order
+    const orderList = Array.isArray(orderRaw) ? orderRaw : orderRaw !== undefined ? [orderRaw] : []
+    const chunkIndex = body.chunk_index !== undefined ? parseInt(body.chunk_index, 10) : null
     const existing = sessions.get(sessionId)
+    const orderOf = (i) => {
+      const value = orderList[i] !== undefined ? parseInt(orderList[i], 10) : chunkIndex
+      return Number.isFinite(value) && value >= 0 ? value : null
+    }
+
+    // Gesamtgröße der Sitzung prüfen, bevor etwas in den Sitzungsordner wandert.
+    // Wiederholte Uploads (N10) ersetzen die Datei derselben Position.
     const requestBytes = files.reduce((sum, f) => sum + (f.size || 0), 0)
+    const replacedBytes = files.reduce(
+      (sum, _f, i) => sum + (existing?.received?.[orderOf(i)]?.size || 0),
+      0,
+    )
     if (
       exceedsPlaylistLimit({
-        current: existing?.totalBytes || 0,
+        current: (existing?.totalBytes || 0) - replacedBytes,
         incoming: requestBytes,
         max: MAX_PLAYLIST_SIZE,
       })
@@ -163,17 +180,14 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
         progress: 0,
         files: [],
         totalBytes: 0,
+        // Position → gespeicherte Datei, für Wiederholung und Fortsetzen (N10)
+        received: {},
         createdAt: Date.now(),
         format: DEFAULT_FORMAT,
         bitrate: DEFAULT_BITRATE,
       }
       sessions.set(sessionId, session)
     }
-
-    // Reihenfolge (order[]) und total_files auslesen.
-    const orderRaw = body['order[]'] ?? body.order
-    const orderList = Array.isArray(orderRaw) ? orderRaw : orderRaw !== undefined ? [orderRaw] : []
-    const chunkIndex = body.chunk_index !== undefined ? parseInt(body.chunk_index, 10) : null
 
     const stored = []
     for (let i = 0; i < files.length; i++) {
@@ -184,16 +198,26 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
         continue
       }
 
-      let orderVal = orderList[i] !== undefined ? parseInt(orderList[i], 10) : chunkIndex
-      if (!Number.isFinite(orderVal)) orderVal = session.files.length
+      const orderVal = orderOf(i) ?? session.files.length
       const prefix = String(orderVal).padStart(4, '0')
       const safeName = sanitizeFilename(file.originalname)
       const targetName = `${prefix}_${safeName}`
       const targetPath = path.join(dir, targetName)
 
+      // Dieselbe Position kam schon an (Antwort ging verloren, neuer Versuch): ersetzen
+      session.received ??= {}
+      const previous = session.received[orderVal]
+      if (previous) {
+        if (previous.name !== targetName) await safeUnlink(path.join(dir, previous.name))
+        session.files = session.files.filter((name) => name !== previous.name)
+        session.totalBytes = (session.totalBytes || 0) - previous.size
+      }
+
       await fsp.rename(file.path, targetPath)
       session.files.push(targetName)
       session.totalBytes = (session.totalBytes || 0) + (file.size || 0)
+      session.received[orderVal] = { name: targetName, size: file.size || 0 }
+      session.updatedAt = Date.now()
       stored.push(targetName)
     }
 
@@ -212,6 +236,26 @@ app.post('/api/upload', ensureFreeSpace, upload.any(), async (req, res) => {
       .status(500)
       .json({ error: 'Upload fehlgeschlagen: ' + err.message, code: 'INTERNAL' })
   }
+})
+
+// --- Upload-Stand (N10) ----------------------------------------------------
+/** Welche Positionen der Server schon hat; die App lädt danach nur den Rest hoch. */
+app.get('/api/upload/:id', (req, res) => {
+  const sessionId = req.params.id
+  if (!isValidSessionId(sessionId)) {
+    return res.status(400).json({ error: 'Ungültige Session-ID', code: 'INVALID_SESSION' })
+  }
+  if (cancelledIds.has(sessionId)) {
+    return res.status(410).json({ error: 'Vorgang wurde abgebrochen', code: 'SESSION_CANCELLED' })
+  }
+  const session = sessions.get(sessionId)
+  if (!session) {
+    return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
+  }
+  const received = Object.keys(session.received || {})
+    .map(Number)
+    .sort((a, b) => a - b)
+  return res.json({ session_id: sessionId, status: session.status, received })
 })
 
 // --- Convert --------------------------------------------------------------
@@ -257,6 +301,14 @@ app.post('/api/convert', async (req, res) => {
     session.outputName = sanitizeOutputName(body.filename)
     // Kanäle: 1 = Mono (Presets „Sprache“, N11), sonst Stereo
     session.channels = parseInt(body.channels, 10) === 1 ? 1 : 2
+    // Pause/Crossfade zwischen Tracks (N4) und Lautheitsangleichung (N5)
+    session.transition = sanitizeTransition(body.transition, body.transition_seconds)
+    session.loudnorm = body.loudnorm === true
+    // Trimmen pro Track und Stille am Rand (N9)
+    session.tracks = sanitizeTracks(body.tracks)
+    session.trimSilence = body.trim_silence === true
+    // Originalnamen der Tracks für die Kapitel (N2)
+    session.titles = sanitizeTitles(body.titles)
     session.error = null
     session.errorCode = null
     session.errorFile = null
@@ -289,6 +341,8 @@ function statusPayload(session) {
   if (session.errorCode) payload.error_code = session.errorCode
   if (session.errorFile) payload.error_file = session.errorFile
   if (session.fileSize != null) payload.file_size = session.fileSize
+  // Kapitel erst mit dem fertigen Ergebnis (Tracklist in der App, N2)
+  if (session.status === 'done' && session.chapters) payload.chapters = session.chapters
   const queuePos = queuePosition(session.id)
   if (queuePos > 0) payload.queue_position = queuePos
   return payload

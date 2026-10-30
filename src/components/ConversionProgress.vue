@@ -60,7 +60,20 @@
     </div>
 
     <div class="flex items-center justify-between gap-3">
-      <p class="text-md text-ink-2">
+      <p
+        v-if="store.status === 'uploading' && store.uploadRetry"
+        class="text-md text-warning"
+        role="status"
+        data-testid="upload-retry"
+      >
+        {{
+          t('conversion.retrying', {
+            attempt: store.uploadRetry.attempt,
+            max: store.uploadRetry.max,
+          })
+        }}
+      </p>
+      <p v-else class="text-md text-ink-2">
         {{ t('conversion.progress') }}
       </p>
 

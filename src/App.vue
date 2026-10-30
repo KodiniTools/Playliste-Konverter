@@ -7,6 +7,7 @@
   import FileList from './components/FileList.vue'
   import FormatSelector from './components/FormatSelector.vue'
   import OutputDetails from './components/OutputDetails.vue'
+  import MixOptions from './components/MixOptions.vue'
   import ConversionProgress from './components/ConversionProgress.vue'
   import DownloadButton from './components/DownloadButton.vue'
   import SizeWarning from './components/SizeWarning.vue'
@@ -141,6 +142,7 @@
 
         <!-- Format Selector -->
         <FormatSelector v-if="store.files.length > 0" />
+        <MixOptions v-if="store.files.length > 0" />
         <OutputDetails v-if="store.files.length > 0" />
 
         <!-- Size Warning / All Clear -->
@@ -185,13 +187,24 @@
         <StatusIcon type="error" class="mt-0.5 h-5 w-5" />
         <div class="flex-1">
           <p class="text-md text-ink">{{ store.errorMessage }}</p>
-          <button
-            type="button"
-            class="mt-2 text-md font-medium text-link underline transition-colors hover:text-accent"
-            @click="store.resetJob"
-          >
-            {{ t('error.reset') }}
-          </button>
+          <div class="mt-2 flex flex-wrap items-center gap-4">
+            <button
+              v-if="store.canResume"
+              type="button"
+              data-testid="resume-upload"
+              class="inline-flex h-control-sm items-center rounded-md bg-accent px-4 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
+              @click="store.resumeUpload"
+            >
+              {{ t('error.resume') }}
+            </button>
+            <button
+              type="button"
+              class="text-md font-medium text-link underline transition-colors hover:text-accent"
+              @click="store.resetJob"
+            >
+              {{ t('error.reset') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
