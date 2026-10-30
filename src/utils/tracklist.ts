@@ -1,7 +1,7 @@
 import type { Chapter } from '../api/converter'
 
 /**
- * Tracklist der fertigen Playlist als Text oder CUE-Sheet (N2).
+ * Tracklist der fertigen Playlist als Text, CUE-Sheet, M3U, PLS oder JSON (N2).
  * Die Zeiten kommen vom Server (Kapitel), berücksichtigen also Zuschnitt,
  * Stille am Rand und Übergänge.
  */
@@ -53,4 +53,104 @@ export function buildCueSheet(chapters: readonly Chapter[], options: CueOptions)
     )
   })
   return lines.join('\r\n') + '\r\n'
+}
+
+/** Zeilenumbrüche würden M3U/PLS-Einträge zerreißen. */
+function lineText(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ')
+}
+
+const chapterSeconds = (chapter: Chapter) => Math.max(0, chapter.end - chapter.start)
+const baseName = (fileName: string) => fileName.replace(/\.[^.]+$/, '')
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
+
+/**
+ * Originaldatei je Kapitel. Der Server bildet die Titel aus den Dateinamen
+ * (Steuerzeichen weg, max. 200 Zeichen, ohne Endung) und lässt Kapitel ohne
+ * Länge weg; deshalb wird der Reihe nach verglichen statt per Index.
+ * Ohne Treffer gilt der Kapiteltitel.
+ */
+export function sourceFileNames(
+  chapters: readonly Chapter[],
+  fileNames: readonly string[],
+): string[] {
+  let next = 0
+  return chapters.map((chapter) => {
+    for (let i = next; i < fileNames.length; i++) {
+      const name = fileNames[i] ?? ''
+      const title = baseName(name.replace(CONTROL_CHARS, ' ').trim().slice(0, 200))
+      if (title === chapter.title) {
+        next = i + 1
+        return name
+      }
+    }
+    return chapter.title
+  })
+}
+
+export interface PlaylistOptions {
+  /** Datei je Kapitel (siehe sourceFileNames), gleiche Reihenfolge wie die Kapitel. */
+  files: readonly string[]
+  title?: string
+}
+
+/** Extended M3U (UTF-8) mit #EXTINF: Dauer in Sekunden und Titel je Track. */
+export function buildM3u(chapters: readonly Chapter[], options: PlaylistOptions): string {
+  const lines = ['#EXTM3U', '#EXTENC:UTF-8']
+  if (options.title) lines.push(`#PLAYLIST:${lineText(options.title)}`)
+  chapters.forEach((chapter, i) => {
+    lines.push(
+      `#EXTINF:${Math.round(chapterSeconds(chapter))},${lineText(chapter.title)}`,
+      lineText(options.files[i] ?? chapter.title),
+    )
+  })
+  return lines.join('\n') + '\n'
+}
+
+/** PLS Version 2 (INI-Format, CRLF). */
+export function buildPls(chapters: readonly Chapter[], options: PlaylistOptions): string {
+  const lines = ['[playlist]']
+  chapters.forEach((chapter, i) => {
+    const n = i + 1
+    lines.push(
+      `File${n}=${lineText(options.files[i] ?? chapter.title)}`,
+      `Title${n}=${lineText(chapter.title)}`,
+      `Length${n}=${Math.round(chapterSeconds(chapter))}`,
+    )
+  })
+  lines.push(`NumberOfEntries=${chapters.length}`, 'Version=2')
+  return lines.join('\r\n') + '\r\n'
+}
+
+export interface JsonTracklistOptions extends PlaylistOptions {
+  /** Name der fertigen Playlist-Datei, z. B. „Sommer Mix.mp3“. */
+  fileName: string
+  performer?: string
+}
+
+const roundMs = (value: number) => Math.round(value * 1000) / 1000
+
+/** Tracklist als JSON: Playlist-Datei plus Start, Ende und Dauer je Track (Sekunden). */
+export function buildTracklistJson(
+  chapters: readonly Chapter[],
+  options: JsonTracklistOptions,
+): string {
+  const last = chapters[chapters.length - 1]
+  const data = {
+    title: options.title ?? null,
+    performer: options.performer ?? null,
+    file: options.fileName,
+    duration: last ? roundMs(last.end) : 0,
+    tracks: chapters.map((chapter, i) => ({
+      number: i + 1,
+      title: chapter.title,
+      file: options.files[i] ?? chapter.title,
+      start: roundMs(chapter.start),
+      end: roundMs(chapter.end),
+      duration: roundMs(chapterSeconds(chapter)),
+      startTime: tracklistTime(chapter.start),
+    })),
+  }
+  return JSON.stringify(data, null, 2) + '\n'
 }

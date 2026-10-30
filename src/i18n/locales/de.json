@@ -156,7 +156,10 @@
     "toolNormalizer": "Audio-Normalisierer",
     "tracklist": "{n} Kapitel eingebettet. Tracklist:",
     "tracklistText": "Text (.txt)",
-    "tracklistCue": "CUE-Sheet (.cue)"
+    "tracklistCue": "CUE-Sheet (.cue)",
+    "tracklistM3u": "M3U (.m3u)",
+    "tracklistPls": "PLS (.pls)",
+    "tracklistJson": "JSON (.json)"
   },
   "image": {
     "title": "Playlist als Bild speichern",

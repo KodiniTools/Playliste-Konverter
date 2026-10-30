@@ -7,7 +7,14 @@
   import { OUTPUT_FORMATS, SHARE_TARGETS } from '../constants'
   import type { ShareTarget } from '../constants'
   import { replaceSharedFiles } from '../utils/sharedFileRepository'
-  import { buildCueSheet, buildTracklistText } from '../utils/tracklist'
+  import {
+    buildCueSheet,
+    buildM3u,
+    buildPls,
+    buildTracklistJson,
+    buildTracklistText,
+    sourceFileNames,
+  } from '../utils/tracklist'
   import { errorName } from '../utils/errors'
   import StatusIcon from './StatusIcon.vue'
   import { logger } from '../utils/logger'
@@ -142,19 +149,62 @@
     }
   }
 
-  /** Tracklist (N2) als Datei speichern: Text mit Startzeiten oder CUE-Sheet. */
-  function downloadTracklist(kind: 'txt' | 'cue') {
+  type TracklistKind = 'txt' | 'cue' | 'm3u' | 'pls' | 'json'
+
+  interface TracklistFormat {
+    kind: TracklistKind
+    labelKey: string
+    mimeType: string
+  }
+
+  /** Formate der Tracklist in der Reihenfolge der Links. */
+  const TRACKLIST_FORMATS: readonly TracklistFormat[] = [
+    { kind: 'txt', labelKey: 'download.tracklistText', mimeType: 'text/plain' },
+    { kind: 'cue', labelKey: 'download.tracklistCue', mimeType: 'text/plain' },
+    { kind: 'm3u', labelKey: 'download.tracklistM3u', mimeType: 'audio/x-mpegurl' },
+    { kind: 'pls', labelKey: 'download.tracklistPls', mimeType: 'audio/x-scpls' },
+    { kind: 'json', labelKey: 'download.tracklistJson', mimeType: 'application/json' },
+  ]
+
+  /**
+   * M3U/PLS verweisen auf die Originaldateien: im selben Ordner wie die
+   * Einzeltracks gespeichert, spielt jeder Player die Playlist ab.
+   */
+  function sourceFiles(): string[] {
+    return sourceFileNames(
+      store.chapters,
+      store.files.map((f) => f.name),
+    )
+  }
+
+  function buildTracklist(kind: TracklistKind, fileName: string, baseName: string): string {
+    const chapters = store.chapters
+    const title = store.tags.title.trim() || baseName
+    const performer = store.tags.artist.trim() || undefined
+    switch (kind) {
+      case 'txt':
+        return buildTracklistText(chapters)
+      case 'cue':
+        return buildCueSheet(chapters, { fileName, title, performer })
+      case 'm3u':
+        return buildM3u(chapters, { files: sourceFiles(), title })
+      case 'pls':
+        return buildPls(chapters, { files: sourceFiles(), title })
+      case 'json':
+        return buildTracklistJson(chapters, { files: sourceFiles(), title, performer, fileName })
+      default: {
+        const unknown: never = kind
+        throw new Error(`Unbekanntes Tracklist-Format: ${String(unknown)}`)
+      }
+    }
+  }
+
+  /** Tracklist (N2) als Datei speichern (Text, CUE-Sheet, M3U, PLS oder JSON). */
+  function downloadTracklist({ kind, mimeType }: TracklistFormat) {
     const fileName = store.outputFileName
     const baseName = fileName.replace(/\.[^.]+$/, '')
-    const content =
-      kind === 'txt'
-        ? buildTracklistText(store.chapters)
-        : buildCueSheet(store.chapters, {
-            fileName,
-            title: store.tags.title.trim() || baseName,
-            performer: store.tags.artist.trim() || undefined,
-          })
-    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }))
+    const content = buildTracklist(kind, fileName, baseName)
+    const url = URL.createObjectURL(new Blob([content], { type: `${mimeType};charset=utf-8` }))
     const link = document.createElement('a')
     link.href = url
     link.download = `${baseName}.${kind}`
@@ -240,22 +290,17 @@
 
     <p v-if="store.chapters.length > 1" class="mt-4 text-sm text-ink-2" data-testid="tracklist">
       {{ t('download.tracklist', { n: store.chapters.length }) }}
-      <button
-        type="button"
-        class="rounded-sm px-1 font-medium text-link hover:underline"
-        data-tracklist="txt"
-        @click="downloadTracklist('txt')"
+      <template v-for="(format, i) in TRACKLIST_FORMATS" :key="format.kind"
+        ><span v-if="i > 0" aria-hidden="true">·</span
+        ><button
+          type="button"
+          class="rounded-sm px-1 font-medium text-link hover:underline"
+          :data-tracklist="format.kind"
+          @click="downloadTracklist(format)"
+        >
+          {{ t(format.labelKey) }}
+        </button></template
       >
-        {{ t('download.tracklistText') }}</button
-      ><span aria-hidden="true">·</span
-      ><button
-        type="button"
-        class="rounded-sm px-1 font-medium text-link hover:underline"
-        data-tracklist="cue"
-        @click="downloadTracklist('cue')"
-      >
-        {{ t('download.tracklistCue') }}
-      </button>
     </p>
 
     <button

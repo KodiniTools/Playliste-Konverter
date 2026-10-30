@@ -156,7 +156,10 @@
     "toolNormalizer": "Audio Normalizer",
     "tracklist": "{n} chapters embedded. Track list:",
     "tracklistText": "Text (.txt)",
-    "tracklistCue": "CUE sheet (.cue)"
+    "tracklistCue": "CUE sheet (.cue)",
+    "tracklistM3u": "M3U (.m3u)",
+    "tracklistPls": "PLS (.pls)",
+    "tracklistJson": "JSON (.json)"
   },
   "image": {
     "title": "Save playlist as image",
