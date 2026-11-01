@@ -6,6 +6,18 @@
   <meta name="description" content="Häufig gestellte Fragen zum Playlist Konverter - Audio-Dateien online zusammenfügen.">
   <title>FAQ - Playlist Konverter</title>
   <link rel="canonical" href="https://kodinitools.com/playlistkonverter/faq.html">
+  <link rel="alternate" hreflang="de" href="https://kodinitools.com/playlistkonverter/faq.html">
+  <link rel="alternate" hreflang="en" href="https://kodinitools.com/playlistkonverter/faq.html?lang=en">
+  <link rel="alternate" hreflang="x-default" href="https://kodinitools.com/playlistkonverter/faq.html">
+  <!-- ?lang=de|en (hreflang-Ziel) hat Vorrang: vor allen Seitenskripten und der
+       SSI-Navigation speichern, die die Sprache aus localStorage.locale lesen. -->
+  <script>
+    try {
+      var urlLang = new URLSearchParams(location.search).get('lang')
+      if (urlLang === 'de' || urlLang === 'en') localStorage.setItem('locale', urlLang)
+    } catch (e) {}
+  </script>
+  <script type="module" src="/src/landing/localeHeadEntry.ts"></script>
   <link rel="stylesheet" href="/fontawesome/css/fontawesome.min.css" />
   <link rel="stylesheet" href="/fontawesome/css/solid.min.css" />
   <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
