@@ -3,12 +3,15 @@
 /** Konfiguration des Dienstes (Umgebungsvariablen mit Standardwerten). */
 const path = require('path')
 const { parseBytes } = require('./limits')
+const { parallelEncodeLimit } = require('./parallel')
 
 const PORT = parseInt(process.env.PORT || '9016', 10)
 const TEMP_DIR = process.env.TEMP_DIR || path.join(__dirname, 'temp')
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg'
 const FFPROBE = process.env.FFPROBE_PATH || 'ffprobe'
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10)
+// Gleichzeitige Track-Encoder über alle Konvertierungen (P3); 1 = aus
+const MAX_PARALLEL_ENCODES = parallelEncodeLimit(process.env.MAX_PARALLEL_ENCODES)
 const MAX_FILE_SIZE = parseBytes(process.env.MAX_FILE_SIZE, 500 * 1024 ** 2) // 500 MB pro Datei
 const MAX_FILES = 200
 // Gesamtgröße pro Sitzung – gleicher Wert wie MAX_PLAYLIST_SIZE der App (src/constants.js)
@@ -54,6 +57,7 @@ module.exports = {
   FFMPEG,
   FFPROBE,
   MAX_CONCURRENT,
+  MAX_PARALLEL_ENCODES,
   MAX_FILE_SIZE,
   MAX_FILES,
   MAX_PLAYLIST_SIZE,

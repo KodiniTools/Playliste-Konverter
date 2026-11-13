@@ -20,7 +20,14 @@
 
 const fs = require('fs')
 const { formatGB } = require('./limits')
-const { PORT, TEMP_DIR, MAX_PLAYLIST_SIZE, MIN_FREE_SPACE } = require('./config')
+const {
+  PORT,
+  TEMP_DIR,
+  MAX_PLAYLIST_SIZE,
+  MIN_FREE_SPACE,
+  MAX_CONCURRENT,
+  MAX_PARALLEL_ENCODES,
+} = require('./config')
 const { periodicCleanup } = require('./lifecycle')
 const { logFfmpegVersion } = require('./health')
 const app = require('./app')
@@ -41,6 +48,7 @@ app.listen(PORT, '127.0.0.1', (err) => {
   // eslint-disable-next-line no-console
   console.log(
     `Playlist Konverter Server läuft auf http://127.0.0.1:${PORT} (temp: ${TEMP_DIR}, ` +
-      `max. Playlist ${formatGB(MAX_PLAYLIST_SIZE)}, Reserve ${formatGB(MIN_FREE_SPACE)})`,
+      `max. Playlist ${formatGB(MAX_PLAYLIST_SIZE)}, Reserve ${formatGB(MIN_FREE_SPACE)}, ` +
+      `${MAX_CONCURRENT} Konvertierungen, ${MAX_PARALLEL_ENCODES} Track-Encoder)`,
   )
 })

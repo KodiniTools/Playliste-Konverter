@@ -21,6 +21,14 @@ läuft der Fortschritt bis 100 % und die Datei steht danach zum Download bereit.
   Kein Zwischenspeicher auf der Platte, keine Grenze bei der Dateianzahl.
 - Nicht lesbare Dateien brechen die Konvertierung mit dem Dateinamen ab, statt
   still zu fehlen.
+- **Paralleles Kodieren** (nur MP3-Ausgabe, nicht bei Crossfade, ab zwei Tracks): der
+  MP3-Encoder nutzt nur einen Kern. Deshalb wird jeder Track in einem eigenen ffmpeg-Prozess
+  zu einem MP3-Segment kodiert (höchstens `MAX_PARALLEL_ENCODES` gleichzeitig, über alle
+  Konvertierungen geteilt), danach fügt der concat-Demuxer die Segmente ohne Neukodierung
+  zusammen. Jeder Übergang trägt den Encoder-Vorlauf (ca. 25–50 ms); die Kapitel werden aus
+  den tatsächlichen Segmentlängen berechnet. Die Segmente liegen bis zum Zusammenfügen im
+  Sitzungsordner (zusätzlich etwa die Größe der Ausgabe). `MAX_PARALLEL_ENCODES=1` schaltet
+  den Weg ab.
 
 Hintergrund: Der concat-Demuxer übernimmt Codec und Parameter der **ersten** Datei.
 Bei gemischten Eingaben wurden spätere Dateien verworfen, ffmpeg endete trotzdem
@@ -57,6 +65,7 @@ PHP-FPM weiter.
 | `queue.js`              | Warteschlange, max. `MAX_CONCURRENT` parallele Konvertierungen     |
 | `lifecycle.js`          | Abbruch, Aufräumen nach Download und nach 1 Stunde                 |
 | `health.js`             | `/health`: `status` ok/degraded, `checks.ffmpeg`, `checks.storage` |
+| `parallel.js`           | Paralleles Kodieren je Track: Limit, Encoder-Plätze, Worker-Pool   |
 | `audio.js`, `limits.js` | Reine Helfer (ffmpeg-Argumente, Größen)                            |
 
 Fehlgeschlagene Konvertierungen stehen mit Session-ID und dem Ende der
@@ -92,16 +101,17 @@ nginx -t && systemctl reload nginx
 
 ## Konfiguration (Umgebungsvariablen)
 
-| Variable            | Standard        | Bedeutung                                                           |
-| ------------------- | --------------- | ------------------------------------------------------------------- |
-| `PORT`              | `9016`          | Listen-Port (nur `127.0.0.1`)                                       |
-| `TEMP_DIR`          | `<server>/temp` | Verzeichnis für Sessions/Uploads                                    |
-| `MAX_CONCURRENT`    | `3`             | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder) |
-| `MAX_PLAYLIST_SIZE` | `5G`            | Gesamtgröße pro Sitzung (413 darüber)                               |
-| `MAX_FILE_SIZE`     | `500M`          | Größe pro Datei (413 darüber)                                       |
-| `MIN_FREE_SPACE`    | `20G`           | Platzreserve auf der Temp-Partition (507 darunter)                  |
-| `FFMPEG_PATH`       | `ffmpeg`        | Pfad zur ffmpeg-Binary                                              |
-| `FFPROBE_PATH`      | `ffprobe`       | Pfad zur ffprobe-Binary                                             |
+| Variable               | Standard        | Bedeutung                                                              |
+| ---------------------- | --------------- | ---------------------------------------------------------------------- |
+| `PORT`                 | `9016`          | Listen-Port (nur `127.0.0.1`)                                          |
+| `TEMP_DIR`             | `<server>/temp` | Verzeichnis für Sessions/Uploads                                       |
+| `MAX_CONCURRENT`       | `3`             | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder)    |
+| `MAX_PARALLEL_ENCODES` | Kerne − 2       | Gleichzeitige Track-Encoder über alle Konvertierungen (MP3); `1` = aus |
+| `MAX_PLAYLIST_SIZE`    | `5G`            | Gesamtgröße pro Sitzung (413 darüber)                                  |
+| `MAX_FILE_SIZE`        | `500M`          | Größe pro Datei (413 darüber)                                          |
+| `MIN_FREE_SPACE`       | `20G`           | Platzreserve auf der Temp-Partition (507 darunter)                     |
+| `FFMPEG_PATH`          | `ffmpeg`        | Pfad zur ffmpeg-Binary                                                 |
+| `FFPROBE_PATH`         | `ffprobe`       | Pfad zur ffprobe-Binary                                                |
 
 ## Hinweise
 

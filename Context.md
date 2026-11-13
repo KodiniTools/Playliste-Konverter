@@ -48,22 +48,26 @@
 Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
 
 **Option A: Drag & Drop (empfohlen)**
+
 - Öffne den Datei-Explorer deines Computers
 - Wähle die gewünschten MP3- oder WAV-Dateien aus
 - Ziehe sie direkt in den markierten Upload-Bereich
 - Lasse die Maustaste los
 
 **Option B: Datei-Auswahl**
+
 - Klicke auf den Button **"Dateien auswählen"**
 - Navigiere zu deinen Audio-Dateien
 - Wähle eine oder mehrere Dateien aus
 - Bestätige mit "Öffnen"
 
 **Unterstützte Formate:**
+
 - MP3 (.mp3)
 - WAV (.wav)
 
 **Limits:**
+
 - Maximale Dateigröße pro Datei: 500 MB (Server, `server/server.js`)
 - Anzahl Dateien: nicht begrenzt (nur Gesamtgröße zählt)
 - Maximale Gesamtgröße: 5 GB (`MAX_PLAYLIST_SIZE` in `src/constants.ts`)
@@ -75,17 +79,20 @@ Es gibt zwei Möglichkeiten, Dateien hinzuzufügen:
 Nach dem Upload siehst du deine Dateien in einer Liste:
 
 **Reihenfolge ändern:**
+
 - Klicke auf einen Track und halte die Maustaste gedrückt
 - Ziehe den Track an die gewünschte Position
 - Lasse los – die neue Reihenfolge wird sofort übernommen
 
 **Audio-Vorschau:**
+
 - Klicke auf den **Play-Button** (▶) neben einem Track
 - Die Musik wird im Browser abgespielt
 - Ein Fortschrittsbalken zeigt die aktuelle Position
 - Klicke erneut zum Pausieren (⏸)
 
 **Dateien entfernen:**
+
 - Einzelne Datei: Klicke auf das **X** neben dem Track
 - Alle Dateien: Klicke auf **"Alle entfernen"**
 
@@ -93,12 +100,12 @@ Nach dem Upload siehst du deine Dateien in einer Liste:
 
 Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße:
 
-| Status (Token) | Größe | Bedeutung |
-|----------------|-------|-----------|
-| Bereit (`success`) | < 2,5 GB | Alles OK |
-| Größere Playlist (`info`) | ab 2,5 GB | Größere Playlist – längere Wartezeit |
-| Sehr große Playlist (`warning`) | ab 4 GB | Sehr große Playlist – lange Wartezeit |
-| Zu groß (`danger`) | > 5 GB | Zu groß – bitte Dateien entfernen |
+| Status (Token)                  | Größe     | Bedeutung                             |
+| ------------------------------- | --------- | ------------------------------------- |
+| Bereit (`success`)              | < 2,5 GB  | Alles OK                              |
+| Größere Playlist (`info`)       | ab 2,5 GB | Größere Playlist – längere Wartezeit  |
+| Sehr große Playlist (`warning`) | ab 4 GB   | Sehr große Playlist – lange Wartezeit |
+| Zu groß (`danger`)              | > 5 GB    | Zu groß – bitte Dateien entfernen     |
 
 > **Wichtig:** Bei roter Warnung ist der Konvertieren-Button deaktiviert. Entferne Dateien, um unter das Limit zu kommen.
 
@@ -106,21 +113,21 @@ Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße:
 
 **Format auswählen:**
 
-| Format | Codec | Beschreibung | Empfohlen für |
-|--------|-------|--------------|---------------|
-| **WebM** | Opus | Modernes Format, beste Qualität bei kleiner Größe | Web, moderne Player |
-| **MP3** | LAME | Universell kompatibel | Alle Geräte |
-| **OGG** | Vorbis | Open-Source Alternative | Linux, Open-Source |
+| Format   | Codec  | Beschreibung                                      | Empfohlen für       |
+| -------- | ------ | ------------------------------------------------- | ------------------- |
+| **WebM** | Opus   | Modernes Format, beste Qualität bei kleiner Größe | Web, moderne Player |
+| **MP3**  | LAME   | Universell kompatibel                             | Alle Geräte         |
+| **OGG**  | Vorbis | Open-Source Alternative                           | Linux, Open-Source  |
 
 **Bitrate (Qualität) wählen:**
 
-| Bitrate | Qualität | Dateigröße | Empfohlen für |
-|---------|----------|------------|---------------|
-| 64 kbps | Niedrig | Sehr klein | Sprache, Podcasts |
-| 128 kbps | Standard | Klein | Allgemeine Nutzung |
-| 192 kbps | Gut | Mittel | Musik-Streaming |
-| 256 kbps | Hoch | Größer | Hochwertige Musik |
-| 320 kbps | Maximum | Groß | Audiophile Qualität |
+| Bitrate  | Qualität | Dateigröße | Empfohlen für       |
+| -------- | -------- | ---------- | ------------------- |
+| 64 kbps  | Niedrig  | Sehr klein | Sprache, Podcasts   |
+| 128 kbps | Standard | Klein      | Allgemeine Nutzung  |
+| 192 kbps | Gut      | Mittel     | Musik-Streaming     |
+| 256 kbps | Hoch     | Größer     | Hochwertige Musik   |
+| 320 kbps | Maximum  | Groß       | Audiophile Qualität |
 
 > **Tipp:** Für die meisten Anwendungsfälle ist 128-192 kbps eine gute Wahl. Höhere Bitraten lohnen sich nur bei hochwertigen Quell-Dateien.
 
@@ -141,6 +148,7 @@ Die App zeigt dir automatisch Warnungen basierend auf der Gesamtgröße:
   - Bei großen Dateien kann dies einige Minuten dauern
 
 **Konvertierung abbrechen:**
+
 - Klicke jederzeit auf **"Abbrechen"**
 - Die App kehrt zum Ausgangszustand zurück
 
@@ -164,11 +172,13 @@ Nach erfolgreicher Konvertierung:
 Oben rechts findest du zwei Buttons:
 
 **Theme wechseln (☀/🌙):**
+
 - Klicke auf das Sonnen- oder Mond-Symbol
 - Wechselt zwischen hellem und dunklem Modus
 - Deine Präferenz wird gespeichert
 
 **Sprache wechseln (DE/EN):**
+
 - Klicke auf das Sprach-Symbol
 - Wechselt zwischen Deutsch und Englisch
 - Deine Präferenz wird gespeichert
@@ -178,24 +188,29 @@ Oben rechts findest du zwei Buttons:
 ### Häufige Fragen beim ersten Mal
 
 **"Warum kann ich nicht konvertieren?"**
+
 - Prüfe die Größenwarnung – ist sie rot?
 - Sind überhaupt Dateien hochgeladen?
 - Sind die Dateien im richtigen Format (MP3/WAV)?
 
 **"Warum dauert es so lange?"**
+
 - Große Playlists (>500 MB) benötigen mehr Zeit
 - Die Konvertierungszeit hängt von der Gesamtgröße ab
 - Bei langsamer Internetverbindung dauert der Upload länger
 
 **"Wo finde ich meine Datei?"**
+
 - Prüfe deinen Download-Ordner
 - Bei "Speichern unter" hast du den Speicherort selbst gewählt
 
 **"Kann ich die gleiche Playlist nochmal konvertieren?"**
+
 - Klicke auf **"Neue Konvertierung starten"**
 - Lade die Dateien erneut hoch
 
 **"Werden meine Dateien gespeichert?"**
+
 - Nein! Alle Dateien werden nach dem Download automatisch gelöscht
 - Deine Dateien werden nicht dauerhaft auf dem Server gespeichert
 
@@ -258,23 +273,23 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 
 ### Frontend
 
-| Technologie | Version | Zweck |
-|-------------|---------|-------|
-| Vue 3 | Composition API | JavaScript-Framework |
-| Pinia | 3 | State Management |
-| Vite | 8 | Build-Tool & Dev-Server |
+| Technologie  | Version                 | Zweck                                       |
+| ------------ | ----------------------- | ------------------------------------------- |
+| Vue 3        | Composition API         | JavaScript-Framework                        |
+| Pinia        | 3                       | State Management                            |
+| Vite         | 8                       | Build-Tool & Dev-Server                     |
 | Tailwind CSS | 4 (`@tailwindcss/vite`) | Utility-First CSS, Theme in `src/style.css` |
-| Vue-i18n | 11 | Internationalisierung (vorkompiliert) |
-| Axios | 1.21 | Upload mit Fortschritt (sonst `fetch`) |
+| Vue-i18n     | 11                      | Internationalisierung (vorkompiliert)       |
+| Axios        | 1.21                    | Upload mit Fortschritt (sonst `fetch`)      |
 
 ### Backend
 
-| Technologie | Zweck |
-|-------------|-------|
-| Node.js + Express (`server/`) | Konvertierungsdienst unter pm2, Port 9016 |
-| multer | Datei-Uploads |
-| FFmpeg + ffprobe | Audio-Verarbeitung |
-| Nginx | Webserver, Proxy für `/playlistkonverter/api/` |
+| Technologie                   | Zweck                                          |
+| ----------------------------- | ---------------------------------------------- |
+| Node.js + Express (`server/`) | Konvertierungsdienst unter pm2, Port 9016      |
+| multer                        | Datei-Uploads                                  |
+| FFmpeg + ffprobe              | Audio-Verarbeitung                             |
+| Nginx                         | Webserver, Proxy für `/playlistkonverter/api/` |
 
 ---
 
@@ -312,6 +327,7 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 ├── server/                       # Node-Konvertierungsdienst
 │   ├── server.js                 # Express-API, Queue, Cleanup
 │   ├── audio.js                  # ffmpeg-Argumente, Probe, Stream-Copy-Prüfung
+│   ├── parallel.js               # Paralleles Kodieren je Track (Limit, Encoder-Plätze)
 │   ├── limits.js                 # Größen- und Speicherlimits
 │   ├── ecosystem.config.cjs      # pm2-Konfiguration
 │   └── test/                     # node --test
@@ -326,12 +342,14 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 ## UI-Komponenten (Detail)
 
 ### FileUploader.vue
+
 - Drag-and-Drop Zone für Audio-Dateien
 - Alternativ: Datei-Auswahl via Button
 - Unterstützte Formate: MP3, WAV
 - Visuelles Feedback beim Hovern (Border-Highlight)
 
 ### FileList.vue
+
 - Playlist-Anzeige mit Track-Nummern
 - Größen-Anzeige pro Track und Gesamtgröße
 - **Audio-Vorschau**: Play/Pause Buttons mit Fortschrittsbalken
@@ -341,6 +359,7 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 - Maximale Scroll-Höhe mit Overflow
 
 ### FormatSelector.vue
+
 - Format-Auswahl: WebM (Opus), MP3, OGG (Vorbis)
 - Bitrate-Auswahl: 64, 128, 192, 256, 320 kbps
 - Format-spezifische Bitrate-Limits
@@ -349,13 +368,16 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 - Gespeicherte Werte werden beim Laden normalisiert (`normalizeFormat`, `normalizeBitrate`)
 
 ### SizeWarning.vue
+
 Gestaffelte Warnungen basierend auf Dateigröße:
+
 - **success** (< 2,5 GB): Alles OK
 - **info** (ab 2,5 GB = `SIZE_THRESHOLD_YELLOW`): Größere Playlist
 - **warning** (ab 4 GB = `SIZE_THRESHOLD_ORANGE`): Sehr große Playlist
 - **danger** (> 5 GB = `MAX_PLAYLIST_SIZE`): Zu groß, Konvertierung deaktiviert
 
 ### ConversionProgress.vue
+
 - Kombinierter Progress-Bar (Upload + Konvertierung)
 - Upload: 0-30% der Anzeige
 - Konvertierung: 30-100% der Anzeige
@@ -365,6 +387,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 - Abbrechen-Button mit Loading-Status
 
 ### DownloadButton.vue
+
 - Success-Anzeige mit Checkmark-Icon
 - Dateigrößen-Anzeige der konvertierten Datei
 - **File System Access API**: Speichern-Dialog für moderne Browser
@@ -372,6 +395,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 - Link zum Starten einer neuen Konvertierung
 
 ### ToastContainer.vue
+
 - Toast-Benachrichtigungen: Success, Error, Info, Warning
 - Auto-Dismiss nach konfigurierbarer Zeit
 - Slide-in/Slide-out Animationen
@@ -379,6 +403,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 - Farbcodiert nach Nachrichtentyp
 
 ### SettingsSwitcher.vue
+
 - Theme Toggle: Light/Dark Mode
 - Sprach-Switch: Deutsch ↔ Englisch
 - Icon-basierte Buttons
@@ -388,21 +413,21 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 
 ## API-Endpunkte
 
-| Endpoint | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/upload` | POST | Dateien hochladen, Session erstellen |
-| `/api/convert` | POST | Konvertierung starten |
-| `/api/status/{session_id}` | GET | Fortschritt abfragen |
-| `/api/download/{session_id}` | GET | Konvertierte Datei herunterladen |
-| `/api/events/{session_id}` | GET | Status als Server-Sent Events (Polling nur noch als Fallback) |
-| `/api/cancel/{session_id}` | POST | Abbrechen: ffmpeg beenden, Dateien und Slot freigeben (auch beim Schließen des Tabs per `sendBeacon`) |
+| Endpoint                     | Methode | Beschreibung                                                                                          |
+| ---------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `/api/upload`                | POST    | Dateien hochladen, Session erstellen                                                                  |
+| `/api/convert`               | POST    | Konvertierung starten                                                                                 |
+| `/api/status/{session_id}`   | GET     | Fortschritt abfragen                                                                                  |
+| `/api/download/{session_id}` | GET     | Konvertierte Datei herunterladen                                                                      |
+| `/api/events/{session_id}`   | GET     | Status als Server-Sent Events (Polling nur noch als Fallback)                                         |
+| `/api/cancel/{session_id}`   | POST    | Abbrechen: ffmpeg beenden, Dateien und Slot freigeben (auch beim Schließen des Tabs per `sendBeacon`) |
 
 ### Upload-Ablauf
 
 1. Dateien werden mit Reihenfolge-Information hochgeladen
 2. Session-ID wird generiert (32-Zeichen Hex)
 3. Dateien werden in `server/temp/{session_id}/` gespeichert (`TEMP_DIR`)
-4. Konvertierung: Stream-Copy nur bei identisch kodierten Dateien, sonst Neukodierung aller Dateien über eine Decoder→Encoder-Pipeline (siehe `server/README.md`)
+4. Konvertierung: Stream-Copy nur bei identisch kodierten Dateien, sonst Neukodierung aller Dateien über eine Decoder→Encoder-Pipeline (siehe `server/README.md`); MP3-Ausgabe ohne Crossfade wird je Track parallel kodiert und danach zusammengefügt (`MAX_PARALLEL_ENCODES`)
 
 ### Konvertierungs-Ablauf
 
@@ -516,6 +541,7 @@ Ablauf und Befehle: `DEPLOY.md` (`./deploy.sh` im Git-Checkout auf dem Server).
 ## Internationalisierung
 
 Unterstützte Sprachen:
+
 - **Deutsch (de)** - Standard
 - **Englisch (en)**
 
@@ -610,6 +636,7 @@ Unterstützte Sprachen:
 ### LocalStorage-Persistierung
 
 Folgende Einstellungen werden im Browser gespeichert:
+
 - **Theme**: Light/Dark Mode Präferenz
 - **Locale**: Sprach-Einstellung (de/en)
 - **Output-Format**: Zuletzt gewähltes Format
