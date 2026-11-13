@@ -140,6 +140,62 @@ function buildEncoderArgs({
 }
 
 /**
+ * ffmpeg-Argumente: eine Datei → ein fertig kodiertes MP3-Segment (P3).
+ * Gleiche Kette wie Decoder + Encoder im Ein-Encoder-Weg: Lautheit (N5),
+ * Zuschnitt (N9), einheitliches Stereo mit fester Rate, dann die gewünschte
+ * Kanalzahl (N11). padSeconds hängt die Pause zum nächsten Track als Stille an
+ * (N4) – nach der Lautheitsmessung, damit sie diese nicht verfälscht. Tags,
+ * Cover und Kapitel kommen erst beim Zusammenfügen.
+ * Die Dauer steht hier VOR -i (Eingabe-Option): als Ausgabe-Option würde sie
+ * auch die angehängte Stille abschneiden.
+ */
+function buildSegmentArgs({
+  inputFile,
+  outputFile,
+  sampleRate,
+  bitrate,
+  outputChannels = CHANNELS,
+  loudnorm = false,
+  start = 0,
+  duration = null,
+  padSeconds = 0,
+}) {
+  const filters = [
+    ...(loudnorm ? [LOUDNORM_FILTER] : []),
+    `aresample=${sampleRate}`,
+    'aformat=channel_layouts=stereo',
+    ...(padSeconds > 0 ? [`apad=pad_dur=${padSeconds}`] : []),
+  ]
+  return [
+    '-hide_banner',
+    '-nostdin',
+    ...(start > 0 ? ['-ss', String(start)] : []),
+    ...(duration !== null ? ['-t', String(duration)] : []),
+    '-i',
+    inputFile,
+    '-map',
+    '0:a:0',
+    '-vn',
+    '-af',
+    filters.join(','),
+    '-ar',
+    String(sampleRate),
+    '-ac',
+    String(outputChannels),
+    '-c:a',
+    'libmp3lame',
+    '-b:a',
+    `${bitrate}k`,
+    '-map_metadata',
+    '-1',
+    '-map_chapters',
+    '-1',
+    '-y',
+    outputFile,
+  ]
+}
+
+/**
  * ffmpeg-Argumente für Stream-Copy über den concat-Demuxer (nur Audio).
  * Der Demuxer übernimmt keine Tags der Eingaben; eigene Tags und Cover (N6)
  * sowie die Kapitel (N2) kommen dazu.
@@ -232,6 +288,7 @@ module.exports = {
   LOUDNORM_FILTER,
   buildEncoderArgs,
   buildCopyArgs,
+  buildSegmentArgs,
   parseFfmpegTime,
   displayName,
   probeAudio,

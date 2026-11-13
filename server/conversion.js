@@ -9,7 +9,13 @@ const { spawn } = require('child_process')
 const fs = require('fs')
 const fsp = require('fs/promises')
 const path = require('path')
-const { FFMPEG, FFPROBE, OUTPUT_FORMATS, DEFAULT_FORMAT } = require('./config')
+const {
+  FFMPEG,
+  FFPROBE,
+  OUTPUT_FORMATS,
+  DEFAULT_FORMAT,
+  MAX_PARALLEL_ENCODES,
+} = require('./config')
 const { sessionDirPath, listInputFiles } = require('./sessions')
 const {
   pickSampleRate,
@@ -17,6 +23,7 @@ const {
   buildDecoderArgs,
   buildEncoderArgs,
   buildCopyArgs,
+  buildSegmentArgs,
   parseFfmpegTime,
   displayName,
   probeAudio,
@@ -24,6 +31,11 @@ const {
 const { PcmJoiner, outputDuration } = require('./transitions')
 const { detectSilenceEdges, segmentFor, segmentLength, trackIndex } = require('./trim')
 const { chapterTitle, computeChapters, writeChaptersFile } = require('./chapters')
+const { createLimiter, canEncodeParallel, runPool } = require('./parallel')
+
+// Encoder-Plätze für das parallele Kodieren, geteilt von allen Konvertierungen (P3)
+const encodeSlots = createLimiter(MAX_PARALLEL_ENCODES)
+const NO_TRANSITION = { type: 'none', seconds: 0 }
 
 /** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
@@ -65,8 +77,11 @@ function waitForExit(proc) {
   })
 }
 
-/** Stream-Copy: alle Eingaben identisch kodiert → concat-Demuxer ohne Neukodierung. */
-async function runStreamCopy(session, dir, inputFiles, outputFile) {
+/**
+ * Stream-Copy: alle Eingaben identisch kodiert → concat-Demuxer ohne Neukodierung.
+ * progress false: der Aufrufer führt den Fortschritt selbst (paralleles Kodieren).
+ */
+async function runStreamCopy(session, dir, inputFiles, outputFile, { progress = true } = {}) {
   const concatPath = await writeConcatFile(dir, inputFiles)
   const proc = spawn(
     FFMPEG,
@@ -80,7 +95,9 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
   )
   session.proc = proc
   let stderrTail = ''
-  trackProgress(proc, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
+  const keepTail = (t) => (stderrTail = (stderrTail + t).slice(-8000))
+  if (progress) trackProgress(proc, session, keepTail)
+  else proc.stderr.on('data', (chunk) => keepTail(chunk.toString()))
   const { code, error } = await waitForExit(proc)
   session.proc = null
   if (error)
@@ -97,6 +114,140 @@ async function runStreamCopy(session, dir, inputFiles, outputFile) {
       stderr: stderrTail,
     }
   return { ok: true }
+}
+
+/** ffmpeg-Lauf für ein Segment; der Prozess hängt an session.procs (Abbruch). */
+async function runSegment(session, args, onTime = () => {}) {
+  const proc = spawn(FFMPEG, args)
+  session.procs.add(proc)
+  let stderrTail = ''
+  proc.stderr.on('data', (chunk) => {
+    const text = chunk.toString()
+    stderrTail = (stderrTail + text).slice(-2000)
+    const seconds = parseFfmpegTime(text)
+    if (seconds !== null) onTime(seconds)
+  })
+  const { code, error } = await waitForExit(proc)
+  session.procs.delete(proc)
+  return { ok: !error && code === 0, stderr: error ? error.message : stderrTail }
+}
+
+/**
+ * Paralleles Kodieren (P3, siehe parallel.js): jeder Track wird in einem eigenen
+ * ffmpeg-Prozess zu einem MP3-Segment, danach fügt der concat-Demuxer die
+ * Segmente ohne Neukodierung zusammen und schreibt Tags, Cover und Kapitel.
+ */
+async function runParallelEncode(session, dir, inputFiles, probes, segments, outputFile) {
+  const sampleRate = pickSampleRate(
+    session.format,
+    probes.map((p) => p.sampleRate),
+  )
+  const common = {
+    sampleRate,
+    bitrate: session.bitrate,
+    outputChannels: session.channels === 1 ? 1 : 2,
+  }
+  const segDir = path.join(dir, 'segments')
+  await fsp.mkdir(segDir, { recursive: true })
+  session.procs = new Set()
+  const segmentFiles = inputFiles.map((_, i) =>
+    path.join(segDir, `seg_${String(i).padStart(4, '0')}.mp3`),
+  )
+  const expected = session.totalDuration
+  const encoded = new Array(inputFiles.length).fill(0)
+  const updateProgress = () => {
+    if (!(expected > 0)) return
+    const seconds = encoded.reduce((sum, value) => sum + value, 0)
+    // 99 bleibt dem Zusammenfügen vorbehalten
+    session.progress = Math.min(98, Math.max(1, Math.round((seconds / expected) * 100)))
+  }
+
+  const gapSeconds = session.transition.type === 'gap' ? session.transition.seconds : 0
+
+  let failure = null
+  try {
+    await runPool({
+      count: inputFiles.length,
+      workers: MAX_PARALLEL_ENCODES,
+      limiter: encodeSlots,
+      shouldStop: () => session.cancelled || failure !== null,
+      task: async (i) => {
+        const result = await runSegment(
+          session,
+          buildSegmentArgs({
+            ...common,
+            inputFile: inputFiles[i],
+            outputFile: segmentFiles[i],
+            loudnorm: session.loudnorm,
+            ...segments[i],
+            // Pause (N4) als Stille am Ende jedes Tracks außer dem letzten
+            padSeconds: i < inputFiles.length - 1 ? gapSeconds : 0,
+          }),
+          (seconds) => {
+            encoded[i] = Math.max(encoded[i], seconds)
+            updateProgress()
+          },
+        )
+        if (result.ok || session.cancelled || failure) return
+        failure = {
+          ok: false,
+          error: `„${displayName(inputFiles[i])}“ konnte nicht gelesen werden.`,
+          errorCode: 'FILE_UNREADABLE',
+          errorFile: displayName(inputFiles[i]),
+          stderr: result.stderr,
+        }
+        // Die übrigen Encoder dieser Konvertierung laufen sonst umsonst weiter
+        for (const proc of session.procs) proc.kill('SIGKILL')
+      },
+    })
+    if (failure) return failure
+    if (session.cancelled) return { ok: false }
+
+    // Kapitel aus den tatsächlichen Segmentlängen (Encoder-Vorlauf je Segment;
+    // die Pause steckt schon im Segment des Vortracks)
+    const lengths = await Promise.all(
+      segmentFiles.map(async (file) => (await probeAudio(FFPROBE, file)).duration),
+    )
+    await applyChapters(session, dir, inputFiles, lengths, NO_TRANSITION, { vorbis: false })
+    if (session.cancelled) return { ok: false }
+
+    // Leere Segmente (Track komplett weggeschnitten) auslassen: der concat-Demuxer
+    // bricht an einer leeren Datei ab und liefert trotzdem Code 0.
+    const parts = segmentFiles.filter((_, i) => lengths[i] > 0)
+    if (parts.length === 0)
+      return { ok: false, error: 'Keine Audiodaten zum Kodieren', errorCode: 'FFMPEG_FAILED' }
+
+    session.progress = 99
+    const joined = await runStreamCopy(session, dir, parts, outputFile, { progress: false })
+    if (!joined.ok || session.cancelled) return joined
+    // Der concat-Demuxer kann still kürzen – die Ausgabe muss alle Segmente enthalten
+    const total = lengths.reduce((sum, value) => sum + value, 0)
+    const written = (await probeAudio(FFPROBE, outputFile)).duration
+    if (written < total - Math.max(1, total * 0.001))
+      return {
+        ok: false,
+        error: `Zusammenfügen unvollständig (${written.toFixed(1)} s von ${total.toFixed(1)} s)`,
+        errorCode: 'FFMPEG_FAILED',
+      }
+    return joined
+  } finally {
+    session.procs = null
+    await fsp.rm(segDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
+/**
+ * Gesamtdauer und Kapitel je Track (N2) setzen: in der Datei und für die
+ * Tracklist der App. `lengths` sind die Längen der Tracks in der Ausgabe.
+ */
+async function applyChapters(session, dir, inputFiles, lengths, transition, { vorbis }) {
+  session.totalDuration = outputDuration(lengths, transition)
+  session.chapters = computeChapters(
+    lengths,
+    inputFiles.map((file) => session.titles?.[trackIndex(file)] ?? chapterTitle(displayName(file))),
+    transition,
+  )
+  session.chaptersPath = await writeChaptersFile(dir, session.chapters, { vorbis })
 }
 
 /** Eine Datei in einheitliches PCM dekodieren und über den Joiner in den Encoder schreiben. */
@@ -244,16 +395,7 @@ async function runConversion(session) {
     for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
     const segments = await trackSegments(session, inputFiles, probes)
     const lengths = probes.map((p, i) => segmentLength(p.duration, segments[i]))
-    session.totalDuration = outputDuration(lengths, session.transition)
-    // Kapitel je Track (N2): in der Datei und für die Tracklist der App
-    session.chapters = computeChapters(
-      lengths,
-      inputFiles.map(
-        (file) => session.titles?.[trackIndex(file)] ?? chapterTitle(displayName(file)),
-      ),
-      session.transition,
-    )
-    session.chaptersPath = await writeChaptersFile(dir, session.chapters, {
+    await applyChapters(session, dir, inputFiles, lengths, session.transition, {
       vorbis: fmt.codec === 'libvorbis',
     })
     // Während der Analyse abgebrochen: nichts mehr starten
@@ -270,10 +412,21 @@ async function runConversion(session) {
       session.transition.type === 'none' &&
       !session.loudnorm &&
       segments.every((seg) => seg.start === 0 && seg.duration === null)
-    session.mode = streamCopy ? 'copy' : 'reencode'
-    const result = streamCopy
-      ? await runStreamCopy(session, dir, inputFiles, outputFile)
-      : await runReencode(session, inputFiles, probes, segments, fmt, outputFile)
+    // Paralleles Kodieren je Track (P3): nur MP3, nicht bei Crossfade
+    const parallel =
+      !streamCopy &&
+      canEncodeParallel({
+        codec: fmt.codec,
+        transitionType: session.transition.type,
+        trackCount: inputFiles.length,
+        limit: MAX_PARALLEL_ENCODES,
+      })
+    session.mode = streamCopy ? 'copy' : parallel ? 'parallel' : 'reencode'
+    let result
+    if (streamCopy) result = await runStreamCopy(session, dir, inputFiles, outputFile)
+    else if (parallel)
+      result = await runParallelEncode(session, dir, inputFiles, probes, segments, outputFile)
+    else result = await runReencode(session, inputFiles, probes, segments, fmt, outputFile)
 
     if (session.cancelled) return
     if (result.ok && fs.existsSync(outputFile)) {
@@ -296,6 +449,7 @@ async function runConversion(session) {
   } finally {
     session.proc = null
     session.decoder = null
+    session.procs = null
   }
 }
 

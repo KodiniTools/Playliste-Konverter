@@ -28,6 +28,9 @@ module.exports = {
         // Gleichzeitige Konvertierungen. Je Job laufen ein Decoder und ein Encoder
         // (~1–2 Kerne); 4 passt zu 8 Kernen und lässt Luft für die übrigen Tools.
         MAX_CONCURRENT: 4,
+        // Gleichzeitige Track-Encoder über ALLE Konvertierungen (MP3, parallel.js).
+        // 6 von 8 Kernen; 1 schaltet das parallele Kodieren ab.
+        MAX_PARALLEL_ENCODES: 6,
         // Gesamtgröße pro Sitzung (wie MAX_PLAYLIST_SIZE der App, src/constants.js)
         MAX_PLAYLIST_SIZE: '5G',
         // Freier Platz, der auf der Partition des Temp-Ordners immer bleiben muss
