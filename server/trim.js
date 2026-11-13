@@ -10,6 +10,7 @@
  */
 
 const { spawn } = require('child_process')
+const { watchStall } = require('./watchdog')
 
 const MAX_TRACKS = 1000
 const SILENCE_THRESHOLD = '-50dB'
@@ -64,9 +65,11 @@ function parseSilenceEdges(stderr, duration) {
 
 /**
  * Stille am Rand einer Datei suchen (eigener ffmpeg-Lauf).
- * onSpawn bekommt den Prozess, damit ein Abbruch ihn beenden kann.
+ * onSpawn bekommt den Prozess, damit ein Abbruch ihn beenden kann. stallMs:
+ * Frist ohne Lebenszeichen, nach der der Lauf beendet wird (0 = aus); der
+ * Track bleibt dann ungekürzt.
  */
-function detectSilenceEdges(ffmpeg, filePath, duration, onSpawn = () => {}) {
+function detectSilenceEdges(ffmpeg, filePath, duration, onSpawn = () => {}, stallMs = 0) {
   return new Promise((resolve) => {
     const proc = spawn(ffmpeg, [
       '-hide_banner',
@@ -82,8 +85,11 @@ function detectSilenceEdges(ffmpeg, filePath, duration, onSpawn = () => {}) {
       '-',
     ])
     onSpawn(proc)
+    const watch = watchStall(proc, stallMs)
     let stderr = ''
     proc.stderr.on('data', (d) => {
+      // ffmpeg schreibt laufend seinen Fortschritt: Lebenszeichen
+      watch.touch()
       const text = d.toString()
       // nur die silencedetect-Zeilen behalten
       for (const line of text.split('\n')) if (line.includes('silence_')) stderr += line + '\n'

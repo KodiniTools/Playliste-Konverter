@@ -10,7 +10,7 @@ const { dequeue } = require('./queue')
 async function removeSession(sessionId) {
   const session = sessions.get(sessionId)
   if (session) session.cancelled = true
-  // procs: Track-Encoder beim parallelen Kodieren (P3)
+  // procs: Stille-Analyse und Track-Encoder (laufen parallel)
   for (const proc of [session?.decoder, session?.proc, ...(session?.procs ?? [])]) {
     if (!proc) continue
     try {

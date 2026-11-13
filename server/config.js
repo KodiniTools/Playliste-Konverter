@@ -4,6 +4,7 @@
 const path = require('path')
 const { parseBytes } = require('./limits')
 const { parallelEncodeLimit } = require('./parallel')
+const { stallTimeoutMs } = require('./watchdog')
 
 const PORT = parseInt(process.env.PORT || '9016', 10)
 const TEMP_DIR = process.env.TEMP_DIR || path.join(__dirname, 'temp')
@@ -12,6 +13,8 @@ const FFPROBE = process.env.FFPROBE_PATH || 'ffprobe'
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10)
 // Gleichzeitige Track-Encoder über alle Konvertierungen (P3); 1 = aus
 const MAX_PARALLEL_ENCODES = parallelEncodeLimit(process.env.MAX_PARALLEL_ENCODES)
+// Frist ohne Fortschritt, nach der ein ffmpeg-Prozess beendet wird (Sekunden; 0 = aus)
+const FFMPEG_STALL_MS = stallTimeoutMs(process.env.FFMPEG_STALL_TIMEOUT)
 const MAX_FILE_SIZE = parseBytes(process.env.MAX_FILE_SIZE, 500 * 1024 ** 2) // 500 MB pro Datei
 const MAX_FILES = 200
 // Gesamtgröße pro Sitzung – gleicher Wert wie MAX_PLAYLIST_SIZE der App (src/constants.js)
@@ -58,6 +61,7 @@ module.exports = {
   FFPROBE,
   MAX_CONCURRENT,
   MAX_PARALLEL_ENCODES,
+  FFMPEG_STALL_MS,
   MAX_FILE_SIZE,
   MAX_FILES,
   MAX_PLAYLIST_SIZE,

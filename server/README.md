@@ -21,6 +21,13 @@ läuft der Fortschritt bis 100 % und die Datei steht danach zum Download bereit.
   Kein Zwischenspeicher auf der Platte, keine Grenze bei der Dateianzahl.
 - Nicht lesbare Dateien brechen die Konvertierung mit dem Dateinamen ab, statt
   still zu fehlen.
+- **Analyse parallel**: `ffprobe` läuft für bis zu 8 Dateien gleichzeitig, die Suche nach
+  Stille am Rand (dekodiert jede Datei ganz) teilt sich die Encoder-Plätze
+  (`MAX_PARALLEL_ENCODES`).
+- **Watchdog** (`watchdog.js`): kommt ein ffmpeg-Prozess `FFMPEG_STALL_TIMEOUT` Sekunden
+  lang nicht voran, wird er beendet und die Konvertierung endet mit `FFMPEG_FAILED`
+  (im Log mit Dateiname), statt den Slot für immer zu belegen. Eine hängende
+  Stille-Suche lässt nur den betroffenen Track ungekürzt.
 - **Paralleles Kodieren** (nur MP3-Ausgabe, nicht bei Crossfade, ab zwei Tracks): der
   MP3-Encoder nutzt nur einen Kern. Deshalb wird jeder Track in einem eigenen ffmpeg-Prozess
   zu einem MP3-Segment kodiert (höchstens `MAX_PARALLEL_ENCODES` gleichzeitig, über alle
@@ -66,6 +73,7 @@ PHP-FPM weiter.
 | `lifecycle.js`          | Abbruch, Aufräumen nach Download und nach 1 Stunde                 |
 | `health.js`             | `/health`: `status` ok/degraded, `checks.ffmpeg`, `checks.storage` |
 | `parallel.js`           | Paralleles Kodieren je Track: Limit, Encoder-Plätze, Worker-Pool   |
+| `watchdog.js`           | Beendet ffmpeg-Prozesse, die nicht mehr vorankommen                |
 | `audio.js`, `limits.js` | Reine Helfer (ffmpeg-Argumente, Größen)                            |
 
 Fehlgeschlagene Konvertierungen stehen mit Session-ID und dem Ende der
@@ -101,17 +109,18 @@ nginx -t && systemctl reload nginx
 
 ## Konfiguration (Umgebungsvariablen)
 
-| Variable               | Standard        | Bedeutung                                                              |
-| ---------------------- | --------------- | ---------------------------------------------------------------------- |
-| `PORT`                 | `9016`          | Listen-Port (nur `127.0.0.1`)                                          |
-| `TEMP_DIR`             | `<server>/temp` | Verzeichnis für Sessions/Uploads                                       |
-| `MAX_CONCURRENT`       | `3`             | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder)    |
-| `MAX_PARALLEL_ENCODES` | Kerne − 2       | Gleichzeitige Track-Encoder über alle Konvertierungen (MP3); `1` = aus |
-| `MAX_PLAYLIST_SIZE`    | `5G`            | Gesamtgröße pro Sitzung (413 darüber)                                  |
-| `MAX_FILE_SIZE`        | `500M`          | Größe pro Datei (413 darüber)                                          |
-| `MIN_FREE_SPACE`       | `20G`           | Platzreserve auf der Temp-Partition (507 darunter)                     |
-| `FFMPEG_PATH`          | `ffmpeg`        | Pfad zur ffmpeg-Binary                                                 |
-| `FFPROBE_PATH`         | `ffprobe`       | Pfad zur ffprobe-Binary                                                |
+| Variable               | Standard        | Bedeutung                                                                        |
+| ---------------------- | --------------- | -------------------------------------------------------------------------------- |
+| `PORT`                 | `9016`          | Listen-Port (nur `127.0.0.1`)                                                    |
+| `TEMP_DIR`             | `<server>/temp` | Verzeichnis für Sessions/Uploads                                                 |
+| `MAX_CONCURRENT`       | `3`             | Max. gleichzeitige Konvertierungen (je Encoder + aktueller Decoder)              |
+| `MAX_PARALLEL_ENCODES` | Kerne − 2       | Gleichzeitige Track-Encoder über alle Konvertierungen (MP3); `1` = aus           |
+| `FFMPEG_STALL_TIMEOUT` | `120`           | Sekunden ohne Fortschritt, nach denen ein ffmpeg-Prozess beendet wird; `0` = aus |
+| `MAX_PLAYLIST_SIZE`    | `5G`            | Gesamtgröße pro Sitzung (413 darüber)                                            |
+| `MAX_FILE_SIZE`        | `500M`          | Größe pro Datei (413 darüber)                                                    |
+| `MIN_FREE_SPACE`       | `20G`           | Platzreserve auf der Temp-Partition (507 darunter)                               |
+| `FFMPEG_PATH`          | `ffmpeg`        | Pfad zur ffmpeg-Binary                                                           |
+| `FFPROBE_PATH`         | `ffprobe`       | Pfad zur ffprobe-Binary                                                          |
 
 ## Hinweise
 

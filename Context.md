@@ -328,6 +328,7 @@ Detaillierte Benutzeranleitung für Erstbenutzer:
 │   ├── server.js                 # Express-API, Queue, Cleanup
 │   ├── audio.js                  # ffmpeg-Argumente, Probe, Stream-Copy-Prüfung
 │   ├── parallel.js               # Paralleles Kodieren je Track (Limit, Encoder-Plätze)
+│   ├── watchdog.js               # Beendet hängende ffmpeg-Prozesse
 │   ├── limits.js                 # Größen- und Speicherlimits
 │   ├── ecosystem.config.cjs      # pm2-Konfiguration
 │   └── test/                     # node --test
