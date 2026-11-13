@@ -104,4 +104,33 @@ async function runPool({ count, workers, limiter, shouldStop, task }) {
   await Promise.all(Array.from({ length: Math.min(workers, count) }, worker))
 }
 
-module.exports = { parallelEncodeLimit, createLimiter, canEncodeParallel, runPool, MAX_LIMIT }
+/**
+ * `fn` auf alle Einträge anwenden, höchstens `limit` gleichzeitig; die
+ * Ergebnisse stehen in der Reihenfolge der Eingabe.
+ * @template T, R
+ * @param {T[]} items
+ * @param {number} limit
+ * @param {(item: T, index: number) => Promise<R>} fn
+ * @returns {Promise<R[]>}
+ */
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++
+      results[index] = await fn(items[index], index)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker))
+  return results
+}
+
+module.exports = {
+  mapLimit,
+  parallelEncodeLimit,
+  createLimiter,
+  canEncodeParallel,
+  runPool,
+  MAX_LIMIT,
+}

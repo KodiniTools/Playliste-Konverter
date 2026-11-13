@@ -22,6 +22,7 @@ const CHANNELS = 2
 const DEFAULT_RATE = 44100
 // Samplerates, die ohne Resampling übernommen werden (mp3/vorbis können beide)
 const KEEP_RATES = [44100, 48000]
+const PROBE_TIMEOUT_MS = 60 * 1000
 
 /**
  * Samplerate der Ausgabe. Opus arbeitet intern immer mit 48 kHz; sonst wird eine
@@ -248,17 +249,22 @@ function displayName(filePath) {
  */
 function probeAudio(ffprobe, filePath) {
   return new Promise((resolve) => {
-    const proc = spawn(ffprobe, [
-      '-v',
-      'error',
-      '-select_streams',
-      'a:0',
-      '-show_entries',
-      'stream=codec_name,sample_rate,channels:format=duration',
-      '-of',
-      'json',
-      filePath,
-    ])
+    const proc = spawn(
+      ffprobe,
+      [
+        '-v',
+        'error',
+        '-select_streams',
+        'a:0',
+        '-show_entries',
+        'stream=codec_name,sample_rate,channels:format=duration',
+        '-of',
+        'json',
+        filePath,
+      ],
+      // ffprobe liest nur den Dateikopf; hängt es, zählt die Datei als unlesbar
+      { timeout: PROBE_TIMEOUT_MS, killSignal: 'SIGKILL' },
+    )
     let out = ''
     proc.stdout.on('data', (d) => (out += d.toString()))
     const empty = { codec: '', sampleRate: 0, channels: 0, duration: 0 }

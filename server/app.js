@@ -427,6 +427,12 @@ app.post('/api/cover/:id', (req, res) => {
   }
   coverUpload(req, res, async (err) => {
     const file = req.file
+    // Abgelehntes Bild VOR der Antwort löschen: der Client darf sich darauf
+    // verlassen, dass nach einer Absage nichts liegen bleibt.
+    const reject = async (status, body) => {
+      if (file) await safeUnlink(file.path)
+      return res.status(status).json(body)
+    }
     try {
       if (err) {
         const tooLarge = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
@@ -436,16 +442,17 @@ app.post('/api/cover/:id', (req, res) => {
       }
       const session = sessions.get(sessionId)
       if (!session || !fs.existsSync(sessionDirPath(sessionId))) {
-        return res.status(404).json({ error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
+        return await reject(404, { error: 'Session nicht gefunden', code: 'SESSION_NOT_FOUND' })
       }
       if (session.status === 'converting' || session.status === 'queued') {
-        return res
-          .status(409)
-          .json({ error: 'Konvertierung läuft bereits', code: 'ALREADY_CONVERTING' })
+        return await reject(409, {
+          error: 'Konvertierung läuft bereits',
+          code: 'ALREADY_CONVERTING',
+        })
       }
       const ext = file && coverExtension(file.originalname)
       if (!ext) {
-        return res.status(400).json({ error: 'Nur JPEG oder PNG', code: 'INVALID_COVER' })
+        return await reject(400, { error: 'Nur JPEG oder PNG', code: 'INVALID_COVER' })
       }
       const target = path.join(sessionDirPath(sessionId), `cover.${ext}`)
       await fsp.rename(file.path, target)

@@ -15,6 +15,7 @@ const {
   OUTPUT_FORMATS,
   DEFAULT_FORMAT,
   MAX_PARALLEL_ENCODES,
+  FFMPEG_STALL_MS,
 } = require('./config')
 const { sessionDirPath, listInputFiles } = require('./sessions')
 const {
@@ -31,11 +32,27 @@ const {
 const { PcmJoiner, outputDuration } = require('./transitions')
 const { detectSilenceEdges, segmentFor, segmentLength, trackIndex } = require('./trim')
 const { chapterTitle, computeChapters, writeChaptersFile } = require('./chapters')
-const { createLimiter, canEncodeParallel, runPool } = require('./parallel')
+const { createLimiter, canEncodeParallel, runPool, mapLimit } = require('./parallel')
+const { watchStall } = require('./watchdog')
 
 // Encoder-Plätze für das parallele Kodieren, geteilt von allen Konvertierungen (P3)
 const encodeSlots = createLimiter(MAX_PARALLEL_ENCODES)
 const NO_TRANSITION = { type: 'none', seconds: 0 }
+// ffprobe liest nur Dateiköpfe: mehrere gleichzeitig kosten kaum CPU (P2)
+const PROBE_PARALLEL = 8
+
+/** Ergebnis, wenn der Watchdog ein hängendes ffmpeg beendet hat. */
+function stallFailure(file = null) {
+  const seconds = Math.round(FFMPEG_STALL_MS / 1000)
+  return {
+    ok: false,
+    error:
+      `FFmpeg kam ${seconds} s lang nicht voran und wurde beendet` +
+      (file ? ` („${displayName(file)}“)` : ''),
+    errorCode: 'FFMPEG_FAILED',
+    errorFile: file ? displayName(file) : null,
+  }
+}
 
 /** concat.txt für den ffmpeg concat-Demuxer schreiben (nur Stream-Copy-Pfad). */
 async function writeConcatFile(dir, inputFiles) {
@@ -45,13 +62,21 @@ async function writeConcatFile(dir, inputFiles) {
   return concatPath
 }
 
-/** Fortschritt aus der ffmpeg-Zeit (time=…) relativ zur Gesamtdauer. */
-function trackProgress(proc, session, onStderr) {
+/**
+ * Fortschritt aus der ffmpeg-Zeit (time=…) relativ zur Gesamtdauer.
+ * onAdvance meldet, dass die Zeit weitergelaufen ist (Lebenszeichen für den Watchdog).
+ */
+function trackProgress(proc, session, onStderr, onAdvance = () => {}) {
+  let last = -1
   proc.stderr.on('data', (chunk) => {
     const text = chunk.toString()
     onStderr(text)
     const seconds = parseFfmpegTime(text)
     if (seconds === null) return
+    if (seconds > last) {
+      last = seconds
+      onAdvance()
+    }
     if (session.totalDuration > 0) {
       session.progress = Math.min(
         99,
@@ -94,12 +119,18 @@ async function runStreamCopy(session, dir, inputFiles, outputFile, { progress = 
     }),
   )
   session.proc = proc
+  // Kopieren ist schnell und gleichmäßig: jede ffmpeg-Ausgabe gilt als Lebenszeichen
+  const watch = watchStall(proc, FFMPEG_STALL_MS)
   let stderrTail = ''
-  const keepTail = (t) => (stderrTail = (stderrTail + t).slice(-8000))
+  const keepTail = (t) => {
+    watch.touch()
+    stderrTail = (stderrTail + t).slice(-8000)
+  }
   if (progress) trackProgress(proc, session, keepTail)
   else proc.stderr.on('data', (chunk) => keepTail(chunk.toString()))
   const { code, error } = await waitForExit(proc)
   session.proc = null
+  if (watch.stalled && !session.cancelled) return stallFailure()
   if (error)
     return {
       ok: false,
@@ -120,16 +151,28 @@ async function runStreamCopy(session, dir, inputFiles, outputFile, { progress = 
 async function runSegment(session, args, onTime = () => {}) {
   const proc = spawn(FFMPEG, args)
   session.procs.add(proc)
+  const watch = watchStall(proc, FFMPEG_STALL_MS)
   let stderrTail = ''
+  let last = -1
   proc.stderr.on('data', (chunk) => {
     const text = chunk.toString()
     stderrTail = (stderrTail + text).slice(-2000)
     const seconds = parseFfmpegTime(text)
-    if (seconds !== null) onTime(seconds)
+    if (seconds === null) return
+    // Nur eine weiterlaufende Zeit ist ein Lebenszeichen
+    if (seconds > last) {
+      last = seconds
+      watch.touch()
+    }
+    onTime(seconds)
   })
   const { code, error } = await waitForExit(proc)
-  session.procs.delete(proc)
-  return { ok: !error && code === 0, stderr: error ? error.message : stderrTail }
+  session.procs?.delete(proc)
+  return {
+    ok: !error && code === 0,
+    stalled: watch.stalled,
+    stderr: error ? error.message : stderrTail,
+  }
 }
 
 /**
@@ -149,7 +192,6 @@ async function runParallelEncode(session, dir, inputFiles, probes, segments, out
   }
   const segDir = path.join(dir, 'segments')
   await fsp.mkdir(segDir, { recursive: true })
-  session.procs = new Set()
   const segmentFiles = inputFiles.map((_, i) =>
     path.join(segDir, `seg_${String(i).padStart(4, '0')}.mp3`),
   )
@@ -189,13 +231,15 @@ async function runParallelEncode(session, dir, inputFiles, probes, segments, out
           },
         )
         if (result.ok || session.cancelled || failure) return
-        failure = {
-          ok: false,
-          error: `„${displayName(inputFiles[i])}“ konnte nicht gelesen werden.`,
-          errorCode: 'FILE_UNREADABLE',
-          errorFile: displayName(inputFiles[i]),
-          stderr: result.stderr,
-        }
+        failure = result.stalled
+          ? { ...stallFailure(inputFiles[i]), stderr: result.stderr }
+          : {
+              ok: false,
+              error: `„${displayName(inputFiles[i])}“ konnte nicht gelesen werden.`,
+              errorCode: 'FILE_UNREADABLE',
+              errorFile: displayName(inputFiles[i]),
+              stderr: result.stderr,
+            }
         // Die übrigen Encoder dieser Konvertierung laufen sonst umsonst weiter
         for (const proc of session.procs) proc.kill('SIGKILL')
       },
@@ -205,8 +249,10 @@ async function runParallelEncode(session, dir, inputFiles, probes, segments, out
 
     // Kapitel aus den tatsächlichen Segmentlängen (Encoder-Vorlauf je Segment;
     // die Pause steckt schon im Segment des Vortracks)
-    const lengths = await Promise.all(
-      segmentFiles.map(async (file) => (await probeAudio(FFPROBE, file)).duration),
+    const lengths = await mapLimit(
+      segmentFiles,
+      PROBE_PARALLEL,
+      async (file) => (await probeAudio(FFPROBE, file)).duration,
     )
     await applyChapters(session, dir, inputFiles, lengths, NO_TRANSITION, { vorbis: false })
     if (session.cancelled) return { ok: false }
@@ -231,7 +277,6 @@ async function runParallelEncode(session, dir, inputFiles, probes, segments, out
       }
     return joined
   } finally {
-    session.procs = null
     await fsp.rm(segDir, { recursive: true, force: true }).catch(() => {})
   }
 }
@@ -292,8 +337,16 @@ async function runReencode(session, inputFiles, probes, segments, fmt, outputFil
     }),
   )
   session.proc = encoder
+  // Hängt ein Decoder, bekommt der Encoder nichts mehr und seine Zeit bleibt stehen:
+  // dann beide beenden, sonst bliebe der Slot für immer belegt.
+  const watch = watchStall(encoder, FFMPEG_STALL_MS, () => session.decoder?.kill('SIGKILL'))
   let stderrTail = ''
-  trackProgress(encoder, session, (t) => (stderrTail = (stderrTail + t).slice(-8000)))
+  trackProgress(
+    encoder,
+    session,
+    (t) => (stderrTail = (stderrTail + t).slice(-8000)),
+    () => watch.touch(),
+  )
   // Stirbt der Encoder, schreibt der Decoder ins Leere (EPIPE): nicht abstürzen,
   // das Ergebnis kommt über den Exit-Code des Encoders.
   encoder.stdin.on('error', () => {})
@@ -305,6 +358,10 @@ async function runReencode(session, inputFiles, probes, segments, fmt, outputFil
   for (const [i, file] of inputFiles.entries()) {
     if (session.cancelled || encoder.exitCode !== null) break
     const result = await decodeInto(session, file, segments[i], sampleRate, joiner)
+    if (watch.stalled) {
+      failure = { ...stallFailure(file), stderr: result.stderr }
+      break
+    }
     if (!result.ok && !session.cancelled) {
       failure = {
         ok: false,
@@ -326,6 +383,7 @@ async function runReencode(session, inputFiles, probes, segments, fmt, outputFil
   const { code, error } = await encoderExit
   session.proc = null
   if (failure) return failure
+  if (watch.stalled && !session.cancelled) return stallFailure()
   if (error)
     return {
       ok: false,
@@ -347,19 +405,33 @@ async function runReencode(session, inputFiles, probes, segments, fmt, outputFil
  * am Rand (N9). Die Trim-Angaben sind nach Upload-Reihenfolge indiziert.
  */
 async function trackSegments(session, inputFiles, probes) {
-  const segments = []
-  for (const [i, file] of inputFiles.entries()) {
-    const trim = session.tracks?.[trackIndex(file)] ?? null
-    let edges = null
-    if (session.trimSilence && !session.cancelled) {
-      edges = await detectSilenceEdges(FFMPEG, file, probes[i].duration, (proc) => {
-        session.decoder = proc
-      })
-      session.decoder = null
-    }
-    segments.push(segmentFor(probes[i].duration, trim, edges))
+  const edges = new Array(inputFiles.length).fill(null)
+  if (session.trimSilence) {
+    // Die Suche dekodiert jede Datei ganz: parallel über die Encoder-Plätze (P2)
+    await runPool({
+      count: inputFiles.length,
+      workers: MAX_PARALLEL_ENCODES,
+      limiter: encodeSlots,
+      shouldStop: () => session.cancelled,
+      task: async (i) => {
+        let proc = null
+        edges[i] = await detectSilenceEdges(
+          FFMPEG,
+          inputFiles[i],
+          probes[i].duration,
+          (spawned) => {
+            proc = spawned
+            session.procs.add(spawned)
+          },
+          FFMPEG_STALL_MS,
+        )
+        session.procs?.delete(proc)
+      },
+    })
   }
-  return segments
+  return inputFiles.map((file, i) =>
+    segmentFor(probes[i].duration, session.tracks?.[trackIndex(file)] ?? null, edges[i]),
+  )
 }
 
 /**
@@ -378,6 +450,8 @@ function logFailure(session, message, details) {
 
 async function runConversion(session) {
   session.transition ??= { type: 'none', seconds: 0 }
+  // Laufende ffmpeg-Prozesse neben Encoder/Decoder (Analyse, Track-Encoder) für den Abbruch
+  session.procs = new Set()
   try {
     const dir = sessionDirPath(session.id)
     const inputFiles = await listInputFiles(dir)
@@ -391,8 +465,7 @@ async function runConversion(session) {
     const fmt = OUTPUT_FORMATS[session.format] || OUTPUT_FORMATS[DEFAULT_FORMAT]
     const outputFile = path.join(dir, 'playlist.' + fmt.extension)
 
-    const probes = []
-    for (const file of inputFiles) probes.push(await probeAudio(FFPROBE, file))
+    const probes = await mapLimit(inputFiles, PROBE_PARALLEL, (file) => probeAudio(FFPROBE, file))
     const segments = await trackSegments(session, inputFiles, probes)
     const lengths = probes.map((p, i) => segmentLength(p.duration, segments[i]))
     await applyChapters(session, dir, inputFiles, lengths, session.transition, {
