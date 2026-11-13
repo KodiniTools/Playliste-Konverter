@@ -25,7 +25,9 @@ module.exports = {
         PORT: 9016,
         // Optional: eigenes Temp-Verzeichnis (Standard: <server>/temp)
         // TEMP_DIR: '/var/www/kodinitools.com/playlistkonverter/server-temp',
-        MAX_CONCURRENT: 3,
+        // Gleichzeitige Konvertierungen. Je Job laufen ein Decoder und ein Encoder
+        // (~1–2 Kerne); 4 passt zu 8 Kernen und lässt Luft für die übrigen Tools.
+        MAX_CONCURRENT: 4,
         // Gesamtgröße pro Sitzung (wie MAX_PLAYLIST_SIZE der App, src/constants.js)
         MAX_PLAYLIST_SIZE: '5G',
         // Freier Platz, der auf der Partition des Temp-Ordners immer bleiben muss
