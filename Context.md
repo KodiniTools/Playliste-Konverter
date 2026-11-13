@@ -406,7 +406,7 @@ Gestaffelte Warnungen basierend auf Dateigröße:
 
 ### Konvertierungs-Ablauf
 
-- Bis zu 3 Konvertierungen parallel (`MAX_CONCURRENT`), weitere warten in einer In-Memory-Queue
+- Bis zu 4 Konvertierungen parallel (`MAX_CONCURRENT` in `server/ecosystem.config.cjs`, Standard ohne pm2: 3), weitere warten in einer In-Memory-Queue
 - Status per Server-Sent Events, Fallback: Polling (nächste Abfrage erst nach der Antwort)
 - Fortschritt wird aus FFmpeg-Log berechnet
 
