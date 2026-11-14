@@ -14,14 +14,14 @@ export const PAGES: Record<PageKey, { url: string } & Record<Locale, LocaleMeta>
   index: {
     url: SITE_URL,
     de: {
-      title: 'Playlist Konverter - Audio-Dateien zusammenfügen',
+      title: 'MP3 zusammenfügen online – Playlist Konverter | KodiniTools',
       description:
-        'Konvertiere mehrere Audio-Dateien zu einer einzigen Playlist. Unterstützt MP3, WAV, FLAC, M4A/AAC, OGG und OPUS mit Ausgabe in WebM, MP3 oder OGG.',
+        'Mehrere MP3 zu einer Datei zusammenfügen, kostenlos online: MP3, WAV, FLAC, M4A, OGG und OPUS verbinden, Ausgabe als MP3, WebM oder OGG. Ohne Registrierung.',
     },
     en: {
-      title: 'Playlist Converter - Merge Audio Files',
+      title: 'Merge MP3 Files Online – Playlist Converter | KodiniTools',
       description:
-        'Merge multiple audio files into a single playlist. Supports MP3, WAV, FLAC, M4A/AAC, OGG and OPUS with output as WebM, MP3 or OGG.',
+        'Merge MP3 files into one online for free: combine MP3, WAV, FLAC, M4A, OGG and OPUS tracks, output as MP3, WebM or OGG. No registration required.',
     },
   },
   app: {
