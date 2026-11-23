@@ -1,6 +1,6 @@
 /**
  * Werkzeugnavigation aus Etappe 2: Übersicht, Konverter, Anleitung und FAQ
- * tragen dieselbe Navigation (Logo + drei Links) und markieren genau die
+ * tragen dieselbe Navigation (Name + drei Links) und markieren genau die
  * eigene Seite mit aria-current="page".
  */
 import { describe, expect, it } from 'vitest'
@@ -23,10 +23,12 @@ const PAGES = [
 ]
 
 describe('Werkzeugnavigation', () => {
-  it.each(PAGES)('$file: Logo, drei Links und genau eine aktive Seite', ({ file, current }) => {
+  it.each(PAGES)('$file: Name, drei Links und genau eine aktive Seite', ({ file, current }) => {
     const nav = navBlock(read(file), file)
     expect(nav).toContain('href="./" class="converter-brand"')
-    expect(nav).toMatch(/<img src="\/src\/assets\/kodinitools-logo\.png"[^>]* alt="">/)
+    // Kein eigenes Logo: das bringt die zentrale Navigation (nav.html) schon mit.
+    expect(nav).not.toContain('<img')
+    expect(nav).toContain('<span data-i18n="nav.logo">Wiedergabeliste Konverter</span>')
     for (const href of ['./app.html', './faq.html', './funktion.html']) {
       expect(nav).toContain(`href="${href}"`)
     }
@@ -50,7 +52,20 @@ describe('Werkzeugnavigation', () => {
     expect(nav).toContain('href="./faq.html"')
     expect(nav).toContain('href="./funktion.html"')
     expect(nav.match(/aria-current="page"/g)).toHaveLength(1)
+    expect(nav).not.toContain('<img')
     expect(nav).toMatch(/<span aria-current="page"[^>]*>\{\{ t\('nav\.converter'\) \}\}/)
+  })
+
+  it('deutscher Name ist „Wiedergabeliste Konverter“, der englische bleibt', () => {
+    const de = JSON.parse(read('src/i18n/locales/de.json'))
+    const en = JSON.parse(read('src/i18n/locales/en.json'))
+    expect(de.app.title).toBe('Wiedergabeliste Konverter')
+    expect(en.app.title).toBe('Playlist Converter')
+    for (const file of ['index.html', 'faq.html', 'funktion.html']) {
+      const source = read(file)
+      expect(source).toContain("'nav.logo': 'Wiedergabeliste Konverter'")
+      expect(source).toContain("'nav.logo': 'Playlist Converter'")
+    }
   })
 
   it('Stylesheets: Header-Styles sind in App und Landing-Seiten eingebunden', () => {

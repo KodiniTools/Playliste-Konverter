@@ -18,7 +18,6 @@
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
   import { logger } from './utils/logger'
   import { isSharedSource } from './constants'
-  import kodiniLogo from './assets/kodinitools-logo.png'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
@@ -101,7 +100,6 @@
       <header class="converter-app-header">
         <nav class="converter-nav" :aria-label="t('app.title')">
           <a href="./" class="converter-brand">
-            <img :src="kodiniLogo" width="36" height="36" alt="" />
             <span>{{ t('app.title') }}</span>
           </a>
           <div class="converter-nav-links">
