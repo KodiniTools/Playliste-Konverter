@@ -48,11 +48,6 @@
   text-decoration: none;
 }
 
-#app .converter-brand img {
-  flex: none;
-  object-fit: contain;
-}
-
 #app .converter-nav :is(.nav-controls, .nav-links, .converter-nav-links) {
   display: flex;
   flex-wrap: wrap;
