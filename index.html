@@ -46,9 +46,14 @@
   <!-- Seiteninhalt in #app: die Partial-Regeln (body > :not(#app)) treffen so nur Nav, Footer, Cookie-Banner -->
   <main id="app" class="landing">
   <!-- Hero Navigation -->
-  <nav class="hero-nav" aria-label="Seitennavigation">
-    <div class="nav-container">
+  <nav class="hero-nav" aria-label="Playlist Konverter">
+    <div class="nav-container converter-nav">
+      <a href="./" class="converter-brand" aria-current="page">
+        <img src="/src/assets/kodinitools-logo.png" width="36" height="36" alt="">
+        <span data-i18n="nav.logo">Playlist Konverter</span>
+      </a>
       <div class="nav-controls">
+        <a href="./app.html" class="nav-link" data-i18n="nav.converter">Konverter</a>
         <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
         <a href="./funktion.html" class="nav-link" data-i18n="nav.guide">Anleitung</a>
       </div>
@@ -235,6 +240,7 @@
     const translations = {
       de: {
         'nav.logo': 'Playlist Konverter',
+        'nav.converter': 'Konverter',
         'nav.faq': 'FAQ',
         'nav.guide': 'Anleitung',
         'hero.badge': 'Kostenlos & Ohne Registrierung',
@@ -280,6 +286,7 @@
       },
       en: {
         'nav.logo': 'Playlist Converter',
+        'nav.converter': 'Converter',
         'nav.faq': 'FAQ',
         'nav.guide': 'Guide',
         'hero.badge': 'Free & No Registration',

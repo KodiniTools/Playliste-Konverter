@@ -62,58 +62,64 @@ body {
 /* === SSI-Partials (nav/footer außerhalb von #app) ===
    Eigene Hintergründe entfernen, damit die Seitenfläche durchscheint — außer
    beim Cookie-Banner. Direkte Wrapper (nav, footer): normale Spezifität. */
-body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']) {
+body
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ) {
   background-color: transparent !important;
 }
 /* Alle inneren Nachfahren: :where() hat Spezifität 0, damit die Restore-Regeln gewinnen */
 :where(
-    body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])
+    body
+      > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+        [class*='cookie']
+      )
   )
   :where(*:not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])) {
   background-color: transparent !important;
 }
 
 /* Dropdowns/Submenüs der SSI-Navigation bekommen wieder eine feste Fläche */
-body > :not(#app):not(script) [class*='drop'],
-body > :not(#app):not(script) [class*='sub-menu'],
-body > :not(#app):not(script) [class*='submenu'],
-body > :not(#app):not(script) [class*='popup'],
-body > :not(#app):not(script) [class*='popover'],
-body > :not(#app):not(script) [class*='megamenu'] {
+body > :not(#app, .global-nav):not(script) [class*='drop'],
+body > :not(#app, .global-nav):not(script) [class*='sub-menu'],
+body > :not(#app, .global-nav):not(script) [class*='submenu'],
+body > :not(#app, .global-nav):not(script) [class*='popup'],
+body > :not(#app, .global-nav):not(script) [class*='popover'],
+body > :not(#app, .global-nav):not(script) [class*='megamenu'] {
   background-color: var(--ds-surface-1) !important;
 }
 
 /* ── Hamburger / Toggle-Menü in der SSI-Navigation ── */
 /* 1. Leere Spans sind dekorative Elemente (Hamburger-Balken via background-color) */
-body > :not(#app):not(script) span:empty {
+body > :not(#app, .global-nav):not(script) span:empty {
   background-color: currentColor !important;
   border-color: currentColor !important;
 }
 /* 2. Spans in aria-expanded-Toggles (Hamburger-Buttons nutzen dieses Attribut) */
-body > :not(#app):not(script) [aria-expanded] > span:empty,
-body > :not(#app):not(script) [aria-expanded] > span > span:empty,
-body > :not(#app):not(script) [aria-expanded] > div > span:empty {
+body > :not(#app, .global-nav):not(script) [aria-expanded] > span:empty,
+body > :not(#app, .global-nav):not(script) [aria-expanded] > span > span:empty,
+body > :not(#app, .global-nav):not(script) [aria-expanded] > div > span:empty {
   background-color: currentColor !important;
   border-color: currentColor !important;
 }
 /* 3. SVG-Hamburger-Icons in Buttons / Toggles — stroke & fill erzwingen */
-body > :not(#app):not(script) button svg line,
-body > :not(#app):not(script) button svg path,
-body > :not(#app):not(script) button svg rect,
-body > :not(#app):not(script) [aria-expanded] svg line,
-body > :not(#app):not(script) [aria-expanded] svg path,
-body > :not(#app):not(script) [aria-expanded] svg rect,
-body > :not(#app):not(script) [role='button'] svg line,
-body > :not(#app):not(script) [role='button'] svg path,
-body > :not(#app):not(script) [role='button'] svg rect {
+body > :not(#app, .global-nav):not(script) button svg line,
+body > :not(#app, .global-nav):not(script) button svg path,
+body > :not(#app, .global-nav):not(script) button svg rect,
+body > :not(#app, .global-nav):not(script) [aria-expanded] svg line,
+body > :not(#app, .global-nav):not(script) [aria-expanded] svg path,
+body > :not(#app, .global-nav):not(script) [aria-expanded] svg rect,
+body > :not(#app, .global-nav):not(script) [role='button'] svg line,
+body > :not(#app, .global-nav):not(script) [role='button'] svg path,
+body > :not(#app, .global-nav):not(script) [role='button'] svg rect {
   stroke: currentColor !important;
   fill: currentColor !important;
 }
 /* 4. Bootstrap toggler-icon (background-image SVG) — Kontrast per CSS-Filter */
-body > :not(#app):not(script) [class*='toggler-icon'] {
+body > :not(#app, .global-nav):not(script) [class*='toggler-icon'] {
   filter: brightness(0) saturate(100%) !important;
 }
-:root[data-theme='dark'] body > :not(#app):not(script) [class*='toggler-icon'] {
+:root[data-theme='dark'] body > :not(#app, .global-nav):not(script) [class*='toggler-icon'] {
   filter: brightness(0) saturate(100%) invert(1) !important;
 }
 
@@ -138,38 +144,38 @@ body > footer {
 /* Textfarben der SSI-Partials aus den Tokens; die Variablen wechseln mit dem
    Theme, deshalb gibt es keine Dark-Varianten mehr. Cookie-Banner ausgenommen. */
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  ),
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie']),
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
   *:not([class*='cookie']):not([id*='cookie']) {
   color: var(--ds-text) !important;
 }
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
   a:not([class*='cookie']):not([id*='cookie']),
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
   a:not([class*='cookie']):not([id*='cookie'])
   * {
   color: var(--ds-link) !important;
 }
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
   a:hover:not([class*='cookie']):not([id*='cookie']),
 body
-  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
-    [id*='cookie']
-  )
+  > :not(#app, .global-nav):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
   a:hover:not([class*='cookie']):not([id*='cookie'])
   * {
   color: var(--ds-accent) !important;

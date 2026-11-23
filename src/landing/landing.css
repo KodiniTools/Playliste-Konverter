@@ -10,6 +10,7 @@
 
 @import '../styles/foundation.css';
 @import '../styles/kodini-layout.css';
+@import '../styles/kodini-header.css';
 
 /* === Reset (die Landing-Seite lädt kein Tailwind-Preflight) === */
 *,
@@ -117,32 +118,6 @@ html {
   display: flex;
   align-items: center;
   gap: var(--ds-space-2);
-}
-
-/* Icon-Button zur Startseite: Sekundär-Fläche, Hover nur Farbe */
-.landing .home-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--ds-control-lg);
-  height: var(--ds-control-lg);
-  background: var(--ds-surface-2);
-  border: var(--ds-border-width) solid var(--ds-border-strong);
-  border-radius: var(--ds-radius-md);
-  color: var(--ds-text-2);
-  transition:
-    color var(--ds-duration) var(--ds-ease),
-    background-color var(--ds-duration) var(--ds-ease);
-}
-
-.landing .home-link:hover {
-  background: var(--ds-surface-3);
-  color: var(--ds-text);
-}
-
-.landing .home-link svg {
-  width: var(--ds-icon-md);
-  height: var(--ds-icon-md);
 }
 
 /* === Hero === */

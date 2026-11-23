@@ -1,0 +1,101 @@
+/* Die zentrale SSI-Navigation übernimmt hier nur die Farbwerte des Konverters. */
+:root[data-theme] body > .global-nav {
+  --nav-bg: var(--ds-surface-1);
+  --nav-text: var(--ds-text);
+  --nav-text-hover: var(--ds-text);
+  --nav-bg-hover: var(--ds-surface-2);
+  --nav-border: var(--ds-border);
+  --nav-shadow: var(--ds-accent-soft);
+  --dropdown-bg: var(--ds-surface-1);
+  --dropdown-border: var(--ds-border-strong);
+  --accent-color: var(--ds-link);
+  background: var(--nav-bg) !important;
+  border-bottom-color: var(--nav-border);
+}
+
+:root[data-theme] body > .global-nav .global-nav-dropdown-menu {
+  background: var(--dropdown-bg);
+  color: var(--ds-text);
+}
+
+@media (max-width: 768px) {
+  :root[data-theme] body > .global-nav .global-nav-links {
+    background: var(--nav-bg);
+  }
+}
+
+#app :is(.hero-nav, .page-nav) {
+  position: static;
+  background: var(--ds-surface-1);
+  border-block-end: 1px solid var(--ds-border);
+}
+
+#app .converter-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2) var(--ds-space-4);
+  padding: var(--ds-space-3) var(--konverter-page-gutter);
+}
+
+#app .converter-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-bold);
+  text-decoration: none;
+}
+
+#app .converter-brand img {
+  flex: none;
+  object-fit: contain;
+}
+
+#app .converter-nav :is(.nav-controls, .nav-links, .converter-nav-links) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-1);
+}
+
+#app .converter-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--ds-control-lg);
+  padding-inline: var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-2);
+  font-size: var(--ds-text-md);
+  text-decoration: none;
+}
+
+#app .converter-nav .nav-link:hover {
+  background: var(--ds-surface-2);
+  color: var(--ds-text);
+}
+
+#app .converter-nav .nav-link[aria-current='page'] {
+  color: var(--ds-text);
+  box-shadow: inset 0 -2px var(--ds-accent);
+}
+
+#app .converter-nav a:focus-visible {
+  outline: 2px solid var(--ds-link);
+  outline-offset: 2px;
+}
+
+#app .converter-app-header {
+  margin-block-end: var(--ds-space-6);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-1);
+}
+
+#app .converter-header-title {
+  display: grid;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-5) var(--konverter-page-gutter);
+  border-block-start: 1px solid var(--ds-border);
+}

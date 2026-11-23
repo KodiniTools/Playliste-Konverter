@@ -17,6 +17,7 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import './styles/foundation.css';
 @import './styles/kodini-layout.css';
+@import './styles/kodini-header.css';
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
 
 /* Klassen nur aus App-Code erzeugen; Testdateien ausnehmen, ihre
@@ -179,17 +180,6 @@ html:has(.sticky-player) {
 /* Datei-Inputs liegen visuell versteckt in ihrem Label; der Fokus landet am Label */
 #app label:focus-within {
   box-shadow: var(--ds-focus-ring);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Wiederkehrende Bausteine der App (Header)
-   ───────────────────────────────────────────────────────────────────────── */
-@layer components {
-  /* Icon-Button zur Startseite: Sekundär-Fläche, Hover nur Farbe */
-  .home-link {
-    @apply flex h-10 w-10 items-center justify-center rounded-md border border-line-strong bg-surface-2 text-ink-2 transition-colors;
-    @apply hover:bg-surface-3 hover:text-ink;
-  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
