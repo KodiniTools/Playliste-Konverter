@@ -9,6 +9,7 @@
    ========================================================================== */
 
 @import '../styles/foundation.css';
+@import '../styles/kodini-layout.css';
 
 /* === Reset (die Landing-Seite lädt kein Tailwind-Preflight) === */
 *,

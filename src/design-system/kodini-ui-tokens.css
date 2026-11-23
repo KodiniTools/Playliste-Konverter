@@ -1,0 +1,40 @@
+/* Laufzeit-Palette der Oberfläche. Die Basistokens bleiben die Quelle für den Bildexport. */
+
+:root {
+  --ds-surface-0: #071321;
+  --ds-surface-1: #0d1d32;
+  --ds-surface-2: #142943;
+  --ds-surface-3: #1b3551;
+  --ds-border: #2a4561;
+  --ds-border-strong: #5d7b98;
+  --ds-text: #edf5ff;
+  --ds-text-2: #adc2da;
+  --ds-text-3: #92abc6;
+  --ds-accent: #f6cf80;
+  --ds-accent-hover: #ffdc97;
+  --ds-accent-soft: rgb(246 207 128 / 14%);
+  --ds-on-accent: #171d28;
+  --ds-link: #70dcf4;
+  --ds-container: 1120px;
+  --ds-hero-tint: #153657;
+  --ds-panel-shadow: 0 12px 30px rgb(0 0 0 / 22%);
+}
+
+.light-theme,
+:root[data-theme='light'] {
+  --ds-surface-0: #eff5fc;
+  --ds-surface-2: #e7f0fa;
+  --ds-surface-3: #d8e7f7;
+  --ds-border: #b2c7df;
+  --ds-border-strong: #637e9b;
+  --ds-text: #12253d;
+  --ds-text-2: #435a73;
+  --ds-text-3: #4b6079;
+  --ds-accent: #e9b850;
+  --ds-accent-hover: #dfab3f;
+  --ds-accent-soft: rgb(233 184 80 / 18%);
+  --ds-on-accent: #231a0b;
+  --ds-link: #056982;
+  --ds-hero-tint: #dbeefa;
+  --ds-panel-shadow: 0 12px 30px rgb(39 73 107 / 11%);
+}
