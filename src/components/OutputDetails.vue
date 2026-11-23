@@ -50,7 +50,9 @@
 </script>
 
 <template>
-  <details class="group rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
+  <details
+    class="converter-settings converter-output group rounded-lg border border-line bg-surface-1 p-4 sm:p-5"
+  >
     <summary
       class="flex cursor-pointer list-none items-center justify-between gap-2 text-md font-semibold text-ink"
     >
@@ -106,7 +108,7 @@
         <span :id="id('cover-label')" class="mb-1 block text-sm font-medium text-ink-2">{{
           t('output.cover')
         }}</span>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <img
             v-if="coverPreview"
             :src="coverPreview"
@@ -114,7 +116,7 @@
             class="h-12 w-12 rounded-sm border border-line object-cover"
           />
           <label
-            class="cursor-pointer rounded-md border border-line bg-surface-2 px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-3"
+            class="converter-cover-pick cursor-pointer rounded-md border border-line bg-surface-2 px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-3"
           >
             {{ store.cover ? t('output.coverChange') : t('output.coverSelect') }}
             <input

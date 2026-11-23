@@ -169,9 +169,10 @@
 <template>
   <div
     :class="[
-      'rounded-lg border border-dashed p-8 text-center transition-colors sm:p-14',
+      'converter-upload rounded-lg border border-dashed p-8 text-center transition-colors sm:p-14',
       isDragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface-1',
     ]"
+    :data-dragging="isDragging"
     @drop.prevent="onDrop"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
@@ -179,7 +180,7 @@
     <!-- Upload-Icon -->
     <div
       :class="[
-        'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg transition-colors',
+        'converter-upload-icon mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg transition-colors',
         isDragging ? 'bg-accent-soft text-ink' : 'bg-surface-2 text-ink-2',
       ]"
     >
@@ -198,7 +199,7 @@
     </p>
     <p class="mt-1.5 text-md text-ink-2">{{ t('uploader.orText') }}</p>
 
-    <div class="mt-4 flex flex-wrap justify-center gap-3">
+    <div class="converter-upload-actions mt-4 flex flex-wrap justify-center gap-3">
       <!-- Einzelne Dateien auswählen (Primäraktion) -->
       <label
         class="inline-flex h-control-md cursor-pointer items-center gap-2 rounded-md bg-accent px-4 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
@@ -251,7 +252,7 @@
     </div>
 
     <!-- Paste-Hinweis -->
-    <div class="mt-5 flex items-center justify-center gap-1.5 text-xs text-ink-3">
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-1.5 text-xs text-ink-3">
       <kbd
         class="inline-flex items-center rounded-sm border border-line-strong bg-surface-2 px-1.5 py-0.5 font-mono leading-tight text-ink-2"
         >Strg</kbd
