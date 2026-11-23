@@ -46,7 +46,7 @@
 
 <template>
   <div
-    class="flex flex-wrap items-end gap-3 rounded-sm border border-line bg-surface-1 p-3"
+    class="converter-trim flex flex-wrap items-end gap-3 rounded-sm border border-line bg-surface-1 p-3"
     :data-trim-editor="item.id"
   >
     <div>

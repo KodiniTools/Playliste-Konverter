@@ -7,7 +7,7 @@
 </script>
 
 <template>
-  <section class="rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
+  <section class="converter-progress rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
     <h3 class="mb-3 text-lg font-semibold text-ink sm:mb-4">
       <template v-if="store.status === 'uploading'">{{ t('conversion.uploading') }}</template>
       <template v-else-if="store.queuePosition > 0">
@@ -59,7 +59,7 @@
       ></div>
     </div>
 
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <p
         v-if="store.status === 'uploading' && store.uploadRetry"
         class="text-md text-warning"
