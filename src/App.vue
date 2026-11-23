@@ -95,8 +95,8 @@
 
 <template>
   <ToastContainer />
-  <div class="min-h-screen py-4 sm:py-8" :class="{ 'pb-28 sm:pb-24': showPlayer }">
-    <div class="mx-auto max-w-4xl px-3 sm:px-4">
+  <div class="converter-shell min-h-screen py-4 sm:py-8" :class="{ 'pb-28 sm:pb-24': showPlayer }">
+    <div class="converter-content mx-auto">
       <header class="mb-6 sm:mb-8">
         <div class="mb-4 flex flex-col items-center gap-2 text-center">
           <div class="flex items-center gap-2 sm:gap-3">

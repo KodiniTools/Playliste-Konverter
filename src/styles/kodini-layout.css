@@ -1,0 +1,42 @@
+/* Playlist Konverter · Etappe 1 */
+#app {
+  --konverter-page-gutter: clamp(1rem, 3vw, 1.75rem);
+}
+
+#app.landing > :is(.hero, .guide-hero, .faq-hero) {
+  max-inline-size: var(--ds-container);
+  margin-block: clamp(1rem, 3vw, 2rem);
+  margin-inline: auto;
+  inline-size: calc(100% - 2 * var(--konverter-page-gutter));
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  padding: clamp(1.5rem, 5vw, 4rem) var(--konverter-page-gutter);
+  background:
+    radial-gradient(ellipse at top right, var(--ds-hero-tint), transparent 72%), var(--ds-surface-1);
+  box-shadow: var(--ds-panel-shadow);
+}
+
+#app.landing .hero-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+#app.landing :is(.feature-card, .format-card, .faq-item, .guide-section, .cta-box) {
+  min-inline-size: 0;
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-panel-shadow);
+}
+
+#app.landing .features-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+#app .converter-shell {
+  padding-block-start: clamp(1.5rem, 4vw, 3rem);
+  background: radial-gradient(ellipse at top center, var(--ds-hero-tint), transparent 72%) center
+    top / 100% 24rem no-repeat;
+}
+
+#app .converter-content {
+  max-inline-size: 64rem;
+  padding-inline: var(--konverter-page-gutter);
+}

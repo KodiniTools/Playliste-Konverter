@@ -16,6 +16,7 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/preflight.css' layer(base);
 @import './styles/foundation.css';
+@import './styles/kodini-layout.css';
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
 
 /* Klassen nur aus App-Code erzeugen; Testdateien ausnehmen, ihre
