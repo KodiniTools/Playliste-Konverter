@@ -20,8 +20,9 @@
   <script type="module" src="/src/landing/localeHeadEntry.ts"></script>
   <link rel="stylesheet" href="/fontawesome/css/fontawesome.min.css" />
   <link rel="stylesheet" href="/fontawesome/css/solid.min.css" />
-  <meta name="theme-color" content="#eff5fc" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#071321" media="(prefers-color-scheme: dark)" />
+  <!-- Seitenfläche der Basistokens (wie Audio Normalizer), nicht die Laufzeit-Palette der App -->
+  <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a1324" media="(prefers-color-scheme: dark)" />
   <!-- Theme vor dem ersten Paint setzen (Tokens: Dark auf :root, Light über data-theme),
        damit Light-Nutzer keinen dunklen Flash sehen. Das Seitenskript übernimmt danach. -->
   <script>
@@ -32,8 +33,9 @@
       document.documentElement.setAttribute('data-theme', 'light')
     }
   </script>
-  <!-- KodiniTools-Tokens v2, Supreme und SSI-Partial-Regeln, geteilt mit der App -->
-  <link rel="stylesheet" href="/src/landing/landing.css" />
+  <!-- Startseite nach dem Muster des Audio Normalizers: Basistokens v2, nur Supreme Regular -->
+  <link rel="preload" href="/src/assets/fonts/Supreme-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/src/landing/home.css" />
   <!-- Vorschaubild beim Teilen (1200×630) -->
   <meta property="og:image" content="https://kodinitools.com/image/kodinitools-og-image.jpg" />
   <meta property="og:image:width" content="1200" />
@@ -44,191 +46,200 @@
 <body>
   <!--#include virtual="/partials/nav.html" -->
   <!-- Seiteninhalt in #app: die Partial-Regeln (body > :not(#app)) treffen so nur Nav, Footer, Cookie-Banner -->
-  <main id="app" class="landing">
-  <!-- Hero Navigation -->
-  <nav class="hero-nav" aria-label="Wiedergabeliste Konverter">
-    <div class="nav-container converter-nav">
-      <a href="./" class="converter-brand" aria-current="page">
-        <span data-i18n="nav.logo">Wiedergabeliste Konverter</span>
-      </a>
-      <div class="nav-controls">
-        <a href="./app.html" class="nav-link" data-i18n="nav.converter">Konverter</a>
-        <a href="./faq.html" class="nav-link" data-i18n="nav.faq">FAQ</a>
-        <a href="./funktion.html" class="nav-link" data-i18n="nav.guide">Anleitung</a>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="hero-badge animate-fade-in">
-        <span class="hero-badge-dot"></span>
-        <span data-i18n="hero.badge">Kostenlos & Ohne Registrierung</span>
-      </div>
-      <h1 class="hero-title animate-fade-in delay-1">
-        <span data-i18n="hero.title1">Audio-Dateien</span><br>
-        <span class="hero-highlight" data-i18n="hero.title2">einfach zusammenfügen</span>
-      </h1>
-      <p class="hero-description animate-fade-in delay-2" data-i18n="hero.description">
-        Füge beliebig viele Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) bis 5 GB zu einer einzigen Playlist zusammen.
-        Wähle dein bevorzugtes Ausgabeformat und die Audioqualität.
-      </p>
-      <div class="hero-buttons animate-fade-in delay-3">
-        <a href="./app.html" class="btn btn-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          <span data-i18n="hero.cta">Jetzt starten</span>
-        </a>
-        <a href="#features" class="btn btn-secondary">
-          <span data-i18n="hero.learnMore">Mehr erfahren</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <polyline points="19 12 12 19 5 12"></polyline>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="features" id="features">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag" data-i18n="features.tag">Funktionen</span>
-        <h2 class="section-title" data-i18n="features.title">Alles was du brauchst</h2>
-        <p class="section-description" data-i18n="features.description">
-          Leistungsstarke Funktionen für eine einfache Audio-Konvertierung
-        </p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.upload.title">Drag & Drop Upload</h3>
-          <p class="feature-description" data-i18n="features.upload.description">
-            Ziehe einfach deine Dateien in den Browser oder wähle sie aus dem Datei-Dialog.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.reorder.title">Reihenfolge ändern</h3>
-          <p class="feature-description" data-i18n="features.reorder.description">
-            Ordne die Tracks per Drag & Drop in der gewünschten Reihenfolge an.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.preview.title">Audio-Vorschau</h3>
-          <p class="feature-description" data-i18n="features.preview.description">
-            Höre dir jeden Track vor der Konvertierung an, um sicherzustellen, dass alles stimmt.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.privacy.title">Datenschutz</h3>
-          <p class="feature-description" data-i18n="features.privacy.description">
-            Deine Dateien werden verschlüsselt (HTTPS) an unseren Server übertragen, dort konvertiert und direkt nach dem Download – spätestens nach einer Stunde – automatisch gelöscht.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.realtime.title">Echtzeit-Fortschritt</h3>
-          <p class="feature-description" data-i18n="features.realtime.description">
-            Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3 class="feature-title" data-i18n="features.formats.title">Mehrere Formate</h3>
-          <p class="feature-description" data-i18n="features.formats.description">
-            Wähle zwischen WebM, MP3 oder OGG als Ausgabeformat.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- How It Works Section -->
-  <section class="how-it-works" id="how-it-works">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag" data-i18n="howItWorks.tag">So funktioniert's</span>
-        <h2 class="section-title" data-i18n="howItWorks.title">In 3 einfachen Schritten</h2>
-        <p class="section-description" data-i18n="howItWorks.description">
-          Keine Registrierung, keine Installation - sofort loslegen
-        </p>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="step-number">1</div>
-          <h3 class="step-title" data-i18n="howItWorks.step1.title">Dateien hochladen</h3>
-          <p class="step-description" data-i18n="howItWorks.step1.description">
-            Lade deine Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) per Drag & Drop oder über den Datei-Dialog hoch.
-          </p>
-        </div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <h3 class="step-title" data-i18n="howItWorks.step2.title">Format wählen</h3>
-          <p class="step-description" data-i18n="howItWorks.step2.description">
-            Wähle dein bevorzugtes Ausgabeformat und die gewünschte Audioqualität.
-          </p>
-        </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <h3 class="step-title" data-i18n="howItWorks.step3.title">Herunterladen</h3>
-          <p class="step-description" data-i18n="howItWorks.step3.description">
-            Klicke auf Konvertieren und lade deine fertige Playlist herunter.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Formats Section -->
-  <section class="formats" id="formats">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag" data-i18n="formats.tag">Ausgabeformate</span>
-        <h2 class="section-title" data-i18n="formats.title">Unterstützte Formate</h2>
-        <p class="section-description" data-i18n="formats.description">
-          Wähle das Format, das am besten zu deinen Bedürfnissen passt
-        </p>
-      </div>
-      <div class="formats-grid">
-        <div class="format-card">
-          <div class="format-name">WebM</div>
-          <p class="format-description" data-i18n="formats.webm">Kompakt & Modern - Opus Codec</p>
-        </div>
-        <div class="format-card">
-          <div class="format-name">MP3</div>
-          <p class="format-description" data-i18n="formats.mp3">Universell kompatibel</p>
-        </div>
-        <div class="format-card">
-          <div class="format-name">OGG</div>
-          <p class="format-description" data-i18n="formats.ogg">Open Source - Vorbis Codec</p>
-        </div>
-        <div class="format-card">
-          <div class="format-name">WAV</div>
-          <p class="format-description" data-i18n="formats.wav">Eingabeformat unterstützt</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="cta">
-    <div class="container">
-      <div class="cta-box">
-        <div class="cta-content">
-          <h2 class="cta-title" data-i18n="cta.title">Bereit zum Starten?</h2>
-          <p class="cta-description" data-i18n="cta.description">
-            Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.
-          </p>
-          <a href="./app.html" class="btn btn-primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+  <main id="app">
+    <!-- Aufbau und Klassen wie die Startseite des Audio Normalizers (LandingPage.vue, HeroNav.vue) -->
+    <div class="landing-page">
+      <div class="hero-nav">
+        <div class="hero-nav-inner">
+          <a href="./" class="hero-nav-brand">
+            <svg class="hero-nav-brand-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15V6" />
+              <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+              <path d="M12 12H3" />
+              <path d="M16 6H3" />
+              <path d="M12 18H3" />
             </svg>
-            <span data-i18n="cta.button">Zur Anwendung</span>
+            <span class="hero-nav-brand-text" data-i18n="nav.logo">Wiedergabeliste Konverter</span>
           </a>
+          <nav class="hero-nav-links" aria-label="Seitennavigation">
+            <a href="./" class="hero-nav-link active" data-tab="home" aria-current="page" data-i18n="nav.home">Start</a>
+            <a href="#features" class="hero-nav-link" data-tab="features" data-i18n="nav.features">Funktionen</a>
+            <a href="./app.html" class="hero-nav-link" data-i18n="nav.converter">Konverter</a>
+            <a href="./funktion.html" class="hero-nav-link" data-i18n="nav.guide">Anleitung</a>
+            <a href="./faq.html" class="hero-nav-link" data-i18n="nav.faq">FAQ</a>
+          </nav>
         </div>
       </div>
+
+      <!-- Hero -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+            <h1 class="hero-title" data-i18n="hero.title">Wiedergabeliste Konverter</h1>
+            <p class="hero-subtitle" data-i18n="hero.subtitle">Audio-Dateien einfach zusammenfügen – kostenlos und ohne Registrierung</p>
+            <p class="hero-description" data-i18n="hero.description">Füge beliebig viele Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) bis 5 GB zu einer einzigen Playlist zusammen. Wähle dein bevorzugtes Ausgabeformat und die Audioqualität.</p>
+            <a href="./app.html" class="btn-hero"><span data-i18n="hero.cta">Jetzt starten</span>&nbsp;→</a>
+          </div>
+          <figure class="hero-media">
+            <img
+              src="/src/assets/landing-hero.webp"
+              alt="Drei Wellenformen in MP3, WAV und FLAC werden zu einer durchgehenden Wellenform zusammengeführt"
+              data-i18n-alt="hero.imageAlt"
+              width="1120"
+              height="630"
+              class="hero-image"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <!-- Funktionen -->
+      <section id="features" class="features">
+        <div class="container">
+          <h2 class="section-title" data-i18n="features.title">Alles was du brauchst</h2>
+          <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">📂</div>
+            <h3 data-i18n="features.upload.title">Drag &amp; Drop Upload</h3>
+            <p data-i18n="features.upload.description">Ziehe einfach deine Dateien in den Browser oder wähle sie aus dem Datei-Dialog.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🔀</div>
+            <h3 data-i18n="features.reorder.title">Reihenfolge ändern</h3>
+            <p data-i18n="features.reorder.description">Ordne die Tracks per Drag &amp; Drop in der gewünschten Reihenfolge an.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🎧</div>
+            <h3 data-i18n="features.preview.title">Audio-Vorschau</h3>
+            <p data-i18n="features.preview.description">Höre dir jeden Track vor der Konvertierung an, um sicherzustellen, dass alles stimmt.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🔒</div>
+            <h3 data-i18n="features.privacy.title">Datenschutz</h3>
+            <p data-i18n="features.privacy.description">Deine Dateien werden verschlüsselt (HTTPS) an unseren Server übertragen, dort konvertiert und direkt nach dem Download – spätestens nach einer Stunde – automatisch gelöscht.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">📈</div>
+            <h3 data-i18n="features.realtime.title">Echtzeit-Fortschritt</h3>
+            <p data-i18n="features.realtime.description">Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🎵</div>
+            <h3 data-i18n="features.formats.title">Mehrere Formate</h3>
+            <p data-i18n="features.formats.description">Wähle zwischen WebM, MP3 oder OGG als Ausgabeformat.</p>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- So funktioniert's -->
+      <section id="how-it-works" class="benefits">
+        <div class="container">
+          <h2 class="section-title" data-i18n="howItWorks.title">In 3 einfachen Schritten</h2>
+          <div class="benefits-grid">
+          <div class="benefit-card">
+            <h3 data-i18n="howItWorks.step1.title">1. Dateien hochladen</h3>
+            <p data-i18n="howItWorks.step1.description">Lade deine Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) per Drag &amp; Drop oder über den Datei-Dialog hoch.</p>
+          </div>
+          <div class="benefit-card">
+            <h3 data-i18n="howItWorks.step2.title">2. Format wählen</h3>
+            <p data-i18n="howItWorks.step2.description">Wähle dein bevorzugtes Ausgabeformat und die gewünschte Audioqualität.</p>
+          </div>
+          <div class="benefit-card">
+            <h3 data-i18n="howItWorks.step3.title">3. Herunterladen</h3>
+            <p data-i18n="howItWorks.step3.description">Klicke auf Konvertieren und lade deine fertige Playlist herunter.</p>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ausgabeformate -->
+      <section id="formats" class="benefits">
+        <div class="container">
+          <h2 class="section-title" data-i18n="formats.title">Ausgabeformate</h2>
+          <div class="benefits-grid">
+          <div class="benefit-card">
+            <h3>WebM</h3>
+            <p data-i18n="formats.webm">Kompakt &amp; Modern - Opus Codec</p>
+          </div>
+          <div class="benefit-card">
+            <h3>MP3</h3>
+            <p data-i18n="formats.mp3">Universell kompatibel</p>
+          </div>
+          <div class="benefit-card">
+            <h3>OGG</h3>
+            <p data-i18n="formats.ogg">Open Source - Vorbis Codec</p>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="faq">
+        <div class="container">
+          <h2 class="section-title" data-i18n="faq.title">Häufig gestellte Fragen</h2>
+          <div class="faq-list">
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-1">
+              <span data-i18n="faq.q1">Was macht dieser Konverter?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-1" class="faq-answer" hidden>
+              <p data-i18n="faq.a1">Der Playlist Konverter kombiniert mehrere Audio-Dateien (z. B. MP3, WAV oder FLAC) zu einer einzigen Datei. Die Tracks werden in der von dir festgelegten Reihenfolge zusammengefügt. Du kannst zwischen verschiedenen Ausgabeformaten und Qualitätsstufen wählen.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-2">
+              <span data-i18n="faq.q2">Werden meine Dateien auf einen Server hochgeladen?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-2" class="faq-answer" hidden>
+              <p data-i18n="faq.a2">Ja. Für die Konvertierung werden deine Dateien verschlüsselt per HTTPS auf unseren Server übertragen und dort zusammengefügt. Direkt nach dem Download – spätestens jedoch nach einer Stunde – werden sie automatisch und unwiderruflich gelöscht. Wir speichern sie nicht dauerhaft und geben sie nicht an Dritte weiter.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-3">
+              <span data-i18n="faq.q3">Welche Eingabeformate werden unterstützt?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-3" class="faq-answer" hidden>
+              <p data-i18n="faq.a3">Unterstützt werden MP3, WAV, FLAC, M4A/AAC, OGG (Vorbis) und OPUS. Du kannst die Formate in einer Playlist beliebig mischen.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-4">
+              <span data-i18n="faq.q4">Welche Ausgabeformate sind verfügbar?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-4" class="faq-answer" hidden>
+              <p data-i18n="faq.a4">Du kannst zwischen drei Ausgabeformaten wählen: WebM (kompakt, modern mit Opus-Codec), MP3 (universell kompatibel) und OGG (Open Source mit Vorbis-Codec). Jedes Format hat seine Vorteile je nach Verwendungszweck.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-5">
+              <span data-i18n="faq.q5">Wie viele Dateien kann ich gleichzeitig konvertieren?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-5" class="faq-answer" hidden>
+              <p data-i18n="faq.a5">Die Anzahl ist nicht begrenzt – entscheidend ist die Gesamtgröße von maximal 5 GB (höchstens 500 MB pro Datei). Die Dateien werden in der Reihenfolge zusammengefügt, die du per Drag &amp; Drop festlegst.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" aria-expanded="false" aria-controls="faq-answer-6">
+              <span data-i18n="faq.q6">Muss ich mich registrieren?</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="faq-answer-6" class="faq-answer" hidden>
+              <p data-i18n="faq.a6">Nein, der Playlist Konverter ist komplett kostenlos und erfordert keine Registrierung. Du kannst sofort loslegen.</p>
+            </div>
+          </div>
+          </div>
+        </div>
+      </section>
     </div>
-  </section>
   </main>
 
   <!--#include virtual="/partials/footer.html" -->
@@ -239,18 +250,16 @@
     const translations = {
       de: {
         'nav.logo': 'Wiedergabeliste Konverter',
+        'nav.home': 'Start',
+        'nav.features': 'Funktionen',
         'nav.converter': 'Konverter',
-        'nav.faq': 'FAQ',
         'nav.guide': 'Anleitung',
-        'hero.badge': 'Kostenlos & Ohne Registrierung',
-        'hero.title1': 'Audio-Dateien',
-        'hero.title2': 'einfach zusammenfügen',
+        'nav.faq': 'FAQ',
+        'hero.title': 'Wiedergabeliste Konverter',
+        'hero.subtitle': 'Audio-Dateien einfach zusammenfügen – kostenlos und ohne Registrierung',
         'hero.description': 'Füge beliebig viele Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) bis 5 GB zu einer einzigen Playlist zusammen. Wähle dein bevorzugtes Ausgabeformat und die Audioqualität.',
         'hero.cta': 'Jetzt starten',
-        'hero.learnMore': 'Mehr erfahren',
-        'features.tag': 'Funktionen',
         'features.title': 'Alles was du brauchst',
-        'features.description': 'Leistungsstarke Funktionen für eine einfache Audio-Konvertierung',
         'features.upload.title': 'Drag & Drop Upload',
         'features.upload.description': 'Ziehe einfach deine Dateien in den Browser oder wähle sie aus dem Datei-Dialog.',
         'features.reorder.title': 'Reihenfolge ändern',
@@ -263,40 +272,44 @@
         'features.realtime.description': 'Verfolge den Upload- und Konvertierungsfortschritt in Echtzeit.',
         'features.formats.title': 'Mehrere Formate',
         'features.formats.description': 'Wähle zwischen WebM, MP3 oder OGG als Ausgabeformat.',
-        'howItWorks.tag': 'So funktioniert\'s',
         'howItWorks.title': 'In 3 einfachen Schritten',
-        'howItWorks.description': 'Keine Registrierung, keine Installation - sofort loslegen',
-        'howItWorks.step1.title': 'Dateien hochladen',
+        'howItWorks.step1.title': '1. Dateien hochladen',
         'howItWorks.step1.description': 'Lade deine Audio-Dateien (MP3, WAV, FLAC, M4A, OGG, OPUS) per Drag & Drop oder über den Datei-Dialog hoch.',
-        'howItWorks.step2.title': 'Format wählen',
+        'howItWorks.step2.title': '2. Format wählen',
         'howItWorks.step2.description': 'Wähle dein bevorzugtes Ausgabeformat und die gewünschte Audioqualität.',
-        'howItWorks.step3.title': 'Herunterladen',
+        'howItWorks.step3.title': '3. Herunterladen',
         'howItWorks.step3.description': 'Klicke auf Konvertieren und lade deine fertige Playlist herunter.',
-        'formats.tag': 'Ausgabeformate',
-        'formats.title': 'Unterstützte Formate',
-        'formats.description': 'Wähle das Format, das am besten zu deinen Bedürfnissen passt',
+        'formats.title': 'Ausgabeformate',
         'formats.webm': 'Kompakt & Modern - Opus Codec',
         'formats.mp3': 'Universell kompatibel',
         'formats.ogg': 'Open Source - Vorbis Codec',
-        'formats.wav': 'Eingabeformat unterstützt',
-        'cta.title': 'Bereit zum Starten?',
-        'cta.description': 'Konvertiere jetzt deine Audio-Dateien - kostenlos und ohne Registrierung.',
-        'cta.button': 'Zur Anwendung'
+        'faq.title': 'Häufig gestellte Fragen',
+        'faq.q1': 'Was macht dieser Konverter?',
+        'faq.a1': 'Der Playlist Konverter kombiniert mehrere Audio-Dateien (z. B. MP3, WAV oder FLAC) zu einer einzigen Datei. Die Tracks werden in der von dir festgelegten Reihenfolge zusammengefügt. Du kannst zwischen verschiedenen Ausgabeformaten und Qualitätsstufen wählen.',
+        'faq.q2': 'Werden meine Dateien auf einen Server hochgeladen?',
+        'faq.a2': 'Ja. Für die Konvertierung werden deine Dateien verschlüsselt per HTTPS auf unseren Server übertragen und dort zusammengefügt. Direkt nach dem Download – spätestens jedoch nach einer Stunde – werden sie automatisch und unwiderruflich gelöscht. Wir speichern sie nicht dauerhaft und geben sie nicht an Dritte weiter.',
+        'faq.q3': 'Welche Eingabeformate werden unterstützt?',
+        'faq.a3': 'Unterstützt werden MP3, WAV, FLAC, M4A/AAC, OGG (Vorbis) und OPUS. Du kannst die Formate in einer Playlist beliebig mischen.',
+        'faq.q4': 'Welche Ausgabeformate sind verfügbar?',
+        'faq.a4': 'Du kannst zwischen drei Ausgabeformaten wählen: WebM (kompakt, modern mit Opus-Codec), MP3 (universell kompatibel) und OGG (Open Source mit Vorbis-Codec). Jedes Format hat seine Vorteile je nach Verwendungszweck.',
+        'faq.q5': 'Wie viele Dateien kann ich gleichzeitig konvertieren?',
+        'faq.a5': 'Die Anzahl ist nicht begrenzt – entscheidend ist die Gesamtgröße von maximal 5 GB (höchstens 500 MB pro Datei). Die Dateien werden in der Reihenfolge zusammengefügt, die du per Drag & Drop festlegst.',
+        'faq.q6': 'Muss ich mich registrieren?',
+        'faq.a6': 'Nein, der Playlist Konverter ist komplett kostenlos und erfordert keine Registrierung. Du kannst sofort loslegen.',
+        'hero.imageAlt': 'Drei Wellenformen in MP3, WAV und FLAC werden zu einer durchgehenden Wellenform zusammengeführt'
       },
       en: {
         'nav.logo': 'Playlist Converter',
+        'nav.home': 'Home',
+        'nav.features': 'Features',
         'nav.converter': 'Converter',
-        'nav.faq': 'FAQ',
         'nav.guide': 'Guide',
-        'hero.badge': 'Free & No Registration',
-        'hero.title1': 'Merge Audio Files',
-        'hero.title2': 'with ease',
+        'nav.faq': 'FAQ',
+        'hero.title': 'Playlist Converter',
+        'hero.subtitle': 'Merge audio files with ease – free and without registration',
         'hero.description': 'Merge any number of audio files (MP3, WAV, FLAC, M4A, OGG, OPUS) up to 5 GB into a single playlist. Choose your preferred output format and audio quality.',
         'hero.cta': 'Get Started',
-        'hero.learnMore': 'Learn more',
-        'features.tag': 'Features',
         'features.title': 'Everything you need',
-        'features.description': 'Powerful features for simple audio conversion',
         'features.upload.title': 'Drag & Drop Upload',
         'features.upload.description': 'Simply drag your files into the browser or select them from the file dialog.',
         'features.reorder.title': 'Reorder Tracks',
@@ -309,25 +322,31 @@
         'features.realtime.description': 'Track upload and conversion progress in real-time.',
         'features.formats.title': 'Multiple Formats',
         'features.formats.description': 'Choose between WebM, MP3 or OGG as output format.',
-        'howItWorks.tag': 'How It Works',
         'howItWorks.title': 'In 3 Simple Steps',
-        'howItWorks.description': 'No registration, no installation - start right away',
-        'howItWorks.step1.title': 'Upload Files',
+        'howItWorks.step1.title': '1. Upload Files',
         'howItWorks.step1.description': 'Upload your audio files (MP3, WAV, FLAC, M4A, OGG, OPUS) via drag & drop or file dialog.',
-        'howItWorks.step2.title': 'Choose Format',
+        'howItWorks.step2.title': '2. Choose Format',
         'howItWorks.step2.description': 'Select your preferred output format and audio quality.',
-        'howItWorks.step3.title': 'Download',
+        'howItWorks.step3.title': '3. Download',
         'howItWorks.step3.description': 'Click convert and download your finished playlist.',
-        'formats.tag': 'Output Formats',
-        'formats.title': 'Supported Formats',
-        'formats.description': 'Choose the format that best suits your needs',
+        'formats.title': 'Output Formats',
         'formats.webm': 'Compact & Modern - Opus Codec',
         'formats.mp3': 'Universal compatibility',
         'formats.ogg': 'Open Source - Vorbis Codec',
-        'formats.wav': 'Input format supported',
-        'cta.title': 'Ready to Start?',
-        'cta.description': 'Convert your audio files now - free and without registration.',
-        'cta.button': 'Go to App'
+        'faq.title': 'Frequently Asked Questions',
+        'faq.q1': 'What does this converter do?',
+        'faq.a1': 'The Playlist Converter combines multiple audio files (e.g. MP3, WAV or FLAC) into a single file. The tracks are merged in the order you specify. You can choose between different output formats and quality levels.',
+        'faq.q2': 'Are my files uploaded to a server?',
+        'faq.a2': 'Yes. For the conversion, your files are transferred to our server via encrypted HTTPS and merged there. Right after the download – at the latest after one hour – they are automatically and permanently deleted. We do not store them long-term or share them with third parties.',
+        'faq.q3': 'Which input formats are supported?',
+        'faq.a3': 'MP3, WAV, FLAC, M4A/AAC, OGG (Vorbis) and OPUS are supported. You can mix the formats freely in one playlist.',
+        'faq.q4': 'Which output formats are available?',
+        'faq.a4': 'You can choose between three output formats: WebM (compact, modern with Opus codec), MP3 (universal compatibility), and OGG (open source with Vorbis codec). Each format has its advantages depending on your use case.',
+        'faq.q5': 'How many files can I convert at once?',
+        'faq.a5': 'There is no limit on the number of files – what counts is the total size of up to 5 GB (at most 500 MB per file). The files will be merged in the order you set via drag & drop.',
+        'faq.q6': 'Do I need to register?',
+        'faq.a6': 'No, the Playlist Converter is completely free and requires no registration. You can start right away.',
+        'hero.imageAlt': 'Three waveforms in MP3, WAV and FLAC are merged into one continuous waveform'
       }
     };
 
@@ -354,6 +373,12 @@
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key]) {
           el.textContent = translations[lang][key];
+        }
+      });
+      document.querySelectorAll('[data-i18n-alt]').forEach(el => {
+        const key = el.getAttribute('data-i18n-alt');
+        if (translations[lang] && translations[lang][key]) {
+          el.setAttribute('alt', translations[lang][key]);
         }
       });
       // SSI-Partials aktualisieren: Footer/Cookie-Banner (data-lang-*)
@@ -397,14 +422,38 @@
     syncDarkClass();
     updateLanguage(currentLang);
 
-    // Hero navigation scroll effect
-    const heroNav = document.querySelector('.hero-nav');
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) {
-        heroNav.classList.add('scrolled');
-      } else {
-        heroNav.classList.remove('scrolled');
-      }
+    // Scroll-Spy der lokalen Navigation (wie HeroNav.vue im Audio Normalizer): aktiv ist
+    // „Funktionen“, sobald der Abschnitt die Linie unter beiden Sticky-Leisten passiert hat.
+    const ACTIVE_LINE_PX = 160;
+    const tabs = document.querySelectorAll('.hero-nav-link[data-tab]');
+    const featuresSection = document.getElementById('features');
+    const faqSection = document.getElementById('faq');
+    function updateActiveTab() {
+      const inFeatures =
+        featuresSection.getBoundingClientRect().top <= ACTIVE_LINE_PX &&
+        faqSection.getBoundingClientRect().top > ACTIVE_LINE_PX;
+      const active = inFeatures ? 'features' : 'home';
+      tabs.forEach(tab => {
+        const isActive = tab.dataset.tab === active;
+        tab.classList.toggle('active', isActive);
+        if (isActive) tab.setAttribute('aria-current', 'page');
+        else tab.removeAttribute('aria-current');
+      });
+    }
+    window.addEventListener('scroll', updateActiveTab, { passive: true });
+    updateActiveTab();
+
+    // FAQ auf- und zuklappen (wie LandingPage.vue im Audio Normalizer)
+    document.querySelectorAll('.faq-question').forEach(button => {
+      button.addEventListener('click', () => {
+        const item = button.closest('.faq-item');
+        const answer = document.getElementById(button.getAttribute('aria-controls'));
+        const open = button.getAttribute('aria-expanded') !== 'true';
+        button.setAttribute('aria-expanded', String(open));
+        item.classList.toggle('faq-open', open);
+        answer.hidden = !open;
+        button.querySelector('.faq-icon').textContent = open ? '−' : '+';
+      });
     });
 
     // Smooth scroll for anchor links

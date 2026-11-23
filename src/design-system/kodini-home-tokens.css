@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Tokens der Startseite (index.html), geladen nach tokens-v2.css.
+   --------------------------------------------------------------------------
+   Werte aus dem Audio Normalizer (src/design-system/tokens-v2.css, Stand
+   799ce80), die die Basistokens dieses Projekts nicht kennen: alle Gewichte
+   auf 400, Layout-Verläufe und Hero-Akzent. Nur die Startseite lädt diese
+   Datei; App, FAQ und Anleitung bleiben unverändert.
+   ========================================================================== */
+
+:root {
+  --ds-weight-medium: 400;
+  --ds-weight-semibold: 400;
+  --ds-weight-bold: 400;
+
+  --ds-glow-blue: rgba(55, 114, 202, 0.2);
+  --ds-glow-cyan: rgba(38, 167, 187, 0.16);
+  --ds-heading-accent: #69d7e9;
+}
+
+.light-theme,
+:root[data-theme='light'] {
+  --ds-glow-blue: rgba(86, 147, 216, 0.15);
+  --ds-glow-cyan: rgba(35, 162, 195, 0.16);
+  --ds-heading-accent: #086a80;
+}

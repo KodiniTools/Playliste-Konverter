@@ -1,0 +1,818 @@
+/* ==========================================================================
+   Wiedergabeliste Konverter · Startseite (index.html)
+   --------------------------------------------------------------------------
+   Übernahme der Startseite des Audio Normalizers (KodiniTools/Audio-Normalizer,
+   Stand 799ce80): styles.css, HeroNav.vue, LandingPage.vue sowie die
+   Landing-Regeln aus kodini-layout-stage1.css und kodini-header-stage2.css.
+   Maße und Farben sollen dort gepflegt und hierher übernommen werden.
+
+   Die Startseite lädt bewusst NICHT foundation.css: sie nutzt die Basistokens
+   (tokens-v2.css) ohne die Laufzeit-Palette der App (kodini-ui-tokens.css) und
+   ausschließlich Supreme Regular (400) ohne künstliches Fett.
+   ========================================================================== */
+
+@import '../design-system/tokens-v2.css';
+@import '../design-system/kodini-home-tokens.css';
+
+/* === Schrift: ausschließlich Supreme Regular (400), gebündelt aus src/assets/fonts.
+   Alle Gewichts-Tokens stehen auf 400; font-synthesis verhindert, dass der Browser
+   für fette Standard-Elemente (h1–h6, strong, th, SSI-Partials) ein Pseudo-Fett erzeugt. === */
+@font-face {
+  font-family: 'Supreme';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('../assets/fonts/Supreme-Regular.woff2') format('woff2');
+}
+
+/* === Farbschema für native Controls (Select-Listen, Scrollbalken) === */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* === Reset === */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* === Body === */
+body {
+  font-family: var(--ds-font-sans);
+  font-weight: var(--ds-weight-regular);
+  font-synthesis: none;
+  font-size: var(--ds-text-lg);
+  line-height: var(--ds-leading);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--ds-surface-0);
+  color: var(--ds-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition:
+    background-color var(--ds-duration-slow) var(--ds-ease),
+    color var(--ds-duration-slow) var(--ds-ease);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* === Grundtypografie (Komponenten setzen Größe und Abstand selbst) === */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--ds-weight-bold);
+  line-height: var(--ds-leading-tight);
+  color: var(--ds-text);
+}
+
+b,
+strong,
+th {
+  font-weight: var(--ds-weight-regular);
+}
+
+a {
+  color: var(--ds-link);
+  text-decoration: none;
+  transition: color var(--ds-duration) var(--ds-ease);
+}
+
+a:hover {
+  color: var(--ds-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
+/* === SSI-Partials (nav/footer/cookie-banner außerhalb von #app) ===
+   Eigene Hintergründe entfernen, damit die Seitenfläche durchscheint — außer
+   beim Cookie-Banner. Direkte Wrapper (nav, footer): normale Spezifität. */
+body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']) {
+  background-color: transparent !important;
+}
+/* Alle inneren Nachfahren: :where() hat Spezifität 0, damit die Restore-Regeln gewinnen */
+:where(
+    body > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])
+  )
+  :where(*:not(.cookie-banner):not(.cookie-consent):not([class*='cookie'])) {
+  background-color: transparent !important;
+}
+
+/* Dropdowns/Submenüs der SSI-Navigation bekommen wieder eine feste Fläche */
+body > :not(#app):not(script) [class*='drop'],
+body > :not(#app):not(script) [class*='sub-menu'],
+body > :not(#app):not(script) [class*='submenu'],
+body > :not(#app):not(script) [class*='popup'],
+body > :not(#app):not(script) [class*='popover'],
+body > :not(#app):not(script) [class*='megamenu'] {
+  background-color: var(--ds-surface-1) !important;
+}
+
+/* ── Hamburger / Toggle-Menü in der SSI-Navigation ── */
+/* 1. Leere Spans sind dekorative Elemente (Hamburger-Balken via background-color) */
+body > :not(#app):not(script) span:empty {
+  background-color: currentColor !important;
+  border-color: currentColor !important;
+}
+/* 2. Spans in aria-expanded-Toggles (Hamburger-Buttons nutzen dieses Attribut) */
+body > :not(#app):not(script) [aria-expanded] > span:empty,
+body > :not(#app):not(script) [aria-expanded] > span > span:empty,
+body > :not(#app):not(script) [aria-expanded] > div > span:empty {
+  background-color: currentColor !important;
+  border-color: currentColor !important;
+}
+/* 3. SVG-Hamburger-Icons in Buttons / Toggles — stroke & fill erzwingen */
+body > :not(#app):not(script) button svg line,
+body > :not(#app):not(script) button svg path,
+body > :not(#app):not(script) button svg rect,
+body > :not(#app):not(script) [aria-expanded] svg line,
+body > :not(#app):not(script) [aria-expanded] svg path,
+body > :not(#app):not(script) [aria-expanded] svg rect,
+body > :not(#app):not(script) [role='button'] svg line,
+body > :not(#app):not(script) [role='button'] svg path,
+body > :not(#app):not(script) [role='button'] svg rect {
+  stroke: currentColor !important;
+  fill: currentColor !important;
+}
+/* 4. Bootstrap toggler-icon (background-image SVG) — Kontrast per CSS-Filter */
+body > :not(#app):not(script) [class*='toggler-icon'] {
+  filter: brightness(0) saturate(100%) !important;
+}
+:root[data-theme='dark'] body > :not(#app):not(script) [class*='toggler-icon'] {
+  filter: brightness(0) saturate(100%) invert(1) !important;
+}
+
+/* Cookie Banner: immer im Vordergrund, über Nav und Dropdowns */
+.cookie-banner,
+.cookie-consent,
+[class*='cookie-banner'],
+[class*='cookie-consent'],
+[id*='cookie-banner'],
+[id*='cookie-consent'] {
+  z-index: 10000 !important;
+  position: fixed !important;
+}
+
+/* Textfarben der SSI-Partials aus den Tokens; die Variablen wechseln mit dem
+   Theme, deshalb gibt es keine Dark-Varianten. Cookie-Banner ausgenommen. */
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  ),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  *:not([class*='cookie']):not([id*='cookie']) {
+  color: var(--ds-text) !important;
+}
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:not([class*='cookie']):not([id*='cookie']),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:not([class*='cookie']):not([id*='cookie'])
+  * {
+  color: var(--ds-link) !important;
+}
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:hover:not([class*='cookie']):not([id*='cookie']),
+body
+  > :not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not([class*='cookie']):not(
+    [id*='cookie']
+  )
+  a:hover:not([class*='cookie']):not([id*='cookie'])
+  * {
+  color: var(--ds-accent) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Touch / Mobile
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Kein grauer Tap-Highlight, keine 300ms-Klickverzögerung auf Bedienelementen */
+a,
+button,
+label,
+select,
+summary,
+[role='button'],
+input[type='range'],
+input[type='checkbox'],
+input[type='file'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* iOS Safari zoomt bei Formularfeldern unter 16px in die Seite. Auf
+   Touch-Viewports deshalb mindestens --ds-text-lg (16px). */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: var(--ds-text-lg) !important;
+  }
+}
+
+/* === Reduzierte Bewegung === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Lokale Navigation (HeroNav.vue)
+   ========================================================================== */
+.hero-nav {
+  position: sticky;
+  top: 70px; /* Höhe der globalen Navigation (nav.html, Desktop) */
+  z-index: var(--ds-z-topbar);
+  background: var(--ds-surface-1);
+  border-bottom: var(--ds-border-width) solid var(--ds-border);
+}
+
+.hero-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  height: var(--ds-topbar-height);
+  max-width: var(--ds-container);
+  margin: 0 auto;
+  padding: 0 var(--ds-gutter);
+}
+
+.hero-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-shrink: 0;
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: var(--ds-tracking-tight);
+  color: var(--ds-text);
+  text-decoration: none;
+}
+
+.hero-nav-brand:hover {
+  color: var(--ds-text);
+}
+
+.hero-nav-brand-icon {
+  color: var(--ds-accent);
+}
+
+.hero-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  min-width: 0;
+}
+
+.hero-nav-link {
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  font-size: var(--ds-text-md);
+  font-weight: var(--ds-weight-semibold);
+  white-space: nowrap;
+  color: var(--ds-text-2);
+  text-decoration: none;
+  transition:
+    color var(--ds-duration) var(--ds-ease),
+    background-color var(--ds-duration) var(--ds-ease);
+}
+
+.hero-nav-link:hover {
+  color: var(--ds-text);
+  background: var(--ds-surface-2);
+}
+
+/* Aktiver Tab: Text in --ds-text (Akzent als Schrift erreicht im Light-Theme
+   nur 2,6:1 statt 4,5:1), Akzent bleibt als getönte Fläche sichtbar. */
+.hero-nav-link.active {
+  color: var(--ds-text);
+  background: var(--ds-accent-soft);
+}
+
+.hero-nav-brand:focus-visible,
+.hero-nav-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
+}
+
+@media (max-width: 768px) {
+  .hero-nav {
+    top: 60px; /* globale Navigation ist auf kleinen Bildschirmen 60 px hoch */
+  }
+
+  .hero-nav-inner {
+    gap: var(--ds-space-3);
+    padding: 0 var(--ds-space-4);
+  }
+
+  /* Tabs bleiben erreichbar: bei Platzmangel seitlich scrollbar (nur die Leiste,
+     nie die Seite) */
+  .hero-nav-links {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .hero-nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-nav-link {
+    padding: var(--ds-space-2);
+    font-size: var(--ds-text-sm);
+  }
+}
+
+@media (max-width: 600px) {
+  /* Platz für die Tabs: Text nur visuell ausblenden, damit der Link für
+     Screenreader weiter „Audio Normalizer“ heißt. */
+  .hero-nav-brand-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-nav-link {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Startseite (LandingPage.vue)
+   ========================================================================== */
+/* Layout */
+.landing-page {
+  min-height: 100vh;
+  background: var(--ds-surface-0);
+  color: var(--ds-text);
+  position: relative;
+  z-index: 1;
+  font-size: var(--ds-text-md);
+  line-height: var(--ds-leading);
+}
+
+.container {
+  max-width: var(--ds-container);
+  margin: 0 auto;
+  padding: 0 var(--ds-gutter);
+}
+
+/* Hero Section */
+.hero {
+  padding: var(--ds-space-16) 0 var(--ds-space-12);
+  text-align: center;
+}
+
+.hero-content {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-size: var(--ds-text-3xl);
+  font-weight: var(--ds-weight-bold);
+  line-height: var(--ds-leading-tight);
+  letter-spacing: var(--ds-tracking-tight);
+  color: var(--ds-text);
+  margin-bottom: var(--ds-space-3);
+}
+
+.hero-subtitle {
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  margin-bottom: var(--ds-space-3);
+}
+
+.hero-description {
+  font-size: var(--ds-text-md);
+  color: var(--ds-text-2);
+  margin-bottom: var(--ds-space-6);
+}
+
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ds-control-lg);
+  padding: 0 var(--ds-space-5);
+  background: var(--ds-accent);
+  color: var(--ds-on-accent);
+  border-radius: var(--ds-radius-md);
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-semibold);
+  text-decoration: none;
+  transition: background-color var(--ds-duration) var(--ds-ease);
+}
+
+.btn-hero:hover {
+  background: var(--ds-accent-hover);
+  color: var(--ds-on-accent);
+}
+
+.btn-hero:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-focus-ring);
+}
+
+/* Hero-Bild: nie größer als intrinsisch (800 px), skaliert mobil auf Containerbreite.
+   width/height-Attribute + aspect-ratio reservieren den Platz (kein Layout-Shift). */
+.hero-media {
+  max-width: 800px;
+  margin: var(--ds-space-10) auto 0;
+  border: var(--ds-border-width) solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+  background: var(--ds-surface-2);
+}
+
+.hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1120 / 630;
+}
+
+/* Sections alternate between page and panel surface. */
+.features,
+.faq {
+  padding: var(--ds-space-12) 0;
+  background: var(--ds-surface-1);
+  border-top: var(--ds-border-width) solid var(--ds-border);
+  border-bottom: var(--ds-border-width) solid var(--ds-border);
+}
+
+.benefits {
+  padding: var(--ds-space-12) 0;
+}
+
+/* Anker-Ziele müssen unter beiden Sticky-Leisten liegen:
+   globale Navigation (70 px) + HeroNav */
+.features,
+.faq {
+  scroll-margin-top: calc(70px + var(--ds-topbar-height));
+}
+
+.section-title {
+  text-align: center;
+  font-size: var(--ds-text-2xl);
+  font-weight: var(--ds-weight-bold);
+  line-height: var(--ds-leading-tight);
+  letter-spacing: var(--ds-tracking-tight);
+  margin-bottom: var(--ds-space-8);
+}
+
+/* Cards: on a panel section they sit on the page surface, and vice versa. */
+.features-grid,
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--ds-gap);
+}
+
+.feature-card,
+.benefit-card {
+  border: var(--ds-border-width) solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  padding: var(--ds-space-5);
+  transition: border-color var(--ds-duration) var(--ds-ease);
+}
+
+.feature-card {
+  background: var(--ds-surface-0);
+}
+
+.benefit-card {
+  background: var(--ds-surface-1);
+}
+
+.feature-card:hover,
+.benefit-card:hover {
+  border-color: var(--ds-border-strong);
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ds-control-lg);
+  height: var(--ds-control-lg);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-2);
+  font-size: var(--ds-text-xl);
+  margin-bottom: var(--ds-space-3);
+}
+
+.feature-card h3,
+.benefit-card h3 {
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-semibold);
+  line-height: var(--ds-leading-tight);
+  margin-bottom: var(--ds-space-2);
+  color: var(--ds-text);
+}
+
+.feature-card p,
+.benefit-card p {
+  color: var(--ds-text-2);
+  font-size: var(--ds-text-md);
+  margin: 0;
+}
+
+/* FAQ Section */
+.faq-list {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.faq-item {
+  background: var(--ds-surface-0);
+  border: var(--ds-border-width) solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+  transition: border-color var(--ds-duration) var(--ds-ease);
+}
+
+.faq-item:hover,
+.faq-open {
+  border-color: var(--ds-border-strong);
+}
+
+.faq-question {
+  width: 100%;
+  min-height: var(--ds-row-height);
+  padding: var(--ds-space-3) var(--ds-space-5);
+  background: none;
+  border: none;
+  color: var(--ds-text);
+  font: inherit;
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-medium);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ds-space-4);
+  transition: background-color var(--ds-duration) var(--ds-ease);
+}
+
+.faq-question:hover {
+  background: var(--ds-surface-2);
+}
+
+.faq-question:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ds-accent);
+}
+
+.faq-icon {
+  font-size: var(--ds-text-xl);
+  color: var(--ds-text-2);
+  flex-shrink: 0;
+}
+
+.faq-answer {
+  padding: 0 var(--ds-space-5) var(--ds-space-4);
+  color: var(--ds-text-2);
+  font-size: var(--ds-text-md);
+}
+
+.faq-answer p {
+  margin: 0;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--ds-space-4);
+  }
+
+  .features,
+  .faq {
+    scroll-margin-top: calc(60px + var(--ds-topbar-height));
+  }
+
+  .hero {
+    padding: var(--ds-space-10) 0 var(--ds-space-8);
+  }
+
+  .hero-title {
+    font-size: var(--ds-text-2xl);
+  }
+
+  .hero-media {
+    margin-top: var(--ds-space-8);
+  }
+
+  .section-title {
+    font-size: var(--ds-text-xl);
+    margin-bottom: var(--ds-space-6);
+  }
+
+  .features-grid,
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features,
+  .benefits,
+  .faq {
+    padding: var(--ds-space-8) 0;
+  }
+
+  .faq-question {
+    padding: var(--ds-space-3) var(--ds-space-4);
+    font-size: var(--ds-text-md);
+  }
+
+  .faq-answer {
+    padding: 0 var(--ds-space-4) var(--ds-space-3);
+  }
+}
+
+/* Responsive - Phone */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 var(--ds-space-3);
+  }
+
+  .hero {
+    padding: var(--ds-space-8) 0 var(--ds-space-6);
+  }
+
+  .hero-subtitle {
+    font-size: var(--ds-text-md);
+  }
+
+  .hero-media {
+    margin-top: var(--ds-space-6);
+    border-radius: var(--ds-radius-md);
+  }
+
+  .btn-hero {
+    width: 100%;
+    max-width: 320px;
+    height: var(--ds-row-height);
+  }
+
+  .feature-card,
+  .benefit-card {
+    padding: var(--ds-space-4);
+  }
+}
+
+/* ==========================================================================
+   Grundlayout (kodini-layout-stage1.css, nur Startseite)
+   ========================================================================== */
+#app > .landing-page {
+  --normalizer-layout-width: 1160px;
+  --normalizer-gutter: clamp(var(--ds-space-3), 3vw, var(--ds-space-6));
+
+  background-color: var(--ds-surface-0);
+  background-image:
+    radial-gradient(ellipse at 85% 0%, var(--ds-glow-cyan), transparent 68%),
+    radial-gradient(ellipse at 12% 0%, var(--ds-glow-blue), transparent 62%);
+  background-repeat: no-repeat;
+  background-size: 100% 42rem;
+}
+
+#app .landing-page > section > .container {
+  max-width: var(--normalizer-layout-width);
+  padding-inline: var(--normalizer-gutter);
+}
+
+#app .landing-page .hero {
+  padding-block: clamp(var(--ds-space-8), 7vw, 6rem) clamp(var(--ds-space-8), 5vw, 4rem);
+}
+
+#app .landing-page .hero > .container {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(var(--ds-space-6), 5vw, var(--ds-space-16));
+}
+
+#app .landing-page .hero-content {
+  margin: 0;
+  text-align: start;
+}
+
+#app .landing-page .hero-title {
+  font-size: clamp(2.25rem, 5.25vw, 4.5rem);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+#app .landing-page .hero-subtitle {
+  color: var(--ds-heading-accent);
+}
+
+#app .landing-page .hero-media {
+  margin: 0;
+  border-color: var(--ds-border-strong);
+  box-shadow: var(--ds-shadow-overlay);
+}
+
+#app .landing-page :is(.features, .benefits, .faq) {
+  padding-block: clamp(var(--ds-space-8), 5vw, var(--ds-space-16));
+}
+
+#app .landing-page :is(.features-grid, .benefits-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+#app .landing-page :is(.feature-card, .benefit-card, .faq-item) {
+  background: linear-gradient(150deg, var(--ds-surface-1), var(--ds-surface-0));
+}
+
+@media (max-width: 760px) {
+  #app .landing-page .hero > .container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Lokale Kopfzeile (kodini-header-stage2.css, nur Startseite)
+   ========================================================================== */
+#app .hero-nav {
+  background: var(--ds-surface-1);
+  border-bottom-color: var(--ds-border-strong);
+}
+
+#app .hero-nav-inner {
+  max-width: 1160px;
+  padding-inline: clamp(var(--ds-space-3), 3vw, var(--ds-space-6));
+}
+
+#app .hero-nav-links {
+  padding: var(--ds-space-1);
+  scroll-padding-inline: var(--ds-space-1);
+}
+
+#app .hero-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-control-md);
+  border: var(--ds-border-width) solid transparent;
+  border-radius: var(--ds-radius-md);
+}
+
+#app .hero-nav-link.active {
+  border-color: var(--ds-accent);
+}
+
+#app .hero-nav-link:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ds-accent);
+}

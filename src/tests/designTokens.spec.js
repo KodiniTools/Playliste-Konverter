@@ -188,15 +188,28 @@ describe('Theme-Mechanik in app.html', () => {
   })
 })
 
-const INFO_PAGES = ['index.html', 'faq.html', 'funktion.html']
+// Die Startseite folgt dem Muster des Audio Normalizers und hat ein eigenes Stylesheet.
+const INFO_PAGES = [
+  { page: 'index.html', stylesheet: '/src/landing/home.css', main: '<main id="app">' },
+  {
+    page: 'faq.html',
+    stylesheet: '/src/landing/landing.css',
+    main: '<main id="app" class="landing">',
+  },
+  {
+    page: 'funktion.html',
+    stylesheet: '/src/landing/landing.css',
+    main: '<main id="app" class="landing">',
+  },
+]
 
-describe.each(INFO_PAGES)('Infoseite %s', (page) => {
+describe.each(INFO_PAGES)('Infoseite $page', ({ page, stylesheet, main }) => {
   const html = readFileSync(join(ROOT_DIR, page), 'utf8')
 
   it('hat kein eigenes Inline-CSS mehr und lädt das Token-Stylesheet', () => {
     expect(html).not.toMatch(/<style[\s>]/)
     expect(html).not.toMatch(/\sstyle="/)
-    expect(html).toContain('<link rel="stylesheet" href="/src/landing/landing.css" />')
+    expect(html).toContain(`<link rel="stylesheet" href="${stylesheet}" />`)
   })
 
   it('nutzt keine Effekt-Elemente der alten Seiten (Glow, Hintergrund-Verlauf)', () => {
@@ -205,9 +218,9 @@ describe.each(INFO_PAGES)('Infoseite %s', (page) => {
 
   it('setzt data-theme vor dem ersten Paint, vor dem Stylesheet', () => {
     const prePaint = html.indexOf("setAttribute('data-theme'")
-    const stylesheet = html.indexOf('/src/landing/landing.css')
+    const stylesheetIndex = html.indexOf(`href="${stylesheet}"`)
     expect(prePaint).toBeGreaterThan(-1)
-    expect(stylesheet).toBeGreaterThan(prePaint)
+    expect(stylesheetIndex).toBeGreaterThan(prePaint)
   })
 
   it('hält body.light-theme und html.dark wie die App synchron', () => {
@@ -216,9 +229,9 @@ describe.each(INFO_PAGES)('Infoseite %s', (page) => {
   })
 
   it('legt den Seiteninhalt in #app, damit die Partial-Regeln nur Nav/Footer treffen', () => {
-    expect(html).toMatch(
-      /<!--#include virtual="\/partials\/nav\.html" -->[\s\S]*?<main id="app" class="landing">/,
-    )
+    const navInclude = html.indexOf('<!--#include virtual="/partials/nav.html" -->')
+    expect(navInclude).toBeGreaterThan(-1)
+    expect(html.indexOf(main)).toBeGreaterThan(navInclude)
     const mainEnd = html.indexOf('</main>')
     expect(mainEnd).toBeGreaterThan(-1)
     expect(html.indexOf('<!--#include virtual="/partials/footer.html" -->')).toBeGreaterThan(
