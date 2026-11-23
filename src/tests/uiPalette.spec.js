@@ -95,7 +95,7 @@ describe('Laufzeit-Palette (Etappe 1)', () => {
     expect(fileList).not.toMatch(/\btext-accent\b/)
   })
 
-  it.each(['app.html', 'index.html', 'faq.html', 'funktion.html'])(
+  it.each(['app.html', 'faq.html', 'funktion.html'])(
     '%s: theme-color entspricht der Seitenfläche der Palette',
     (file) => {
       const html = readRelative(import.meta.url, `../../${file}`)
@@ -109,4 +109,14 @@ describe('Laufzeit-Palette (Etappe 1)', () => {
       expect(metaColor('light')).toBe(uiLight['--ds-surface-0'])
     },
   )
+
+  it('index.html: theme-color entspricht den Basistokens (Startseite ohne Laufzeit-Palette)', () => {
+    const html = readRelative(import.meta.url, '../../index.html')
+    expect(html).toContain(
+      `<meta name="theme-color" content="${baseDark['--ds-surface-0']}" media="(prefers-color-scheme: dark)"`,
+    )
+    expect(html).toContain(
+      `<meta name="theme-color" content="${baseLightApp['--ds-surface-0']}" media="(prefers-color-scheme: light)"`,
+    )
+  })
 })

@@ -1,7 +1,8 @@
 /**
- * Werkzeugnavigation aus Etappe 2: Übersicht, Konverter, Anleitung und FAQ
- * tragen dieselbe Navigation (Name + drei Links) und markieren genau die
- * eigene Seite mit aria-current="page".
+ * Werkzeugnavigation aus Etappe 2: Konverter, Anleitung und FAQ tragen
+ * dieselbe Navigation (Name + drei Links) und markieren genau die eigene Seite
+ * mit aria-current="page". Die Startseite hat die Navigation nach dem Muster
+ * des Audio Normalizers (siehe homeLanding.spec.js).
  */
 import { describe, expect, it } from 'vitest'
 import { readRelative } from '../design-system/__tests__/tokenTestUtils'
@@ -17,7 +18,6 @@ function navBlock(source, file) {
 }
 
 const PAGES = [
-  { file: 'index.html', current: 'class="converter-brand"' },
   { file: 'faq.html', current: 'href="./faq.html"' },
   { file: 'funktion.html', current: 'href="./funktion.html"' },
 ]
