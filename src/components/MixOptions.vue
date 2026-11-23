@@ -46,17 +46,17 @@
 </script>
 
 <template>
-  <section class="rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
+  <section class="converter-settings rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
     <h2 class="mb-3 text-md font-semibold text-ink">{{ t('mix.title') }}</h2>
 
     <fieldset>
       <legend class="mb-2 text-sm font-medium text-ink-2">{{ t('mix.transition') }}</legend>
-      <div class="grid grid-cols-3 gap-2">
+      <div class="converter-transitions grid grid-cols-3 gap-2">
         <label
           v-for="option in TRANSITION_OPTIONS"
           :key="option.value"
           :class="[
-            'cursor-pointer rounded-md border px-3 py-2 text-center text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent',
+            'converter-option cursor-pointer rounded-md border px-3 py-2 text-center text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent',
             transition === option.value
               ? 'border-accent bg-accent-soft text-ink'
               : 'border-line bg-surface-2 text-ink-2 hover:bg-surface-3',
@@ -75,7 +75,7 @@
       </div>
     </fieldset>
 
-    <div v-if="transition !== 'none'" class="mt-3 flex items-center gap-3">
+    <div v-if="transition !== 'none'" class="converter-duration mt-3 flex items-center gap-3">
       <label :for="`transition-seconds-${uid}`" class="shrink-0 text-sm text-ink-2">
         {{ t('mix.seconds') }}
       </label>
@@ -94,7 +94,7 @@
       </span>
     </div>
 
-    <label class="mt-4 flex cursor-pointer items-start gap-2 text-sm text-ink">
+    <label class="converter-check mt-4 flex cursor-pointer items-start gap-2 text-sm text-ink">
       <input
         v-model="loudnorm"
         type="checkbox"
@@ -107,7 +107,7 @@
       </span>
     </label>
 
-    <label class="mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
+    <label class="converter-check mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
       <input
         v-model="trimSilence"
         type="checkbox"

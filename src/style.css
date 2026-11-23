@@ -18,6 +18,7 @@
 @import './styles/foundation.css';
 @import './styles/kodini-layout.css';
 @import './styles/kodini-header.css';
+@import './styles/kodini-controls.css';
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
 
 /* Klassen nur aus App-Code erzeugen; Testdateien ausnehmen, ihre

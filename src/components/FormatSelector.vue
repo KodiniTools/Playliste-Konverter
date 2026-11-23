@@ -47,7 +47,7 @@
 </script>
 
 <template>
-  <section class="rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
+  <section class="converter-settings rounded-lg border border-line bg-surface-1 p-4 sm:p-5">
     <div role="group" :aria-label="t('preset.title')" class="mb-4">
       <p class="mb-2 text-sm font-medium text-ink-2">{{ t('preset.title') }}</p>
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -58,7 +58,7 @@
           :data-preset="preset.id"
           :aria-pressed="store.activePreset === preset.id"
           :class="[
-            'rounded-md border px-3 py-2 text-left transition-colors',
+            'converter-option rounded-md border px-3 py-2 text-left transition-colors',
             store.activePreset === preset.id
               ? 'border-accent bg-accent-soft'
               : 'border-line bg-surface-2 hover:bg-surface-3',
@@ -81,7 +81,7 @@
       <p class="text-sm text-ink-3">
         {{ t('bitrate.hint') }}
       </p>
-      <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+      <label class="converter-check inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
         <input v-model="mono" type="checkbox" data-testid="mono" class="h-4 w-4 accent-accent" />
         {{ t('preset.mono') }}
       </label>
