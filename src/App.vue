@@ -131,43 +131,47 @@
         <span>{{ sharedBanner.message }}</span>
       </div>
 
-      <div v-if="store.status === 'idle'" class="space-y-6">
-        <FileUploader />
-        <FileList v-if="store.files.length > 0" />
+      <div v-if="store.status === 'idle'" class="converter-workspace">
+        <div class="converter-tracks">
+          <FileUploader />
+          <FileList v-if="store.files.length > 0" />
+        </div>
 
-        <!-- Format Selector -->
-        <FormatSelector v-if="store.files.length > 0" />
-        <MixOptions v-if="store.files.length > 0" />
-        <OutputDetails v-if="store.files.length > 0" />
+        <div v-if="store.files.length > 0" class="converter-options">
+          <FormatSelector />
+          <MixOptions />
+          <OutputDetails />
+        </div>
 
-        <!-- Size Warning / All Clear -->
-        <SizeWarning />
+        <div class="converter-job">
+          <SizeWarning />
 
-        <button
-          v-if="store.files.length > 0"
-          type="button"
-          :disabled="store.isOverSizeLimit"
-          class="converter-submit w-full rounded-md bg-accent py-3 text-lg font-semibold text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-accent"
-          @click="store.convert"
-        >
-          <span class="inline-flex items-center justify-center gap-2">
-            <svg
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            {{ store.files.length }} {{ t('button.convert') }}
-          </span>
-        </button>
+          <button
+            v-if="store.files.length > 0"
+            type="button"
+            :disabled="store.isOverSizeLimit"
+            class="converter-submit w-full rounded-md bg-accent py-3 text-lg font-semibold text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-accent"
+            @click="store.convert"
+          >
+            <span class="inline-flex items-center justify-center gap-2">
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              {{ store.files.length }} {{ t('button.convert') }}
+            </span>
+          </button>
+        </div>
       </div>
 
       <ConversionProgress v-else-if="store.status !== 'done'" />

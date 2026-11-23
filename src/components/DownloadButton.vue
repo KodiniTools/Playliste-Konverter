@@ -252,12 +252,14 @@
 </script>
 
 <template>
-  <section class="rounded-lg border border-line bg-surface-1 p-4 text-center sm:p-6">
+  <section
+    class="converter-result rounded-lg border border-line bg-surface-1 p-4 text-center sm:p-6"
+  >
     <StatusIcon type="success" class="mx-auto mb-3 h-12 w-12 sm:mb-4 sm:h-16 sm:w-16" />
     <h3 class="mb-2 text-xl font-semibold text-ink">
       {{ t('download.title') }}
     </h3>
-    <p class="mb-2 text-md text-ink-2 sm:text-lg">
+    <p class="converter-result-name mb-2 text-md text-ink-2 sm:text-lg">
       {{ t('download.subtitle') }}
     </p>
     <p v-if="store.outputFileSize" class="mb-6 text-sm tabular-nums text-ink-3">

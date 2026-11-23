@@ -243,7 +243,7 @@
 
 <template>
   <details
-    class="group rounded-lg border border-line bg-surface-1 p-4 text-left sm:p-5"
+    class="converter-image group rounded-lg border border-line bg-surface-1 p-4 text-left sm:p-5"
     data-testid="playlist-image"
     @toggle="onToggle"
   >
@@ -454,7 +454,7 @@
       </div>
 
       <div
-        class="flex w-full items-center justify-center self-center overflow-hidden rounded-md border border-line bg-surface-2"
+        class="converter-image-preview flex w-full items-center justify-center self-center overflow-hidden rounded-md border border-line bg-surface-2"
         :class="format === 'square' ? 'max-w-[60vh]' : 'max-w-[40vh]'"
         :style="{ aspectRatio: `${size.width} / ${size.height}` }"
       >

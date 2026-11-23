@@ -116,7 +116,7 @@
 </script>
 
 <template>
-  <section class="rounded-lg border border-line bg-surface-1 p-3 sm:p-4">
+  <section class="converter-track-list rounded-lg border border-line bg-surface-1 p-3 sm:p-4">
     <div class="mb-3 flex items-center justify-between gap-2">
       <div class="min-w-0">
         <h3 class="text-md font-semibold text-ink sm:text-lg">
@@ -156,12 +156,13 @@
       </button>
     </div>
 
-    <div class="max-h-[420px] space-y-2 overflow-y-auto">
+    <div class="converter-track-scroll max-h-[420px] space-y-2 overflow-y-auto">
       <div v-for="(item, index) in store.files" :key="item.id" class="space-y-1">
         <div
           draggable="true"
+          :data-active="isActive(item)"
           :class="[
-            'flex min-h-row cursor-move items-center gap-2 rounded-sm border p-2 transition-colors sm:gap-3 sm:p-3',
+            'converter-track-row flex min-h-row cursor-move items-center gap-2 rounded-sm border p-2 transition-colors sm:gap-3 sm:p-3',
             isActive(item)
               ? 'border-accent bg-accent-soft'
               : 'border-line bg-surface-2 hover:bg-surface-3',
