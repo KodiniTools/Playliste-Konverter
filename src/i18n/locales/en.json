@@ -3,6 +3,10 @@
     "title": "Playlist Converter",
     "subtitle": "Merge multiple audio tracks into one file – up to 5 GB"
   },
+  "nav": {
+    "converter": "Converter",
+    "guide": "Guide"
+  },
   "format": {
     "title": "Output Format",
     "webm": {

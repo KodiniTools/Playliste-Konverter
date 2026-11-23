@@ -18,6 +18,7 @@
   import { getSharedFiles, clearSharedFiles } from './utils/sharedFileRepository'
   import { logger } from './utils/logger'
   import { isSharedSource } from './constants'
+  import kodiniLogo from './assets/kodinitools-logo.png'
 
   const store = useConverterStore()
   const uiStore = useUIStore()
@@ -97,29 +98,22 @@
   <ToastContainer />
   <div class="converter-shell min-h-screen py-4 sm:py-8" :class="{ 'pb-28 sm:pb-24': showPlayer }">
     <div class="converter-content mx-auto">
-      <header class="mb-6 sm:mb-8">
-        <div class="mb-4 flex flex-col items-center gap-2 text-center">
-          <div class="flex items-center gap-2 sm:gap-3">
-            <a href="./" class="home-link flex-shrink-0" title="Home" aria-label="Home">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-              </svg>
-            </a>
-            <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">
-              {{ t('app.title') }}
-            </h1>
+      <header class="converter-app-header">
+        <nav class="converter-nav" :aria-label="t('app.title')">
+          <a href="./" class="converter-brand">
+            <img :src="kodiniLogo" width="36" height="36" alt="" />
+            <span>{{ t('app.title') }}</span>
+          </a>
+          <div class="converter-nav-links">
+            <span aria-current="page" class="nav-link">{{ t('nav.converter') }}</span>
+            <a href="./faq.html" class="nav-link">FAQ</a>
+            <a href="./funktion.html" class="nav-link">{{ t('nav.guide') }}</a>
           </div>
+        </nav>
+        <div class="converter-header-title">
+          <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+            {{ t('app.title') }}
+          </h1>
           <p class="text-md text-ink-2 sm:text-lg">{{ t('app.subtitle') }}</p>
         </div>
       </header>
