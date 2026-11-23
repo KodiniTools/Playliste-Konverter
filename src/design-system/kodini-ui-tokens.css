@@ -15,6 +15,7 @@
   --ds-accent-soft: rgb(246 207 128 / 14%);
   --ds-on-accent: #171d28;
   --ds-link: #70dcf4;
+  --ds-focus-ring: 0 0 0 2px var(--ds-surface-0), 0 0 0 4px var(--ds-link);
   --ds-container: 1120px;
   --ds-hero-tint: #153657;
   --ds-panel-shadow: 0 12px 30px rgb(0 0 0 / 22%);
@@ -35,6 +36,7 @@
   --ds-accent-soft: rgb(233 184 80 / 18%);
   --ds-on-accent: #231a0b;
   --ds-link: #056982;
+  --ds-focus-ring: 0 0 0 2px var(--ds-surface-0), 0 0 0 4px var(--ds-link);
   --ds-hero-tint: #dbeefa;
   --ds-panel-shadow: 0 12px 30px rgb(39 73 107 / 11%);
 }

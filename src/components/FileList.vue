@@ -224,7 +224,7 @@
               <template v-if="typeof item.duration === 'number'">
                 <span aria-hidden="true">·</span> {{ formatTime(item.duration) }}
               </template>
-              <span v-if="isTrimmed(item)" class="ml-1 text-accent" data-testid="trim-badge"
+              <span v-if="isTrimmed(item)" class="ml-1 text-link" data-testid="trim-badge"
                 >· {{ t('trim.badge', { range: trimRange(item) }) }}</span
               >
               <span
@@ -301,9 +301,7 @@
             :data-trim-toggle="item.id"
             :class="[
               'flex h-control-sm w-7 flex-shrink-0 items-center justify-center rounded-sm transition-colors hover:bg-surface-3',
-              isTrimmed(item) || openTrimId === item.id
-                ? 'text-accent'
-                : 'text-ink-3 hover:text-ink',
+              isTrimmed(item) || openTrimId === item.id ? 'text-link' : 'text-ink-3 hover:text-ink',
             ]"
             @click.stop="toggleTrim(item.id)"
           >

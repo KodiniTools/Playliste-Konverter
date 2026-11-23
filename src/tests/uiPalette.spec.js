@@ -72,4 +72,41 @@ describe('Laufzeit-Palette (Etappe 1)', () => {
       expect(contrastRatio(c['--ds-on-accent'], c['--ds-accent-hover'])).toBeGreaterThanOrEqual(4.5)
     },
   )
+
+  // Abschlusskorrekturen (Etappe 5): Fokus, aktive Navigation und Zuschnitt-Hinweise
+  // nutzen die Linkfarbe, weil Gold auf hellen Flächen zu wenig Kontrast hat.
+  it.each(['dark', 'light'])('%s: der Fokus-Ring nutzt die Linkfarbe', (theme) => {
+    const ring = (theme === 'dark' ? uiDark : uiLight)['--ds-focus-ring']
+    expect(ring).toBe('0 0 0 2px var(--ds-surface-0), 0 0 0 4px var(--ds-link)')
+    // Nicht-Text-Kontrast (WCAG 1.4.11) des Rings auf allen Flächen
+    const c = effective[theme]
+    for (const surface of ['--ds-surface-0', '--ds-surface-1', '--ds-surface-2']) {
+      expect(contrastRatio(c['--ds-link'], c[surface])).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('aktive Navigation und Zuschnitt-Hinweise nutzen die Linkfarbe statt Gold', () => {
+    const headerCss = readRelative(import.meta.url, '../styles/kodini-header.css')
+    expect(headerCss).toMatch(
+      /\.nav-link\[aria-current='page'\] \{[^}]*box-shadow: inset 0 -2px var\(--ds-link\);/,
+    )
+    const fileList = readRelative(import.meta.url, '../components/FileList.vue')
+    expect(fileList).toMatch(/class="ml-1 text-link" data-testid="trim-badge"/)
+    expect(fileList).not.toMatch(/\btext-accent\b/)
+  })
+
+  it.each(['app.html', 'index.html', 'faq.html', 'funktion.html'])(
+    '%s: theme-color entspricht der Seitenfläche der Palette',
+    (file) => {
+      const html = readRelative(import.meta.url, `../../${file}`)
+      const metaColor = (scheme) =>
+        html.match(
+          new RegExp(
+            `<meta name="theme-color" content="(#[0-9a-f]{6})" media="\\(prefers-color-scheme: ${scheme}\\)"`,
+          ),
+        )?.[1]
+      expect(metaColor('dark')).toBe(uiDark['--ds-surface-0'])
+      expect(metaColor('light')).toBe(uiLight['--ds-surface-0'])
+    },
+  )
 })
