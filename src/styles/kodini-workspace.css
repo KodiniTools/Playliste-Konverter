@@ -107,6 +107,7 @@ html:has(.sticky-player) {
   border-color: var(--ds-border-strong);
 }
 
+#app .converter-image label:has(:focus-visible),
 #app .converter-image summary:focus-visible {
   outline: 2px solid var(--ds-link);
   outline-offset: 2px;
