@@ -18,6 +18,13 @@
   color: var(--ds-text);
 }
 
+/* Aktive Sprache wie im Playlist Generator: gefüllt wie der Primärbutton. Das
+   Partial färbt sie sonst mit --accent-color (hier die Linkfarbe). */
+:root[data-theme] body > .global-nav .global-nav-lang-btn.active {
+  background: var(--ds-accent-fill) !important;
+  color: var(--ds-on-accent-fill) !important;
+}
+
 @media (max-width: 768px) {
   :root[data-theme] body > .global-nav .global-nav-links {
     background: var(--nav-bg);
