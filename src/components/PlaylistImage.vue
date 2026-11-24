@@ -484,7 +484,7 @@
         <button
           type="button"
           :disabled="!blob"
-          class="inline-flex h-control-md items-center rounded-md bg-accent px-4 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
+          class="inline-flex h-control-md items-center rounded-md bg-accent-fill px-4 text-md font-semibold text-on-accent-fill transition-colors hover:bg-accent-fill-hover disabled:cursor-not-allowed disabled:opacity-45"
           data-action="download"
           @click="handleDownload"
         >

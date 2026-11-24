@@ -187,7 +187,7 @@
             :class="[
               'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors',
               isActive(item)
-                ? 'bg-accent text-on-accent hover:bg-accent-hover'
+                ? 'bg-accent-fill text-on-accent-fill hover:bg-accent-fill-hover'
                 : 'border border-line-strong bg-surface-1 text-ink hover:bg-surface-3',
             ]"
             @click.stop="player.toggle(item)"

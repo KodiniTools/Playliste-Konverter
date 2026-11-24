@@ -269,7 +269,7 @@
 
     <button
       type="button"
-      class="inline-flex h-control-lg items-center rounded-md bg-accent px-6 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
+      class="inline-flex h-control-lg items-center rounded-md bg-accent-fill px-6 text-md font-semibold text-on-accent-fill transition-colors hover:bg-accent-fill-hover"
       @click="handleDownload"
     >
       {{ t('download.button', { name: store.outputFileName }) }}

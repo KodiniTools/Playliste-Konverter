@@ -44,7 +44,13 @@ describe('Startseite: Stylesheet', () => {
   })
 
   it('nutzt nur Variablen, die in den Tokens definiert sind', () => {
-    const defined = new Set((baseCss + homeTokensCss).match(/--ds-[a-z0-9-]+(?=\s*:)/g))
+    const buttonTokensCss = readRelative(
+      import.meta.url,
+      '../design-system/kodini-button-tokens.css',
+    )
+    const defined = new Set(
+      (baseCss + homeTokensCss + buttonTokensCss).match(/--ds-[a-z0-9-]+(?=\s*:)/g),
+    )
     const used = new Set(css.match(/--ds-[a-z0-9-]+/g))
     expect([...used].filter((variable) => !defined.has(variable))).toEqual([])
   })

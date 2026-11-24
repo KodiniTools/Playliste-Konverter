@@ -298,7 +298,9 @@ describe('Stylesheet der Infoseiten (landing.css)', () => {
   })
 
   it('nutzt nur Variablen, die in den Tokens definiert sind', () => {
-    const tokensCss = readFileSync(join(SRC_DIR, 'design-system', 'tokens-v2.css'), 'utf8')
+    const tokensCss = ['tokens-v2.css', 'kodini-button-tokens.css']
+      .map((file) => readFileSync(join(SRC_DIR, 'design-system', file), 'utf8'))
+      .join('\n')
     const defined = new Set(tokensCss.match(/--ds-[a-z0-9-]+(?=\s*:)/g))
     const used = new Set(withoutComments(landingCss).match(/--ds-[a-z0-9-]+/g))
     expect([...used].filter((variable) => !defined.has(variable))).toEqual([])

@@ -1,0 +1,22 @@
+/* ==========================================================================
+   Tokens der gefüllten Buttons, geladen nach den Paletten der Oberfläche.
+   --------------------------------------------------------------------------
+   Werte aus dem Playlist Generator (src/design-system/tokens-v2.css, Stand
+   c66577a: --ds-accent-fill, --ds-accent-fill-hover, --ds-on-accent). Die
+   Schriftfarbe heißt hier --ds-on-accent-fill, weil --ds-on-accent in diesem
+   Projekt weiter zur Goldfarbe --ds-accent gehört.
+   Geladen von foundation.css (App, FAQ, Anleitung) und home.css (Startseite).
+   ========================================================================== */
+
+:root {
+  --ds-accent-fill: #8f6320;
+  --ds-accent-fill-hover: #9a6b24;
+  --ds-on-accent-fill: #ffffff;
+}
+
+.light-theme,
+:root[data-theme='light'] {
+  --ds-accent-fill: #8f6320;
+  --ds-accent-fill-hover: #7d561c;
+  --ds-on-accent-fill: #ffffff;
+}

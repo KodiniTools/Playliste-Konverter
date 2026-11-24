@@ -53,6 +53,10 @@
   --color-accent-hover: var(--ds-accent-hover);
   --color-accent-soft: var(--ds-accent-soft);
   --color-on-accent: var(--ds-on-accent);
+  /* Gefüllte Buttons (Werte des Playlist Generators) */
+  --color-accent-fill: var(--ds-accent-fill);
+  --color-accent-fill-hover: var(--ds-accent-fill-hover);
+  --color-on-accent-fill: var(--ds-on-accent-fill);
   --color-link: var(--ds-link);
   --color-success: var(--ds-success);
   --color-warning: var(--ds-warning);
