@@ -13,6 +13,7 @@
 
 @import '../design-system/tokens-v2.css';
 @import '../design-system/kodini-home-tokens.css';
+@import '../design-system/kodini-button-tokens.css';
 
 /* === Schrift: ausschließlich Supreme Regular (400), gebündelt aus src/assets/fonts.
    Alle Gewichts-Tokens stehen auf 400; font-synthesis verhindert, dass der Browser
@@ -443,8 +444,8 @@ input[type='file'] {
   justify-content: center;
   height: var(--ds-control-lg);
   padding: 0 var(--ds-space-5);
-  background: var(--ds-accent);
-  color: var(--ds-on-accent);
+  background: var(--ds-accent-fill);
+  color: var(--ds-on-accent-fill);
   border-radius: var(--ds-radius-md);
   font-size: var(--ds-text-lg);
   font-weight: var(--ds-weight-semibold);
@@ -453,8 +454,8 @@ input[type='file'] {
 }
 
 .btn-hero:hover {
-  background: var(--ds-accent-hover);
-  color: var(--ds-on-accent);
+  background: var(--ds-accent-fill-hover);
+  color: var(--ds-on-accent-fill);
 }
 
 .btn-hero:focus-visible {

@@ -11,6 +11,7 @@
 
 @import '../design-system/tokens-v2.css';
 @import '../design-system/kodini-ui-tokens.css';
+@import '../design-system/kodini-button-tokens.css';
 
 /* === Schrift: Supreme in den drei genutzten Gewichten (font-medium = 500,
    font-semibold/-bold = 700), gebündelt aus src/assets/fonts. === */

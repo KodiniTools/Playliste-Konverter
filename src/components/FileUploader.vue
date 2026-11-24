@@ -202,7 +202,7 @@
     <div class="converter-upload-actions mt-4 flex flex-wrap justify-center gap-3">
       <!-- Einzelne Dateien auswählen (Primäraktion) -->
       <label
-        class="inline-flex h-control-md cursor-pointer items-center gap-2 rounded-md bg-accent px-4 text-md font-semibold text-on-accent transition-colors hover:bg-accent-hover"
+        class="inline-flex h-control-md cursor-pointer items-center gap-2 rounded-md bg-accent-fill px-4 text-md font-semibold text-on-accent-fill transition-colors hover:bg-accent-fill-hover"
       >
         <svg
           class="h-4 w-4"

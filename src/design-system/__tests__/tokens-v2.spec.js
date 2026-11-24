@@ -15,6 +15,11 @@ const v2Css = readRelative(base, '../tokens-v2.css')
 const styleCss = readRelative(base, '../../style.css')
 const foundationCss = readRelative(base, '../../styles/foundation.css')
 const landingCss = readRelative(base, '../../landing/landing.css')
+const buttonBlock = parseBlock(
+  readRelative(base, '../kodini-button-tokens.css'),
+  ':root',
+  'kodini-button-tokens.css',
+)
 // Tailwind-4-Theme: der @theme-Block in style.css
 const tailwindTheme = styleCss.match(/@theme \{[\s\S]*?\n\}/)?.[0] ?? ''
 
@@ -104,6 +109,8 @@ describe('Namespace und Einbindung', () => {
     const undefinedVars = [...referenced]
       .map((expression) => expression.slice(4, -1))
       .filter((variable) => rootBlock[variable] === undefined)
+      // Button-Tokens liegen in einer eigenen Datei (siehe buttonFill.spec.js)
+      .filter((variable) => buttonBlock[variable] === undefined)
     expect(undefinedVars).toEqual([])
   })
 })

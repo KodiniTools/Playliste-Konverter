@@ -237,14 +237,14 @@ html {
   flex-shrink: 0;
 }
 
-/* Primäraktion: die einzige Goldfläche je Ansicht */
+/* Primäraktion: gefüllter Button wie im Playlist Generator */
 .landing .btn-primary {
-  background: var(--ds-accent);
-  color: var(--ds-on-accent);
+  background: var(--ds-accent-fill);
+  color: var(--ds-on-accent-fill);
 }
 
 .landing .btn-primary:hover {
-  background: var(--ds-accent-hover);
+  background: var(--ds-accent-fill-hover);
 }
 
 .landing .btn-secondary {

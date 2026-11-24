@@ -61,7 +61,7 @@
             :disabled="converter.files.length === 0"
             :title="player.isPlaying ? t('preview.pause') : t('preview.play')"
             :aria-label="player.isPlaying ? t('preview.pause') : t('preview.play')"
-            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
+            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-fill text-on-accent-fill transition-colors hover:bg-accent-fill-hover disabled:cursor-not-allowed disabled:opacity-45"
             @click="player.togglePlayPause()"
           >
             <svg
