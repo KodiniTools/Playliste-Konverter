@@ -219,6 +219,20 @@ body
   color: var(--ds-accent) !important;
 }
 
+/* Aktive Sprache der zentralen Navigation wie im Playlist Generator: gefüllt wie
+   der Primärbutton. Die Regeln oben nehmen jedem Element im Partial Hintergrund
+   und eigene Textfarbe; ohne diese Ausnahme wäre die gewählte Sprache nicht zu
+   erkennen. Gleicher Selektor-Anfang plus zwei Klassen, damit die Regel über
+   der Textfarben-Regel (auch a und a:hover) liegt. */
+body
+  > .global-nav:not(#app):not(script):not(.cookie-banner):not(.cookie-consent):not(
+    [class*='cookie']
+  ):not([id*='cookie'])
+  .global-nav-lang-btn.active:not([class*='cookie']):not([id*='cookie']) {
+  background-color: var(--ds-accent-fill) !important;
+  color: var(--ds-on-accent-fill) !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    Touch / Mobile
    ───────────────────────────────────────────────────────────────────────── */
