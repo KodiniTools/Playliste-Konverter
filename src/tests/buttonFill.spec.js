@@ -41,11 +41,17 @@ describe('Gefüllte Buttons wie im Playlist Generator', () => {
       '--ds-accent-fill': '#8f6320',
       '--ds-accent-fill-hover': '#9a6b24',
       '--ds-on-accent-fill': '#ffffff',
+      '--ds-accent-fill-grad': 'linear-gradient(180deg, #9c6c26 0%, #7a5218 45%, #4a2f0a 100%)',
+      '--ds-accent-fill-grad-hover':
+        'linear-gradient(180deg, #8c5f1f 0%, #6a4614 45%, #402908 100%)',
     })
     expect(tokens.light).toEqual({
       '--ds-accent-fill': '#8f6320',
       '--ds-accent-fill-hover': '#7d561c',
       '--ds-on-accent-fill': '#ffffff',
+      '--ds-accent-fill-grad': 'linear-gradient(180deg, #9c6c26 0%, #7a5218 45%, #4a2f0a 100%)',
+      '--ds-accent-fill-grad-hover':
+        'linear-gradient(180deg, #8c5f1f 0%, #6a4614 45%, #402908 100%)',
     })
   })
 
@@ -57,6 +63,28 @@ describe('Gefüllte Buttons wie im Playlist Generator', () => {
     expect(
       contrastRatio(c['--ds-on-accent-fill'], c['--ds-accent-fill-hover']),
     ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(['dark', 'light'])(
+    '%s: jeder Stopp des Verlaufs erfüllt mit weißer Schrift WCAG AA',
+    (theme) => {
+      const c = tokens[theme]
+      for (const token of ['--ds-accent-fill-grad', '--ds-accent-fill-grad-hover']) {
+        const stops = c[token].match(/#[0-9a-f]{6}/gi) ?? []
+        expect(stops).toHaveLength(3)
+        for (const stop of stops) {
+          expect(contrastRatio(c['--ds-on-accent-fill'], stop)).toBeGreaterThanOrEqual(4.5)
+        }
+      }
+    },
+  )
+
+  it('App: Tailwind-Klassen bg-accent-fill und hover:bg-accent-fill-hover tragen den Verlauf', () => {
+    const style = withoutComments(read('../style.css'))
+    expect(style).toMatch(/\.bg-accent-fill \{\s*background-image: var\(--ds-accent-fill-grad\);/)
+    expect(style).toMatch(
+      /\.hover\\:bg-accent-fill-hover:hover:not\(:disabled\) \{\s*background-image: var\(--ds-accent-fill-grad-hover\);/,
+    )
   })
 
   it('App, Infoseiten und Startseite laden die Tokens nach ihrer Palette', () => {
@@ -80,17 +108,17 @@ describe('Gefüllte Buttons wie im Playlist Generator', () => {
   it('Startseite, FAQ und Anleitung: Primärbutton nutzt Fläche, Hover und Schrift der Tokens', () => {
     const home = withoutComments(read('../landing/home.css'))
     expect(home).toMatch(
-      /\.btn-hero \{[^}]*background: var\(--ds-accent-fill\);\s*color: var\(--ds-on-accent-fill\);/,
+      /\.btn-hero \{[^}]*background: var\(--ds-accent-fill\) var\(--ds-accent-fill-grad\);\s*color: var\(--ds-on-accent-fill\);/,
     )
     expect(home).toMatch(
-      /\.btn-hero:hover \{\s*background: var\(--ds-accent-fill-hover\);\s*color: var\(--ds-on-accent-fill\);/,
+      /\.btn-hero:hover \{\s*background: var\(--ds-accent-fill-hover\) var\(--ds-accent-fill-grad-hover\);\s*color: var\(--ds-on-accent-fill\);/,
     )
     const landing = withoutComments(read('../landing/landing.css'))
     expect(landing).toMatch(
-      /\.landing \.btn-primary \{\s*background: var\(--ds-accent-fill\);\s*color: var\(--ds-on-accent-fill\);/,
+      /\.landing \.btn-primary \{\s*background: var\(--ds-accent-fill\) var\(--ds-accent-fill-grad\);\s*color: var\(--ds-on-accent-fill\);/,
     )
     expect(landing).toMatch(
-      /\.landing \.btn-primary:hover \{\s*background: var\(--ds-accent-fill-hover\);/,
+      /\.landing \.btn-primary:hover \{\s*background: var\(--ds-accent-fill-hover\) var\(--ds-accent-fill-grad-hover\);/,
     )
     expect(home + landing).not.toMatch(/var\(--ds-on-accent\)/)
   })

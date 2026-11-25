@@ -6,12 +6,16 @@
    Schriftfarbe heißt hier --ds-on-accent-fill, weil --ds-on-accent in diesem
    Projekt weiter zur Goldfarbe --ds-accent gehört.
    Geladen von foundation.css (App, FAQ, Anleitung) und home.css (Startseite).
+   Verlauf (Equalizer-19-Muster): --ds-accent-fill-grad(-hover) liegt über der
+   Fläche; jeder Stopp erreicht mit Weiß mindestens 4,5:1.
    ========================================================================== */
 
 :root {
   --ds-accent-fill: #8f6320;
   --ds-accent-fill-hover: #9a6b24;
   --ds-on-accent-fill: #ffffff;
+  --ds-accent-fill-grad: linear-gradient(180deg, #9c6c26 0%, #7a5218 45%, #4a2f0a 100%);
+  --ds-accent-fill-grad-hover: linear-gradient(180deg, #8c5f1f 0%, #6a4614 45%, #402908 100%);
 }
 
 .light-theme,
@@ -19,4 +23,6 @@
   --ds-accent-fill: #8f6320;
   --ds-accent-fill-hover: #7d561c;
   --ds-on-accent-fill: #ffffff;
+  --ds-accent-fill-grad: linear-gradient(180deg, #9c6c26 0%, #7a5218 45%, #4a2f0a 100%);
+  --ds-accent-fill-grad-hover: linear-gradient(180deg, #8c5f1f 0%, #6a4614 45%, #402908 100%);
 }
