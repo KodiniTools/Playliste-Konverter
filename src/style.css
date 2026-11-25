@@ -157,6 +157,19 @@
 
 /* Verhalten von Tailwind 3 beibehalten: Rahmen ohne Farbklasse in der
    Token-Rahmenfarbe (statt currentColor), Buttons mit Hand-Cursor */
+/* Verlauf der gefüllten Buttons (Equalizer-19-Muster): ergänzt die Tailwind-
+   Klassen bg-accent-fill / hover:bg-accent-fill-hover um die Verlaufsebene.
+   Die Fläche bleibt als Rückfall darunter; deaktiviert gibt es keinen Hover. */
+@layer utilities {
+  .bg-accent-fill {
+    background-image: var(--ds-accent-fill-grad);
+  }
+
+  .hover\:bg-accent-fill-hover:hover:not(:disabled) {
+    background-image: var(--ds-accent-fill-grad-hover);
+  }
+}
+
 @layer base {
   *,
   ::after,

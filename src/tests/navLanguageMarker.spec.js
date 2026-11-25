@@ -73,7 +73,7 @@ describe('Aktive Sprache in der zentralen Navigation', () => {
 
   it('App, FAQ und Anleitung: markieren die aktive Sprache gleich', () => {
     expect(headerCss).toMatch(
-      /:root\[data-theme\] body > \.global-nav \.global-nav-lang-btn\.active \{ background: var\(--ds-accent-fill\) !important; color: var\(--ds-on-accent-fill\) !important; \}/,
+      /:root\[data-theme\] body > \.global-nav \.global-nav-lang-btn\.active \{ background: var\(--ds-accent-fill\) var\(--ds-accent-fill-grad\) !important; color: var\(--ds-on-accent-fill\) !important; \}/,
     )
     // foundation.css nimmt die zentrale Navigation von den erzwingenden Regeln aus
     expect(foundationCss).not.toMatch(/body > :not\(#app\):not\(script\)/)

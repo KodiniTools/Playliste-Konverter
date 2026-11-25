@@ -239,12 +239,12 @@ html {
 
 /* Primäraktion: gefüllter Button wie im Playlist Generator */
 .landing .btn-primary {
-  background: var(--ds-accent-fill);
+  background: var(--ds-accent-fill) var(--ds-accent-fill-grad);
   color: var(--ds-on-accent-fill);
 }
 
 .landing .btn-primary:hover {
-  background: var(--ds-accent-fill-hover);
+  background: var(--ds-accent-fill-hover) var(--ds-accent-fill-grad-hover);
 }
 
 .landing .btn-secondary {
