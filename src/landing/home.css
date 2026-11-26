@@ -440,6 +440,15 @@ input[type='file'] {
   margin-bottom: var(--ds-space-3);
 }
 
+/* Zweifarbiger Titel: erstes Wort Gold, zweites Blau (Farben des Logos) */
+.hero-title-gold {
+  color: var(--ds-title-gold);
+}
+
+.hero-title-blue {
+  color: var(--ds-title-blue);
+}
+
 .hero-subtitle {
   font-size: var(--ds-text-lg);
   font-weight: var(--ds-weight-medium);

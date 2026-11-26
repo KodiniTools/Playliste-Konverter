@@ -15,6 +15,10 @@
   --ds-glow-blue: rgba(55, 114, 202, 0.2);
   --ds-glow-cyan: rgba(38, 167, 187, 0.16);
   --ds-heading-accent: #69d7e9;
+
+  /* Titel der Startseite: Gold und Blau des Logos, im Dunkeln die helleren Töne */
+  --ds-title-gold: #e6bc76;
+  --ds-title-blue: #48a0d8;
 }
 
 .light-theme,
@@ -22,4 +26,7 @@
   --ds-glow-blue: rgba(86, 147, 216, 0.15);
   --ds-glow-cyan: rgba(35, 162, 195, 0.16);
   --ds-heading-accent: #086a80;
+
+  --ds-title-gold: #775115;
+  --ds-title-blue: #0058a0;
 }

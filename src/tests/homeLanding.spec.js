@@ -142,11 +142,28 @@ describe('Startseite: Aufbau', () => {
     expect(html).toContain("'nav.converter': 'Converter'")
   })
 
-  it('genau eine h1 mit dem Namen des Werkzeugs', () => {
+  it('genau eine h1 mit dem Namen des Werkzeugs, zweifarbig', () => {
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1)
-    expect(html).toMatch(
-      /<h1 class="hero-title" data-i18n="hero\.title">Wiedergabeliste Konverter<\/h1>/,
+    expect(html).toContain(
+      '<h1 class="hero-title"><span class="hero-title-gold" data-i18n="hero.title.gold">Wiedergabeliste</span> <span class="hero-title-blue" data-i18n="hero.title.blue">Konverter</span></h1>',
     )
+    expect(html).toContain("'hero.title.gold': 'Playlist'")
+    expect(html).toContain("'hero.title.blue': 'Converter'")
+  })
+
+  it('Titelfarben: Gold und Blau des Logos, hell dunkel, WCAG AA auf der Seitenfläche', () => {
+    expect(homeDark['--ds-title-gold']).toBe('#e6bc76')
+    expect(homeDark['--ds-title-blue']).toBe('#48a0d8')
+    expect(homeLight['--ds-title-gold']).toBe('#775115')
+    expect(homeLight['--ds-title-blue']).toBe('#0058a0')
+    expect(css).toMatch(/\.hero-title-gold \{\s*color: var\(--ds-title-gold\);/)
+    expect(css).toMatch(/\.hero-title-blue \{\s*color: var\(--ds-title-blue\);/)
+    for (const token of ['--ds-title-gold', '--ds-title-blue']) {
+      expect(contrastRatio(homeDark[token], baseDark['--ds-surface-0'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(homeLight[token], baseLight['--ds-surface-0'])).toBeGreaterThanOrEqual(
+        4.5,
+      )
+    }
   })
 
   it('FAQ: sechs Einträge, zu Beginn geschlossen, in DE und EN übersetzt', () => {
